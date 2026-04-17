@@ -10,6 +10,8 @@ import {
   labelClass,
   sectionCardClass,
 } from "@/lib/ui";
+import QrScanner from "@/components/qr-scanner";
+import { parseQrFactura } from "@/lib/parse-qr-factura";
 
 type FormState = {
   fecha: string;
@@ -35,6 +37,7 @@ export default function NuevaFacturaPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   const requiredFields: (keyof FormState)[] = [
     "fecha",
@@ -72,6 +75,28 @@ export default function NuevaFacturaPage() {
     }
   };
 
+  const handleQrScan = (decodedText: string) => {
+    const parsed = parseQrFactura(decodedText);
+
+    setForm((prev) => ({
+      ...prev,
+      fecha: parsed.fecha || prev.fecha,
+      proveedor: parsed.proveedor || prev.proveedor,
+      monto: parsed.monto || prev.monto,
+    }));
+
+    setShowScanner(false);
+    setError("");
+
+    if (parsed.fecha || parsed.proveedor || parsed.monto) {
+      setMensaje("QR leído. Revisa los datos antes de guardar.");
+    } else {
+      setMensaje(
+        "Se leyó el QR, pero no se pudieron identificar campos automáticamente."
+      );
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMensaje("");
@@ -103,6 +128,7 @@ export default function NuevaFacturaPage() {
       setMensaje("Factura guardada correctamente.");
       setForm(initialForm);
       setFileName("");
+      setShowScanner(false);
     } catch (err) {
       console.error("Error al enviar factura:", err);
       setError(
@@ -136,6 +162,26 @@ export default function NuevaFacturaPage() {
               Ver facturas
             </a>
           </div>
+
+          <div className="mb-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setShowScanner((prev) => !prev)}
+              disabled={isSubmitting}
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {showScanner ? "Ocultar escáner" : "Escanear QR"}
+            </button>
+          </div>
+
+          {showScanner ? (
+            <div className="mb-5">
+              <QrScanner
+                onScan={handleQrScan}
+                onClose={() => setShowScanner(false)}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="grid gap-5">
             <div className="grid gap-5 md:grid-cols-2">
