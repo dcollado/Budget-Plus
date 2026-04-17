@@ -60,14 +60,16 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
         const scanner = new Html5Qrcode("qr-reader");
         scannerRef.current = scanner;
 
+        const config = {
+          fps: 15,
+          qrbox: { width: 280, height: 280 },
+          aspectRatio: 1,
+        };
+
         try {
           await scanner.start(
             { facingMode: "environment" },
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1,
-            },
+            config,
             async (decodedText) => {
               await handleDecodedText(scanner, decodedText);
             },
@@ -75,7 +77,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
           );
         } catch (firstError) {
           console.warn(
-            "No se pudo usar facingMode environment. Intentando cámara por defecto...",
+            "No se pudo usar facingMode environment. Intentando por cámaras disponibles...",
             firstError
           );
 
@@ -85,13 +87,14 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
             throw new Error("No se encontraron cámaras disponibles.");
           }
 
+          const preferredCamera =
+            cameras.find((camera) =>
+              /back|rear|environment|trasera/i.test(camera.label)
+            ) || cameras[0];
+
           await scanner.start(
-            cameras[0].id,
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1,
-            },
+            preferredCamera.id,
+            config,
             async (decodedText) => {
               await handleDecodedText(scanner, decodedText);
             },

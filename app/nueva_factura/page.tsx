@@ -122,9 +122,12 @@ export default function NuevaFacturaPage() {
         fecha: factura.fecha || prev.fecha,
         proveedor: factura.proveedor || prev.proveedor,
         monto: factura.monto || prev.monto,
+        tipo: "Fiscal",
       }));
 
-      setMensaje("Factura leída desde la DGI. Revisa los datos antes de guardar.");
+      setMensaje(
+        "Factura fiscal leída desde la DGI. Revisa fecha, proveedor y monto antes de guardar."
+      );
       setShowScanner(false);
     } catch (err) {
       console.error("Error procesando QR:", err);
