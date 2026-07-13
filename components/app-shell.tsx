@@ -35,12 +35,14 @@ export function AppShell({
               Dashboard
             </a>
 
-            <a
-              href="/facturas"
-              className="text-text-muted transition-all duration-150 hover:font-semibold hover:text-gold"
-            >
-              Facturas
-            </a>
+          {/*
+<a
+  href="/facturas"
+  className="text-text-muted transition-all duration-150 hover:font-semibold hover:text-gold"
+>
+  Facturas
+</a>
+*/}
 
             <a
               href="/fijos"

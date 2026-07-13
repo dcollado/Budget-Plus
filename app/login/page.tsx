@@ -50,7 +50,7 @@ export default function LoginPage() {
       router.replace(safeNextPath);
       router.refresh();
     } catch {
-      setError("Ocurrió un error al conectar con FacturApp.");
+      setError("Ocurrió un error al conectar con Budget Plus.");
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function LoginPage() {
 
             <div>
               <p className="font-display text-xl font-semibold tracking-[-0.02em]">
-                Facturas App
+                Budget Plus
               </p>
               <p className="text-sm text-text-muted">
                 Finanzas personales
@@ -225,7 +225,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-5 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
-            Facturas App · Acceso privado
+            Budget Plus
           </p>
         </section>
       </div>

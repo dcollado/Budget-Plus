@@ -1,63 +1,86 @@
-# Login real usando las credenciales actuales de Basic Auth
+# Sincronización de ítems fijos con el dashboard
 
-Esta implementación elimina el cuadro emergente del navegador y usa las
-credenciales existentes dentro del formulario visual de `/login`.
+## Cambio en Google Sheets
 
-## Archivos
+En la hoja `Movimientos`, agrega una nueva columna al final:
 
-- `lib/auth-session.ts`
-- `app/api/login/route.ts`
-- `app/api/logout/route.ts`
-- `app/login/page.tsx`
-- `components/logout-menu.tsx`
-- `middleware.ts`
+| Columna | Encabezado |
+|---|---|
+| M | `itemFijoId` |
 
-## Variables de entorno
+No muevas ni renombres las columnas A-L.
 
-Se siguen utilizando:
+La estructura queda:
 
-```env
-BASIC_AUTH_USER=
-BASIC_AUTH_PASSWORD=
+```text
+A id
+B fecha
+C tipo
+D origen
+E monto
+F categoria
+G descripcion
+H mes
+I anio
+J numeroFactura
+K ruc
+L notas
+M itemFijoId
 ```
 
-Agrega también una clave exclusiva para firmar las sesiones:
+## Archivos que debes reemplazar
 
-```env
-SESSION_SECRET=
+```text
+lib/movimientos-store.ts
+app/api/movimientos/route.ts
+app/api/items-fijos/route.ts
 ```
 
-Puedes usar una cadena aleatoria larga, por ejemplo de 32 caracteres o más.
-No uses la misma contraseña del login.
+## Comportamiento nuevo
 
-## Flujo
+- Crear un ítem fijo activo:
+  - se guarda en `ItemsFijos`;
+  - si el mes actual ya fue generado, crea inmediatamente su movimiento;
+  - el dashboard lo mostrará al volver o refrescar.
 
-1. Cualquier página privada redirige a `/login` si no hay una sesión válida.
-2. El formulario envía usuario y contraseña a `/api/login`.
-3. La API compara los valores con `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD`.
-4. Si son correctos, crea una cookie `httpOnly` firmada por ocho horas.
-5. `/api/logout` elimina la cookie y devuelve al usuario al login.
+- Editar un ítem fijo:
+  - actualiza el movimiento del mes actual.
 
-## Agregar el menú de logout
+- Desactivar un ítem fijo:
+  - elimina su movimiento del mes actual;
+  - no toca movimientos históricos.
 
-Importa el componente dentro del header, navegación o layout donde quieras
-mostrarlo:
+- Reactivar un ítem fijo:
+  - vuelve a crear su movimiento del mes actual.
 
-```tsx
-import { LogoutMenu } from "@/components/logout-menu";
+- Eliminar un ítem fijo:
+  - elimina el movimiento asociado del mes actual;
+  - conserva meses anteriores.
+
+## Importante sobre movimientos ya existentes
+
+Los movimientos fijos generados antes de este cambio tendrán vacía la columna
+`itemFijoId`. No se dañan y siguen apareciendo en el dashboard, pero no quedan
+vinculados retroactivamente.
+
+Para probar la nueva vinculación, crea un ítem fijo nuevo después de instalar
+estos archivos. Ese movimiento sí tendrá su ID en la columna M.
+
+## Pruebas
+
+```bash
+npm run build
+npm run dev
 ```
 
-Luego colócalo dentro de la zona derecha del encabezado:
+Prueba:
 
-```tsx
-<div className="flex items-center gap-3">
-  <LogoutMenu />
-</div>
-```
-
-## Importante
-
-- No se instala ninguna dependencia.
-- El popup nativo de Basic Auth deja de utilizarse.
-- Las credenciales continúan viniendo de las mismas variables.
-- Las APIs privadas también responden `401` sin una sesión válida.
+1. Abre el dashboard para asegurar que el mes actual esté generado.
+2. Crea un ítem fijo activo.
+3. Regresa al dashboard y refresca.
+4. Edita su monto.
+5. Verifica que el movimiento cambie y no se duplique.
+6. Desactívalo.
+7. Verifica que desaparezca del mes actual.
+8. Reactívalo.
+9. Verifica que reaparezca una sola vez.

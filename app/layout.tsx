@@ -20,7 +20,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestor de Facturas",
+  title: "Budget Plus",
   description: "App personal para organizar facturas",
 };
 

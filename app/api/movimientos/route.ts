@@ -7,14 +7,17 @@ import type { ItemFijo } from "@/lib/items-fijos-store";
 const SHEET_NAME = "Movimientos";
 const SHEET_ITEMS_FIJOS = "ItemsFijos";
 const SHEET_MESES_GENERADOS = "MesesGenerados";
+const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:M`;
 
 function buildMovimiento(row: string[]): Movimiento {
   return {
     id: row[0] ?? "",
     fecha: row[1] ?? "",
-    tipo: (row[2] === "ingreso" ? "ingreso" : "gasto"),
+    tipo: row[2] === "ingreso" ? "ingreso" : "gasto",
     origen:
-      row[3] === "fijo" || row[3] === "factura" ? row[3] : "variable",
+      row[3] === "fijo" || row[3] === "factura"
+        ? row[3]
+        : "variable",
     monto: row[4] ?? "",
     categoria: row[5] ?? "",
     descripcion: row[6] ?? "",
@@ -23,6 +26,7 @@ function buildMovimiento(row: string[]): Movimiento {
     numeroFactura: row[9] ?? "",
     ruc: row[10] ?? "",
     notas: row[11] ?? "",
+    itemFijoId: row[12] ?? "",
   };
 }
 
@@ -38,9 +42,12 @@ function buildItemFijo(row: string[]): ItemFijo {
 }
 
 function getMesAnioFromFecha(fecha: string) {
-  if (!fecha) return { mes: "", anio: "" };
+  if (!fecha) {
+    return { mes: "", anio: "" };
+  }
 
   const parts = fecha.split("-");
+
   if (parts.length !== 3) {
     return { mes: "", anio: "" };
   }
@@ -54,37 +61,43 @@ function getMesAnioFromFecha(fecha: string) {
 function getPeriodoActual(): string {
   const hoy = new Date();
   const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+
   return `${hoy.getFullYear()}-${mes}`;
 }
 
-// Si el período pedido es el mes actual y todavía no fue "abierto", genera
-// los movimientos a partir de los ítems fijos activos y marca el mes como
-// generado. No hace nada para meses pasados — eso es responsabilidad de la
-// página de reportes, no de esta ruta.
 async function asegurarMesGenerado(
   sheets: Awaited<ReturnType<typeof getSheetsClient>>,
   sheetId: string,
   periodo: string
 ) {
-  if (periodo !== getPeriodoActual()) return;
+  if (periodo !== getPeriodoActual()) {
+    return;
+  }
 
   const mesesResponse = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
     range: `${SHEET_MESES_GENERADOS}!A:A`,
   });
+
   const mesesRows = mesesResponse.data.values ?? [];
   const yaGenerado = mesesRows
     .slice(1)
     .some((row) => (row[0] ?? "").trim() === periodo);
 
-  if (yaGenerado) return;
+  if (yaGenerado) {
+    return;
+  }
 
   const itemsResponse = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
     range: `${SHEET_ITEMS_FIJOS}!A:F`,
   });
+
   const itemsRows = itemsResponse.data.values ?? [];
-  const itemsFijos: ItemFijo[] = itemsRows.slice(1).map((row) => buildItemFijo(row));
+  const itemsFijos: ItemFijo[] = itemsRows
+    .slice(1)
+    .map((row) => buildItemFijo(row));
+
   const activos = itemsFijos.filter((item) => item.activo);
 
   if (activos.length > 0) {
@@ -104,13 +117,16 @@ async function asegurarMesGenerado(
       "",
       "",
       "",
+      item.id,
     ]);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:L`,
+      range: MOVIMIENTOS_RANGE,
       valueInputOption: "RAW",
-      requestBody: { values: filas },
+      requestBody: {
+        values: filas,
+      },
     });
   }
 
@@ -133,7 +149,6 @@ export async function GET(req: NextRequest) {
     }
 
     const periodo = req.nextUrl.searchParams.get("periodo")?.trim();
-
     const sheets = await getSheetsClient();
 
     if (periodo && /^\d{4}-\d{2}$/.test(periodo)) {
@@ -142,7 +157,7 @@ export async function GET(req: NextRequest) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:L`,
+      range: MOVIMIENTOS_RANGE,
     });
 
     const rows = response.data.values ?? [];
@@ -154,12 +169,17 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const dataRows = rows.slice(1);
-    let movimientos: Movimiento[] = dataRows.map((row) => buildMovimiento(row));
+    let movimientos: Movimiento[] = rows
+      .slice(1)
+      .map((row) => buildMovimiento(row));
 
     if (periodo && /^\d{4}-\d{2}$/.test(periodo)) {
       const [anio, mes] = periodo.split("-");
-      movimientos = movimientos.filter((m) => m.mes === mes && m.anio === anio);
+
+      movimientos = movimientos.filter(
+        (movimiento) =>
+          movimiento.mes === mes && movimiento.anio === anio
+      );
     }
 
     return NextResponse.json({
@@ -188,22 +208,36 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-
     const validacion = validarMovimiento(body);
+
     if (!validacion.ok) {
       return NextResponse.json(
-        { success: false, message: validacion.errores.join(" ") },
+        {
+          success: false,
+          message: validacion.errores.join(" "),
+        },
         { status: 400 }
       );
     }
 
-    const { fecha, tipo, monto, categoria, descripcion, notas } = validacion.data;
+    const { fecha, tipo, monto, categoria, descripcion, notas } =
+      validacion.data;
+
     const { mes, anio } = getMesAnioFromFecha(fecha);
 
     const origenRaw = String(
       (body as Record<string, unknown>)?.origen ?? "variable"
     ).trim();
-    const origen = origenRaw === "fijo" || origenRaw === "factura" ? origenRaw : "variable";
+
+    const origen =
+      origenRaw === "fijo" || origenRaw === "factura"
+        ? origenRaw
+        : "variable";
+
+    const itemFijoId =
+      typeof (body as Record<string, unknown>).itemFijoId === "string"
+        ? String((body as Record<string, unknown>).itemFijoId).trim()
+        : "";
 
     const movimiento: Movimiento = {
       id: crypto.randomUUID(),
@@ -218,13 +252,14 @@ export async function POST(req: NextRequest) {
       numeroFactura: "",
       ruc: "",
       notas,
+      itemFijoId,
     };
 
     const sheets = await getSheetsClient();
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:L`,
+      range: MOVIMIENTOS_RANGE,
       valueInputOption: "RAW",
       requestBody: {
         values: [[
@@ -240,6 +275,7 @@ export async function POST(req: NextRequest) {
           movimiento.numeroFactura ?? "",
           movimiento.ruc ?? "",
           movimiento.notas ?? "",
+          movimiento.itemFijoId ?? "",
         ]],
       },
     });
@@ -301,7 +337,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const dataRows = rows.slice(1);
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    const dataIndex = dataRows.findIndex(
+      (row) => (row[0] ?? "").trim() === id
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
