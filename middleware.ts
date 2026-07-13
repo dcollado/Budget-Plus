@@ -1,33 +1,49 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  COOKIE_NAME,
+  verifySessionToken,
+} from "@/lib/auth-session";
 
-export function middleware(req: NextRequest) {
-  const username = process.env.BASIC_AUTH_USER;
-  const password = process.env.BASIC_AUTH_PASSWORD;
+const PUBLIC_ROUTES = ["/login", "/api/login"];
 
-  const auth = req.headers.get("authorization");
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  if (auth) {
-    const [scheme, encoded] = auth.split(" ");
+  const isPublicRoute = PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 
-    if (scheme === "Basic") {
-      const decoded = Buffer.from(encoded, "base64").toString();
-      const [user, pass] = decoded.split(":");
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const hasValidSession = await verifySessionToken(token);
 
-      if (user === username && pass === password) {
-        return NextResponse.next();
-      }
-    }
+  if (pathname === "/login" && hasValidSession) {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  return new NextResponse("Auth required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Secure Area"',
-    },
-  });
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  if (!hasValidSession) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("next", pathname);
+
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: "/:path*",
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+  ],
 };

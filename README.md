@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Login real usando las credenciales actuales de Basic Auth
 
-## Getting Started
+Esta implementación elimina el cuadro emergente del navegador y usa las
+credenciales existentes dentro del formulario visual de `/login`.
 
-First, run the development server:
+## Archivos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- `lib/auth-session.ts`
+- `app/api/login/route.ts`
+- `app/api/logout/route.ts`
+- `app/login/page.tsx`
+- `components/logout-menu.tsx`
+- `middleware.ts`
+
+## Variables de entorno
+
+Se siguen utilizando:
+
+```env
+BASIC_AUTH_USER=
+BASIC_AUTH_PASSWORD=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Agrega también una clave exclusiva para firmar las sesiones:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+SESSION_SECRET=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Puedes usar una cadena aleatoria larga, por ejemplo de 32 caracteres o más.
+No uses la misma contraseña del login.
 
-## Learn More
+## Flujo
 
-To learn more about Next.js, take a look at the following resources:
+1. Cualquier página privada redirige a `/login` si no hay una sesión válida.
+2. El formulario envía usuario y contraseña a `/api/login`.
+3. La API compara los valores con `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD`.
+4. Si son correctos, crea una cookie `httpOnly` firmada por ocho horas.
+5. `/api/logout` elimina la cookie y devuelve al usuario al login.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Agregar el menú de logout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Importa el componente dentro del header, navegación o layout donde quieras
+mostrarlo:
 
-## Deploy on Vercel
+```tsx
+import { LogoutMenu } from "@/components/logout-menu";
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Luego colócalo dentro de la zona derecha del encabezado:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```tsx
+<div className="flex items-center gap-3">
+  <LogoutMenu />
+</div>
+```
+
+## Importante
+
+- No se instala ninguna dependencia.
+- El popup nativo de Basic Auth deja de utilizarse.
+- Las credenciales continúan viniendo de las mismas variables.
+- Las APIs privadas también responden `401` sin una sesión válida.

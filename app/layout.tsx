@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import { Plus } from "lucide-react";
 import "./globals.css";
+import { LogoutMenu } from "@/components/logout-menu";
 
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -10,6 +11,7 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   variable: "--font-plex-mono",
 });
+
 
 export const metadata: Metadata = {
   title: "Gestor de Facturas",
@@ -35,7 +37,7 @@ export default function RootLayout({
               href="/"
               className="font-display text-lg font-bold tracking-tight text-text transition hover:text-gold"
             >
-              Facturas App
+              Budget Plus
             </a>
 
             {/* MENU */}
@@ -45,7 +47,7 @@ export default function RootLayout({
                 href="/"
                 className="text-text-muted transition-all duration-150 hover:text-gold hover:font-semibold"
               >
-                Inicio
+                Dashboard
               </a>
 
               <a
@@ -71,6 +73,9 @@ export default function RootLayout({
               </a>
 
             </nav>
+            <div className="flex items-center gap-3">
+  <LogoutMenu />
+</div>
           </div>
         </header>
 
