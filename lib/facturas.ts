@@ -1,14 +1,16 @@
 export const categoriasFactura = [
   "Supermercado",
+  "Camila",
   "Restaurantes",
+  "Bancos",
   "Combustible",
   "Servicios",
-  "Gastos Fijos",
+  "Renta",
   "Deuda",
   "Software",
   "Transporte",
   "Papelería",
-  "Otros",
+  "Miscelaneos",
 ];
 
 export const tiposFactura = [
