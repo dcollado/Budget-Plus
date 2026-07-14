@@ -13,6 +13,10 @@ import TarjetaEditModal from "@/components/dashboard/modals/TarjetaEditModal";
 import DeudaEditModal from "@/components/dashboard/modals/DeudaEditModal";
 
 const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const mesesCompletos = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
 
 function formatMoney(n: number): string {
   const sign = n < 0 ? "-" : "";
@@ -43,7 +47,7 @@ export default function Home() {
   const mesActual = String(ahora.getMonth() + 1).padStart(2, "0");
   const anioActual = String(ahora.getFullYear());
   const periodoActual = `${anioActual}-${mesActual}`;
-  const etiquetaMes = `${meses[Number(mesActual) - 1]} ${anioActual}`;
+  const etiquetaMes = `${mesesCompletos[Number(mesActual) - 1]} ${anioActual}`;
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -174,26 +178,28 @@ export default function Home() {
 
         {/* Category breakdown + Deudas */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-text">Adónde va el dinero</h2>
-            {loading ? (
-              <p className="text-xs text-text-muted">Cargando...</p>
-            ) : categorias.length === 0 ? (
-              <p className="text-xs text-text-muted">
-                Todavía no hay gastos registrados este mes.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {categorias.map((c) => (
-                  <CategoryBar
-                    key={c.categoria}
-                    label={c.categoria}
-                    monto={c.monto}
-                    max={maxCategoria}
-                  />
-                ))}
-              </div>
-            )}
+          <div className="flex flex-col gap-3">
+            <h2 className="px-1 text-sm font-semibold text-text">Adónde va el dinero</h2>
+            <div className="flex flex-1 flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm">
+              {loading ? (
+                <p className="text-xs text-text-muted">Cargando...</p>
+              ) : categorias.length === 0 ? (
+                <p className="text-xs text-text-muted">
+                  Todavía no hay gastos registrados este mes.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {categorias.map((c) => (
+                    <CategoryBar
+                      key={c.categoria}
+                      label={c.categoria}
+                      monto={c.monto}
+                      max={maxCategoria}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -213,65 +219,69 @@ export default function Home() {
         </div>
 
         {/* Movements table */}
-        <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-text">Movimientos de {etiquetaMes}</h2>
-          {loading ? (
-            <p className="text-xs text-text-muted">Cargando...</p>
-          ) : movimientosOrdenados.length === 0 ? (
-            <p className="text-xs text-text-muted">Todavía no hay movimientos este mes.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-sm">
-                <thead>
-                  <tr className="text-text-muted">
-                    <th className="pb-2 text-left font-normal">Fecha</th>
-                    <th className="pb-2 text-left font-normal">Descripción</th>
-                    <th className="pb-2 text-left font-normal">Categoría</th>
-                    <th className="pb-2 text-right font-normal">Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movimientosOrdenados.map((m) => (
-                    <tr key={m.id} className="border-t border-line">
-                      <td className="py-2.5 font-mono text-xs text-text-muted">
-                        {formatFechaCorta(m.fecha)}
-                      </td>
-                      <td className="py-2.5 text-text">{m.descripcion}</td>
-                      <td className="py-2.5">
-                        <span className="rounded-full bg-surface-raised px-2 py-0.5 text-xs text-text-muted">
-                          {m.categoria}
-                        </span>
-                      </td>
-                      <td className="py-2.5 text-right font-mono">
-                        <span
-                          className={`inline-flex items-center justify-end gap-1 ${
-                            m.tipo === "ingreso" ? "text-sage" : "text-rust"
-                          }`}
-                        >
-                          {m.tipo === "ingreso" ? (
-                            <ArrowUpRight size={12} />
-                          ) : (
-                            <ArrowDownRight size={12} />
-                          )}
-                          {formatMoney(
-                            m.tipo === "ingreso" ? Number(m.monto) : -Number(m.monto)
-                          )}
-                        </span>
-                      </td>
+        <div className="flex flex-col gap-3">
+          <h2 className="px-1 text-sm font-semibold text-text">Movimientos de {etiquetaMes}</h2>
+          <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm">
+            {loading ? (
+              <p className="text-xs text-text-muted">Cargando...</p>
+            ) : movimientosOrdenados.length === 0 ? (
+              <p className="text-xs text-text-muted">Todavía no hay movimientos este mes.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="text-text-muted">
+                      <th className="pb-2 text-left font-normal">Fecha</th>
+                      <th className="pb-2 text-left font-normal">Descripción</th>
+                      <th className="pb-2 text-left font-normal">Categoría</th>
+                      <th className="pb-2 text-right font-normal">Monto</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {movimientosOrdenados.map((m) => (
+                      <tr key={m.id} className="border-t border-line">
+                        <td className="py-2.5 font-mono text-xs text-text-muted">
+                          {formatFechaCorta(m.fecha)}
+                        </td>
+                        <td className="py-2.5 text-text">{m.descripcion}</td>
+                        <td className="py-2.5">
+                          <span className="rounded-full bg-surface-raised px-2 py-0.5 text-xs text-text-muted">
+                            {m.categoria}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-right font-mono">
+                          <span
+                            className={`inline-flex items-center justify-end gap-1 ${
+                              m.tipo === "ingreso" ? "text-sage" : "text-rust"
+                            }`}
+                          >
+                            {m.tipo === "ingreso" ? (
+                              <ArrowUpRight size={12} />
+                            ) : (
+                              <ArrowDownRight size={12} />
+                            )}
+                            {formatMoney(
+                              m.tipo === "ingreso" ? Number(m.monto) : -Number(m.monto)
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {modalTipo ? (
         <QuickAddModal
           tipoInicial={modalTipo}
+          deudas={deudas}
           onClose={() => setModalTipo(null)}
           onAdded={handleAdded}
+          onDeudaActualizada={handleDeudaSaved}
         />
       ) : null}
 

@@ -48,3 +48,31 @@ export function mesesRestantes(fechaFin: string | undefined | null): number | nu
   if (fin.getDate() < hoy.getDate()) diffMeses -= 1;
   return Math.max(diffMeses, 0);
 }
+
+/**
+ * Aplica un pago a una deuda y devuelve la deuda actualizada. No muta el
+ * objeto original.
+ *
+ * - Si la deuda tiene detalle bancario (montoDesembolsado + saldoActual,
+ *   hoy solo el préstamo), el pago reduce el saldo actual (capital) y el
+ *   saldo total, ya que el progreso de esas deudas se deriva de ahí
+ *   (ver getProgreso). totalAPagar/totalPagado quedan sin tocar porque
+ *   son solo el respaldo que se usa cuando NO hay detalle bancario.
+ * - Si no tiene detalle bancario (tarjeta, auto, genéricas), el pago
+ *   aumenta totalPagado directamente, que es lo que usa getProgreso en
+ *   ese caso.
+ */
+export function aplicarPago(deuda: Deuda, monto: number): Deuda {
+  const tieneDetalleBancario = deuda.montoDesembolsado != null && deuda.saldoActual != null;
+
+  if (tieneDetalleBancario) {
+    const saldoActual = Math.max((deuda.saldoActual ?? 0) - monto, 0);
+    const saldoTotal =
+      deuda.saldoTotal != null ? Math.max(deuda.saldoTotal - monto, 0) : deuda.saldoTotal;
+
+    return { ...deuda, saldoActual, saldoTotal };
+  }
+
+  const totalPagado = Math.min(deuda.totalPagado + monto, deuda.totalAPagar);
+  return { ...deuda, totalPagado };
+}

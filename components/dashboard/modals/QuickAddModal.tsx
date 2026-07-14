@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { categoriasFactura, categoriasIngreso } from "@/lib/facturas";
 import type { Movimiento, TipoMovimiento } from "@/lib/movimientos-store";
+import type { Deuda } from "@/lib/deudas";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -12,12 +13,21 @@ import {
 
 type Props = {
   tipoInicial: TipoMovimiento;
+  deudas: Deuda[];
   onClose: () => void;
   onAdded: (movimiento: Movimiento) => void;
+  onDeudaActualizada: (deuda: Deuda) => void;
 };
 
-export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) {
+export default function QuickAddModal({
+  tipoInicial,
+  deudas,
+  onClose,
+  onAdded,
+  onDeudaActualizada,
+}: Props) {
   const [tipo, setTipo] = useState<TipoMovimiento>(tipoInicial);
+  const [deudaId, setDeudaId] = useState("");
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -25,17 +35,48 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
   const [guardando, setGuardando] = useState(false);
 
   const categorias = tipo === "gasto" ? categoriasFactura : categoriasIngreso;
+  const esPagoDeuda = tipo === "gasto" && deudaId !== "";
+  const deudaSeleccionada = deudas.find((d) => d.id === deudaId) || null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
-    if (!descripcion.trim()) {
-      setError("Escribe una descripción.");
-      return;
-    }
     if (!monto || Number(monto) <= 0) {
       setError("El monto debe ser mayor que cero.");
+      return;
+    }
+
+    if (esPagoDeuda) {
+      setGuardando(true);
+      try {
+        const res = await fetch("/api/pagos-deuda", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deudaId,
+            monto,
+            fecha: new Date().toISOString().slice(0, 10),
+            descripcion: descripcion.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "No se pudo registrar el pago.");
+        }
+        onAdded(data.data.movimiento as Movimiento);
+        onDeudaActualizada(data.data.deuda as Deuda);
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error guardando.");
+      } finally {
+        setGuardando(false);
+      }
+      return;
+    }
+
+    if (!descripcion.trim()) {
+      setError("Escribe una descripción.");
       return;
     }
     if (!categoria) {
@@ -93,6 +134,7 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
             onClick={() => {
               setTipo("gasto");
               setCategoria("");
+              setDeudaId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "gasto" ? "bg-rust-soft text-rust" : "text-text-muted"
@@ -105,6 +147,7 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
             onClick={() => {
               setTipo("ingreso");
               setCategoria("");
+              setDeudaId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "ingreso" ? "bg-sage-soft text-sage" : "text-text-muted"
@@ -115,13 +158,42 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {tipo === "gasto" && deudas.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Tipo de gasto</label>
+              <select
+                value={deudaId}
+                onChange={(e) => {
+                  setDeudaId(e.target.value);
+                  setCategoria("");
+                }}
+                className={`${fieldBaseClass} ${fieldNormalClass} appearance-none text-text`}
+              >
+                <option value="">Gasto misceláneo</option>
+                {deudas.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    Pago: {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>Descripción</label>
+            <label className={labelClass}>
+              Descripción {esPagoDeuda ? "(opcional)" : ""}
+            </label>
             <input
               type="text"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder={tipo === "gasto" ? "Ej. Farmacia" : "Ej. Proyecto extra"}
+              placeholder={
+                esPagoDeuda
+                  ? `Pago: ${deudaSeleccionada?.label ?? ""}`
+                  : tipo === "gasto"
+                  ? "Ej. Farmacia"
+                  : "Ej. Proyecto extra"
+              }
               className={`${fieldBaseClass} ${fieldNormalClass}`}
             />
           </div>
@@ -139,23 +211,33 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
                 className={`${fieldBaseClass} ${fieldNormalClass} font-mono`}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Categoría</label>
-              <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className={`${fieldBaseClass} ${fieldNormalClass} appearance-none ${
-                  categoria ? "text-text" : "text-text-muted"
-                }`}
-              >
-                <option value="">Selecciona</option>
-                {categorias.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+
+            {!esPagoDeuda ? (
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass}>Categoría</label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className={`${fieldBaseClass} ${fieldNormalClass} appearance-none ${
+                    categoria ? "text-text" : "text-text-muted"
+                  }`}
+                >
+                  <option value="">Selecciona</option>
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass}>Categoría</label>
+                <div className={`${fieldBaseClass} border-line bg-surface-raised text-text-muted`}>
+                  Deuda
+                </div>
+              </div>
+            )}
           </div>
 
           {error ? <p className="text-xs text-rust">{error}</p> : null}
@@ -167,7 +249,11 @@ export default function QuickAddModal({ tipoInicial, onClose, onAdded }: Props) 
               tipo === "gasto" ? "bg-rust" : "bg-sage"
             }`}
           >
-            {guardando ? "Guardando..." : `Agregar ${tipo === "gasto" ? "gasto" : "ingreso"}`}
+            {guardando
+              ? "Guardando..."
+              : esPagoDeuda
+              ? "Registrar pago"
+              : `Agregar ${tipo === "gasto" ? "gasto" : "ingreso"}`}
           </button>
         </form>
       </div>

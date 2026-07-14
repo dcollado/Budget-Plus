@@ -4,6 +4,7 @@ export const categoriasFactura = [
   "Combustible",
   "Servicios",
   "Gastos Fijos",
+  "Deuda",
   "Software",
   "Transporte",
   "Papelería",

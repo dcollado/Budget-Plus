@@ -1,6 +1,6 @@
 export type TipoMovimiento = "ingreso" | "gasto";
 
-export type OrigenMovimiento = "fijo" | "variable" | "factura";
+export type OrigenMovimiento = "fijo" | "variable" | "factura" | "deuda";
 
 export type Movimiento = {
   id: string;
@@ -16,4 +16,5 @@ export type Movimiento = {
   ruc?: string;
   notas?: string;
   itemFijoId?: string;
+  deudaId?: string;
 };

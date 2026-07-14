@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
 import type { Movimiento } from "@/lib/movimientos-store";
 import { validarMovimiento } from "@/lib/validar-movimiento";
-import type { ItemFijo } from "@/lib/items-fijos-store";
+import { sincronizarTodosLosActivos } from "@/lib/sincronizar-items-fijos";
 
 const SHEET_NAME = "Movimientos";
-const SHEET_ITEMS_FIJOS = "ItemsFijos";
 const SHEET_MESES_GENERADOS = "MesesGenerados";
-const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:M`;
+const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:N`;
 
 function buildMovimiento(row: string[]): Movimiento {
   return {
@@ -15,7 +14,7 @@ function buildMovimiento(row: string[]): Movimiento {
     fecha: row[1] ?? "",
     tipo: row[2] === "ingreso" ? "ingreso" : "gasto",
     origen:
-      row[3] === "fijo" || row[3] === "factura"
+      row[3] === "fijo" || row[3] === "factura" || row[3] === "deuda"
         ? row[3]
         : "variable",
     monto: row[4] ?? "",
@@ -27,17 +26,7 @@ function buildMovimiento(row: string[]): Movimiento {
     ruc: row[10] ?? "",
     notas: row[11] ?? "",
     itemFijoId: row[12] ?? "",
-  };
-}
-
-function buildItemFijo(row: string[]): ItemFijo {
-  return {
-    id: row[0] ?? "",
-    label: row[1] ?? "",
-    tipo: row[2] === "ingreso" ? "ingreso" : "gasto",
-    monto: Number(row[3]) || 0,
-    categoria: row[4] ?? "",
-    activo: (row[5] ?? "").trim().toLowerCase() !== "false",
+    deudaId: row[13] ?? "",
   };
 }
 
@@ -61,10 +50,16 @@ function getMesAnioFromFecha(fecha: string) {
 function getPeriodoActual(): string {
   const hoy = new Date();
   const mes = String(hoy.getMonth() + 1).padStart(2, "0");
-
   return `${hoy.getFullYear()}-${mes}`;
 }
 
+// Si el período pedido es el mes actual y todavía no fue "abierto" (no hay
+// registro en MesesGenerados), sincroniza TODOS los ítems fijos activos de
+// una vez — cubre los que ya existían antes de este mes. Esto es solo una
+// optimización para no recorrer ItemsFijos en cada carga del dashboard;
+// no es la única vía de sincronización. Cualquier ítem fijo creado,
+// editado, activado o desactivado se sincroniza de inmediato desde
+// app/api/items-fijos/route.ts, sin depender de esto.
 async function asegurarMesGenerado(
   sheets: Awaited<ReturnType<typeof getSheetsClient>>,
   sheetId: string,
@@ -88,47 +83,7 @@ async function asegurarMesGenerado(
     return;
   }
 
-  const itemsResponse = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: `${SHEET_ITEMS_FIJOS}!A:F`,
-  });
-
-  const itemsRows = itemsResponse.data.values ?? [];
-  const itemsFijos: ItemFijo[] = itemsRows
-    .slice(1)
-    .map((row) => buildItemFijo(row));
-
-  const activos = itemsFijos.filter((item) => item.activo);
-
-  if (activos.length > 0) {
-    const [anio, mes] = periodo.split("-");
-    const fecha = `${periodo}-01`;
-
-    const filas = activos.map((item) => [
-      crypto.randomUUID(),
-      fecha,
-      item.tipo,
-      "fijo",
-      String(item.monto),
-      item.categoria,
-      item.label,
-      mes,
-      anio,
-      "",
-      "",
-      "",
-      item.id,
-    ]);
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range: MOVIMIENTOS_RANGE,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: filas,
-      },
-    });
-  }
+  await sincronizarTodosLosActivos(sheets, sheetId);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
@@ -230,13 +185,18 @@ export async function POST(req: NextRequest) {
     ).trim();
 
     const origen =
-      origenRaw === "fijo" || origenRaw === "factura"
+      origenRaw === "fijo" || origenRaw === "factura" || origenRaw === "deuda"
         ? origenRaw
         : "variable";
 
     const itemFijoId =
       typeof (body as Record<string, unknown>).itemFijoId === "string"
         ? String((body as Record<string, unknown>).itemFijoId).trim()
+        : "";
+
+    const deudaId =
+      typeof (body as Record<string, unknown>).deudaId === "string"
+        ? String((body as Record<string, unknown>).deudaId).trim()
         : "";
 
     const movimiento: Movimiento = {
@@ -253,6 +213,7 @@ export async function POST(req: NextRequest) {
       ruc: "",
       notas,
       itemFijoId,
+      deudaId,
     };
 
     const sheets = await getSheetsClient();
@@ -276,6 +237,7 @@ export async function POST(req: NextRequest) {
           movimiento.ruc ?? "",
           movimiento.notas ?? "",
           movimiento.itemFijoId ?? "",
+          movimiento.deudaId ?? "",
         ]],
       },
     });

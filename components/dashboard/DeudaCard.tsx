@@ -1,4 +1,7 @@
-import { Landmark, CreditCard, Car, Pencil } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Landmark, CreditCard, Car, Pencil, ChevronDown } from "lucide-react";
 import type { Deuda, TipoDeuda } from "@/lib/deudas";
 import { getProgreso, mesesRestantes } from "@/lib/deudas";
 
@@ -31,6 +34,9 @@ type DeudaCardProps = {
 };
 
 export default function DeudaCard({ deuda, onEdit }: DeudaCardProps) {
+  const [bancoAbierto, setBancoAbierto] = useState(false);
+  const [tarjetaAbierto, setTarjetaAbierto] = useState(false);
+
   const Icon = iconoPorTipo[deuda.tipo];
   const { total, pagado } = getProgreso(deuda);
   const tieneDetalleBancario = deuda.montoDesembolsado != null;
@@ -92,87 +98,115 @@ export default function DeudaCard({ deuda, onEdit }: DeudaCardProps) {
 
       {tieneDetalleBancario ? (
         <div className="mt-1 flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised p-3">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
-            Detalle del banco
-          </span>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-            <span className="text-text-muted">Desembolsado</span>
-            <span className="text-right font-mono text-text">
-              {formatMoney(deuda.montoDesembolsado ?? 0)}
+          <button
+            type="button"
+            onClick={() => setBancoAbierto((v) => !v)}
+            className="flex items-center justify-between gap-2 text-left"
+          >
+            <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+              Detalle del banco
             </span>
+            <ChevronDown
+              size={14}
+              className={`text-text-muted transition-transform ${
+                bancoAbierto ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+          {bancoAbierto ? (
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <span className="text-text-muted">Desembolsado</span>
+              <span className="text-right font-mono text-text">
+                {formatMoney(deuda.montoDesembolsado ?? 0)}
+              </span>
 
-            <span className="text-text-muted">Fecha de desembolso</span>
-            <span className="text-right font-mono text-text">
-              {formatFechaLarga(deuda.fechaDesembolso)}
-            </span>
+              <span className="text-text-muted">Fecha de desembolso</span>
+              <span className="text-right font-mono text-text">
+                {formatFechaLarga(deuda.fechaDesembolso)}
+              </span>
 
-            <span className="text-text-muted">Primer pago</span>
-            <span className="text-right font-mono text-text">
-              {formatFechaLarga(deuda.fechaPrimerPago)}
-            </span>
+              <span className="text-text-muted">Primer pago</span>
+              <span className="text-right font-mono text-text">
+                {formatFechaLarga(deuda.fechaPrimerPago)}
+              </span>
 
-            <span className="text-text-muted">Vencimiento</span>
-            <span className="text-right font-mono text-text">
-              {formatFechaLarga(deuda.fechaVencimiento)}
-            </span>
+              <span className="text-text-muted">Vencimiento</span>
+              <span className="text-right font-mono text-text">
+                {formatFechaLarga(deuda.fechaVencimiento)}
+              </span>
 
-            <span className="text-text-muted">Plazo</span>
-            <span className="text-right font-mono text-text">
-              {deuda.plazoMeses} meses
-            </span>
+              <span className="text-text-muted">Plazo</span>
+              <span className="text-right font-mono text-text">
+                {deuda.plazoMeses} meses
+              </span>
 
-            {restantes != null ? (
-              <>
-                <span className="text-text-muted">Meses restantes</span>
-                <span className="text-right font-mono text-text">{restantes}</span>
-              </>
-            ) : null}
+              {restantes != null ? (
+                <>
+                  <span className="text-text-muted">Meses restantes</span>
+                  <span className="text-right font-mono text-text">{restantes}</span>
+                </>
+              ) : null}
 
-            <span className="text-text-muted">Saldo actual (capital)</span>
-            <span className="text-right font-mono text-text">
-              {formatMoney(deuda.saldoActual ?? 0)}
-            </span>
+              <span className="text-text-muted">Saldo actual (capital)</span>
+              <span className="text-right font-mono text-text">
+                {formatMoney(deuda.saldoActual ?? 0)}
+              </span>
 
-            <span className="text-text-muted">Saldo total (con intereses y cargos)</span>
-            <span className="text-right font-mono text-text">
-              {formatMoney(deuda.saldoTotal ?? 0)}
-            </span>
+              <span className="text-text-muted">Saldo total (con intereses y cargos)</span>
+              <span className="text-right font-mono text-text">
+                {formatMoney(deuda.saldoTotal ?? 0)}
+              </span>
 
-            <span className="text-text-muted">Cargos pagados</span>
-            <span className="text-right font-mono text-text">{deuda.cargosPagados}</span>
+              <span className="text-text-muted">Cargos pagados</span>
+              <span className="text-right font-mono text-text">{deuda.cargosPagados}</span>
 
-            <span className="text-text-muted">Cargos pendientes</span>
-            <span className="text-right font-mono text-text">{deuda.cargosPendientes}</span>
-          </div>
+              <span className="text-text-muted">Cargos pendientes</span>
+              <span className="text-right font-mono text-text">{deuda.cargosPendientes}</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       {tieneDetalleTarjeta ? (
         <div className="mt-1 flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised p-3">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
-            Detalle de la tarjeta
-          </span>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-            <span className="text-text-muted">Tasa por adelantos/quasi-cash</span>
-            <span className="text-right font-mono text-text">
-              {deuda.tasaInteresAdelantos}% anual
+          <button
+            type="button"
+            onClick={() => setTarjetaAbierto((v) => !v)}
+            className="flex items-center justify-between gap-2 text-left"
+          >
+            <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+              Detalle de la tarjeta
             </span>
+            <ChevronDown
+              size={14}
+              className={`text-text-muted transition-transform ${
+                tarjetaAbierto ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+          {tarjetaAbierto ? (
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <span className="text-text-muted">Tasa por adelantos/quasi-cash</span>
+              <span className="text-right font-mono text-text">
+                {deuda.tasaInteresAdelantos}% anual
+              </span>
 
-            <span className="text-text-muted">Membresía anual</span>
-            <span className="text-right font-mono text-text">
-              {formatMoney(deuda.membresiaAnual ?? 0)}
-            </span>
+              <span className="text-text-muted">Membresía anual</span>
+              <span className="text-right font-mono text-text">
+                {formatMoney(deuda.membresiaAnual ?? 0)}
+              </span>
 
-            <span className="text-text-muted">Pago mínimo</span>
-            <span className="text-right font-mono text-text">
-              {deuda.pagoMinimoPorcentaje}%, mín. {formatMoney(deuda.pagoMinimoMonto ?? 0)}
-            </span>
+              <span className="text-text-muted">Pago mínimo</span>
+              <span className="text-right font-mono text-text">
+                {deuda.pagoMinimoPorcentaje}%, mín. {formatMoney(deuda.pagoMinimoMonto ?? 0)}
+              </span>
 
-            <span className="text-text-muted">Cargo por pago atrasado</span>
-            <span className="text-right font-mono text-text">
-              {formatMoney(deuda.cargoPagoAtrasado ?? 0)}
-            </span>
-          </div>
+              <span className="text-text-muted">Cargo por pago atrasado</span>
+              <span className="text-right font-mono text-text">
+                {formatMoney(deuda.cargoPagoAtrasado ?? 0)}
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
