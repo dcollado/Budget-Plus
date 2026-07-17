@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
+import { getUsuarioId } from "@/lib/current-user";
 import type { ItemFijo } from "@/lib/items-fijos-store";
 import { validarItemFijo } from "@/lib/validar-item-fijo";
 
 const SHEET_NAME = "ItemsFijos";
-const RANGE = `${SHEET_NAME}!A:F`;
+const RANGE = `${SHEET_NAME}!A:G`;
 
 function buildItemFijo(row: string[]): ItemFijo {
   return {
@@ -14,13 +15,22 @@ function buildItemFijo(row: string[]): ItemFijo {
     monto: Number(row[3]) || 0,
     categoria: row[4] ?? "",
     activo: (row[5] ?? "").trim().toLowerCase() !== "false",
+    usuarioId: row[6] ?? "",
   };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+
+    const usuarioId = getUsuarioId(req);
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
 
     const sheets = await getSheetsClient();
     const response = await sheets.spreadsheets.values.get({
@@ -29,11 +39,11 @@ export async function GET() {
     });
 
     const rows = response.data.values ?? [];
-    if (rows.length <= 1) {
-      return NextResponse.json({ success: true, data: [] });
-    }
+    const items: ItemFijo[] = rows
+      .slice(1)
+      .map((row) => buildItemFijo(row))
+      .filter((item) => item.usuarioId === usuarioId);
 
-    const items: ItemFijo[] = rows.slice(1).map((row) => buildItemFijo(row));
     return NextResponse.json({ success: true, data: items });
   } catch (error) {
     console.error("Error obteniendo ítems fijos:", error);
@@ -49,8 +59,17 @@ export async function POST(req: NextRequest) {
     const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
 
+    const usuarioId = getUsuarioId(req);
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const validacion = validarItemFijo(body);
+
     if (!validacion.ok) {
       return NextResponse.json(
         { success: false, message: validacion.errores.join(" ") },
@@ -58,9 +77,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const item: ItemFijo = { id: crypto.randomUUID(), ...validacion.data };
+    const item: ItemFijo = {
+      id: crypto.randomUUID(),
+      ...validacion.data,
+      usuarioId,
+    };
 
     const sheets = await getSheetsClient();
+
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: RANGE,
@@ -73,6 +97,7 @@ export async function POST(req: NextRequest) {
           item.monto,
           item.categoria,
           String(item.activo),
+          item.usuarioId,
         ]],
       },
     });
@@ -92,6 +117,14 @@ export async function PUT(req: NextRequest) {
     const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
 
+    const usuarioId = getUsuarioId(req);
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const id = req.nextUrl.searchParams.get("id")?.trim();
     if (!id) {
       return NextResponse.json(
@@ -102,6 +135,7 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json();
     const validacion = validarItemFijo(body);
+
     if (!validacion.ok) {
       return NextResponse.json(
         { success: false, message: validacion.errores.join(" ") },
@@ -109,17 +143,18 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const item: ItemFijo = { id, ...validacion.data };
-
     const sheets = await getSheetsClient();
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
-    const dataRows = rows.slice(1);
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    const dataIndex = rows.slice(1).findIndex(
+      (row) =>
+        (row[0] ?? "").trim() === id &&
+        (row[6] ?? "").trim() === usuarioId
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
@@ -128,10 +163,17 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const item: ItemFijo = {
+      id,
+      ...validacion.data,
+      usuarioId,
+    };
+
     const sheetRowNumber = dataIndex + 2;
+
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A${sheetRowNumber}:F${sheetRowNumber}`,
+      range: `${SHEET_NAME}!A${sheetRowNumber}:G${sheetRowNumber}`,
       valueInputOption: "RAW",
       requestBody: {
         values: [[
@@ -141,6 +183,7 @@ export async function PUT(req: NextRequest) {
           item.monto,
           item.categoria,
           String(item.activo),
+          item.usuarioId,
         ]],
       },
     });
@@ -160,6 +203,14 @@ export async function DELETE(req: NextRequest) {
     const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
 
+    const usuarioId = getUsuarioId(req);
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const id = req.nextUrl.searchParams.get("id")?.trim();
     if (!id) {
       return NextResponse.json(
@@ -171,12 +222,15 @@ export async function DELETE(req: NextRequest) {
     const sheets = await getSheetsClient();
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
-    const dataRows = rows.slice(1);
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    const dataIndex = rows.slice(1).findIndex(
+      (row) =>
+        (row[0] ?? "").trim() === id &&
+        (row[6] ?? "").trim() === usuarioId
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
@@ -195,8 +249,8 @@ export async function DELETE(req: NextRequest) {
     const targetSheet = spreadsheetResponse.data.sheets?.find(
       (sheet) => sheet.properties?.title === SHEET_NAME
     );
-    const sheetNumericId = targetSheet?.properties?.sheetId;
 
+    const sheetNumericId = targetSheet?.properties?.sheetId;
     if (sheetNumericId === undefined) {
       throw new Error(`No se encontró la hoja ${SHEET_NAME}`);
     }

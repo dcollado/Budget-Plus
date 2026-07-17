@@ -1,37 +1,58 @@
-// Hash de contraseñas con PBKDF2 vía Web Crypto — a propósito no usa
-// bcrypt/argon2 porque esas librerías no corren en el runtime Edge donde
-// vive el middleware. Web Crypto sí funciona en Edge y en Node, sin
-// dependencias nuevas.
-
 const ITERATIONS = 100_000;
 const HASH_ALG = "SHA-256";
-const KEY_LENGTH_BITS = 256;
+const KEY_LENGTH = 256;
 
-function bytesToBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-function base64UrlToBytes(value: string): Uint8Array {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
+  if (hex.length % 2 !== 0) {
+    throw new Error("El hash hexadecimal no tiene una longitud válida.");
+  }
+
+  const buffer = new ArrayBuffer(hex.length / 2);
+  const bytes = new Uint8Array(buffer);
+
+  for (let index = 0; index < hex.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(hex.slice(index, index + 2), 16);
+  }
+
   return bytes;
 }
 
-async function derivarHash(password: string, salt: Uint8Array): Promise<Uint8Array> {
+function encodeText(value: string): Uint8Array<ArrayBuffer> {
+  const encoded = new TextEncoder().encode(value);
+
+  // Creamos una copia respaldada por ArrayBuffer para satisfacer
+  // los tipos estrictos de Web Crypto y TypeScript.
+  const buffer = new ArrayBuffer(encoded.byteLength);
+  const bytes = new Uint8Array(buffer);
+
+  bytes.set(encoded);
+
+  return bytes;
+}
+
+async function derivePasswordHash(
+  password: string,
+  salt: Uint8Array<ArrayBuffer>
+): Promise<string> {
+  const passwordBytes = encodeText(password);
+
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
+    passwordBytes,
+    {
+      name: "PBKDF2",
+    },
     false,
     ["deriveBits"]
   );
 
-  const bits = await crypto.subtle.deriveBits(
+  const derivedBits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       salt,
@@ -39,36 +60,47 @@ async function derivarHash(password: string, salt: Uint8Array): Promise<Uint8Arr
       hash: HASH_ALG,
     },
     keyMaterial,
-    KEY_LENGTH_BITS
+    KEY_LENGTH
   );
 
-  return new Uint8Array(bits);
+  return bytesToHex(new Uint8Array(derivedBits));
 }
 
-// Formato guardado en la hoja: "salt:hash", ambos en base64url.
 export async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await derivarHash(password, salt);
-  return `${bytesToBase64Url(salt)}:${bytesToBase64Url(hash)}`;
+  const saltBuffer = new ArrayBuffer(16);
+  const salt = new Uint8Array(saltBuffer);
+
+  crypto.getRandomValues(salt);
+
+  const hash = await derivePasswordHash(password, salt);
+
+  return `${bytesToHex(salt)}:${hash}`;
 }
 
 export async function verifyPassword(
   password: string,
-  almacenado: string
+  storedPassword: string
 ): Promise<boolean> {
-  const [saltB64, hashB64] = (almacenado ?? "").split(":");
-  if (!saltB64 || !hashB64) return false;
+  const [saltHex, expectedHash] = storedPassword.split(":");
 
-  const salt = base64UrlToBytes(saltB64);
-  const hashEsperado = base64UrlToBytes(hashB64);
-  const hashCalculado = await derivarHash(password, salt);
-
-  if (hashCalculado.length !== hashEsperado.length) return false;
-
-  // Comparación en tiempo constante — no cortar apenas difiere un byte.
-  let diff = 0;
-  for (let i = 0; i < hashCalculado.length; i += 1) {
-    diff |= hashCalculado[i] ^ hashEsperado[i];
+  if (!saltHex || !expectedHash) {
+    return false;
   }
-  return diff === 0;
+
+  const salt = hexToBytes(saltHex);
+  const calculatedHash = await derivePasswordHash(password, salt);
+
+  if (calculatedHash.length !== expectedHash.length) {
+    return false;
+  }
+
+  let difference = 0;
+
+  for (let index = 0; index < calculatedHash.length; index += 1) {
+    difference |=
+      calculatedHash.charCodeAt(index) ^
+      expectedHash.charCodeAt(index);
+  }
+
+  return difference === 0;
 }
