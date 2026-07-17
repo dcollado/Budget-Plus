@@ -37,6 +37,12 @@ export default function TarjetaEditModal({ deuda, onClose, onSaved }: Props) {
   const [cargoPagoAtrasado, setCargoPagoAtrasado] = useState(
     deuda.cargoPagoAtrasado != null ? String(deuda.cargoPagoAtrasado) : ""
   );
+  const [limiteCredito, setLimiteCredito] = useState(
+    deuda.limiteCredito != null ? String(deuda.limiteCredito) : ""
+  );
+  const [saldoHeredado, setSaldoHeredado] = useState(
+    deuda.saldoHeredado != null ? String(deuda.saldoHeredado) : ""
+  );
   const [nota, setNota] = useState(deuda.nota || "");
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -86,6 +92,8 @@ export default function TarjetaEditModal({ deuda, onClose, onSaved }: Props) {
         pagoMinimoPorcentaje.trim() !== "" ? Number(pagoMinimoPorcentaje) : null,
       pagoMinimoMonto: pagoMinimoMonto.trim() !== "" ? Number(pagoMinimoMonto) : null,
       cargoPagoAtrasado: cargoPagoAtrasado.trim() !== "" ? Number(cargoPagoAtrasado) : null,
+      limiteCredito: limiteCredito.trim() !== "" ? Number(limiteCredito) : null,
+      saldoHeredado: saldoHeredado.trim() !== "" ? Number(saldoHeredado) : null,
     };
 
     setGuardando(true);
@@ -172,6 +180,33 @@ export default function TarjetaEditModal({ deuda, onClose, onSaved }: Props) {
                 value={tasaInteres}
                 onChange={(e) => setTasaInteres(e.target.value)}
                 placeholder="Ej. 21.99"
+                className={`${fieldBaseClass} ${fieldNormalClass} font-mono`}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Límite de crédito</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={limiteCredito}
+                onChange={(e) => setLimiteCredito(e.target.value)}
+                placeholder="Ej. 1900"
+                className={`${fieldBaseClass} ${fieldNormalClass} font-mono`}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Saldo heredado pendiente</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={saldoHeredado}
+                onChange={(e) => setSaldoHeredado(e.target.value)}
+                placeholder="Ej. 1803.89"
                 className={`${fieldBaseClass} ${fieldNormalClass} font-mono`}
               />
             </div>

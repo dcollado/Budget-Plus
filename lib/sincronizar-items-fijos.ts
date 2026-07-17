@@ -2,10 +2,10 @@ import { getSheetsClient } from "@/lib/google-sheets";
 import type { ItemFijo } from "@/lib/items-fijos-store";
 
 const ITEMS_FIJOS_SHEET = "ItemsFijos";
-const ITEMS_FIJOS_RANGE = `${ITEMS_FIJOS_SHEET}!A:F`;
+const ITEMS_FIJOS_RANGE = `${ITEMS_FIJOS_SHEET}!A:G`;
 
 const MOVIMIENTOS_SHEET = "Movimientos";
-const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:M`;
+const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:O`;
 
 type SheetsClient = Awaited<ReturnType<typeof getSheetsClient>>;
 
@@ -28,6 +28,7 @@ export function buildItemFijo(row: string[]): ItemFijo {
     monto: Number(row[3]) || 0,
     categoria: row[4] ?? "",
     activo: (row[5] ?? "").trim().toLowerCase() !== "false",
+    usuarioId: row[6] ?? "",
   };
 }
 
@@ -78,10 +79,13 @@ async function eliminarFilasMovimiento(
   });
 }
 
+// Filtra también por usuarioId — evita que un ítem fijo de un usuario
+// pudiera, en teoría, emparejarse con el movimiento de otro.
 async function buscarCoincidenciasDelMes(
   sheets: SheetsClient,
   sheetId: string,
   itemFijoId: string,
+  usuarioId: string,
   mes: string,
   anio: string
 ) {
@@ -100,12 +104,14 @@ async function buscarCoincidenciasDelMes(
       const movimientoMes = (row[7] ?? "").trim();
       const movimientoAnio = (row[8] ?? "").trim();
       const movimientoItemFijoId = (row[12] ?? "").trim();
+      const movimientoUsuarioId = (row[14] ?? "").trim();
 
       return (
         origen === "fijo" &&
         movimientoMes === mes &&
         movimientoAnio === anio &&
-        movimientoItemFijoId === itemFijoId
+        movimientoItemFijoId === itemFijoId &&
+        movimientoUsuarioId === usuarioId
       );
     });
 }
@@ -131,6 +137,7 @@ export async function sincronizarMovimientoFijo(
     sheets,
     sheetId,
     item.id,
+    item.usuarioId,
     mes,
     anio
   );
@@ -158,6 +165,8 @@ export async function sincronizarMovimientoFijo(
     "",
     "",
     item.id,
+    "",
+    item.usuarioId,
   ];
 
   if (coincidencias.length === 0) {
@@ -174,7 +183,7 @@ export async function sincronizarMovimientoFijo(
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${MOVIMIENTOS_SHEET}!A${primeraCoincidencia.rowNumber}:M${primeraCoincidencia.rowNumber}`,
+    range: `${MOVIMIENTOS_SHEET}!A${primeraCoincidencia.rowNumber}:O${primeraCoincidencia.rowNumber}`,
     valueInputOption: "RAW",
     requestBody: { values: [movimientoValues] },
   });
@@ -191,7 +200,8 @@ export async function sincronizarMovimientoFijo(
 export async function eliminarMovimientoMesActualDeItem(
   sheets: SheetsClient,
   sheetId: string,
-  itemFijoId: string
+  itemFijoId: string,
+  usuarioId: string
 ) {
   const { anio, mes } = getPeriodoActual();
 
@@ -199,6 +209,7 @@ export async function eliminarMovimientoMesActualDeItem(
     sheets,
     sheetId,
     itemFijoId,
+    usuarioId,
     mes,
     anio
   );
@@ -211,11 +222,12 @@ export async function eliminarMovimientoMesActualDeItem(
 }
 
 /**
- * Recorre TODOS los ítems fijos activos y sincroniza cada uno con su
- * movimiento del mes actual. Se usa solo al abrir un mes por primera vez
- * (ver MesesGenerados en app/api/movimientos/route.ts) — cubre los ítems
- * que ya existían antes de que empezara el mes y que por lo tanto nunca
- * dispararon su propio POST/PUT durante este período.
+ * Recorre TODOS los ítems fijos activos DE UN USUARIO y sincroniza cada
+ * uno con su movimiento del mes actual. Se usa solo al abrir un mes por
+ * primera vez para ese usuario (ver MesesGenerados en
+ * app/api/movimientos/route.ts) — cubre los ítems que ya existían antes
+ * de que empezara el mes y que por lo tanto nunca dispararon su propio
+ * POST/PUT durante este período.
  *
  * Es seguro llamarla aunque algunos ítems ya tengan su movimiento
  * sincronizado por su propio CRUD — sincronizarMovimientoFijo es
@@ -223,7 +235,8 @@ export async function eliminarMovimientoMesActualDeItem(
  */
 export async function sincronizarTodosLosActivos(
   sheets: SheetsClient,
-  sheetId: string
+  sheetId: string,
+  usuarioId: string
 ) {
   const itemsResponse = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
@@ -232,7 +245,9 @@ export async function sincronizarTodosLosActivos(
 
   const itemsRows = itemsResponse.data.values ?? [];
   const itemsFijos: ItemFijo[] = itemsRows.slice(1).map((row) => buildItemFijo(row));
-  const activos = itemsFijos.filter((item) => item.activo);
+  const activos = itemsFijos.filter(
+    (item) => item.activo && item.usuarioId === usuarioId
+  );
 
   for (const item of activos) {
     await sincronizarMovimientoFijo(sheets, sheetId, item);

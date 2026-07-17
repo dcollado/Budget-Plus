@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 const navLinks = [
   { href: "/", label: "Dashboard" },
   { href: "/fijos", label: "Ítems fijos" },
+  { href: "/familia", label: "Familia" },
 ];
 
 export function AppShell({

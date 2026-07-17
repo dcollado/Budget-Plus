@@ -14,9 +14,10 @@ type StatCardProps = {
   icon: LucideIcon;
   accent: Accento;
   sub?: string;
+  detalles?: { label: string; value: string }[];
 };
 
-export default function StatCard({ label, value, icon: Icon, accent, sub }: StatCardProps) {
+export default function StatCard({ label, value, icon: Icon, accent, sub, detalles }: StatCardProps) {
   const { icon, iconBg } = accentClasses[accent];
 
   return (
@@ -33,6 +34,16 @@ export default function StatCard({ label, value, icon: Icon, accent, sub }: Stat
         {value}
       </span>
       {sub ? <span className="text-xs text-text-muted">{sub}</span> : null}
+      {detalles && detalles.length > 0 ? (
+        <div className="flex flex-col gap-1 border-t border-line pt-2">
+          {detalles.map((d) => (
+            <div key={d.label} className="flex items-center justify-between text-xs">
+              <span className="text-text-muted">{d.label}</span>
+              <span className="font-mono text-text">{d.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

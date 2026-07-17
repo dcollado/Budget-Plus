@@ -1,14 +1,10 @@
 const COOKIE_NAME = "facturapp_session";
 
 function getSecret(): string {
-  const secret =
-    process.env.SESSION_SECRET ||
-    process.env.BASIC_AUTH_PASSWORD;
+  const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
-    throw new Error(
-      "Falta SESSION_SECRET o BASIC_AUTH_PASSWORD en las variables de entorno."
-    );
+    throw new Error("Falta SESSION_SECRET en las variables de entorno.");
   }
 
   return secret;
@@ -54,8 +50,18 @@ async function getSigningKey(): Promise<CryptoKey> {
   );
 }
 
-export async function createSessionToken(username: string): Promise<string> {
-  const payload = {
+export type SessionPayload = {
+  usuarioId: string;
+  username: string;
+  expiresAt: number;
+};
+
+export async function createSessionToken(
+  usuarioId: string,
+  username: string
+): Promise<string> {
+  const payload: SessionPayload = {
+    usuarioId,
     username,
     expiresAt: Date.now() + 8 * 60 * 60 * 1000,
   };
@@ -75,15 +81,15 @@ export async function createSessionToken(username: string): Promise<string> {
 
 export async function verifySessionToken(
   token: string | undefined
-): Promise<boolean> {
+): Promise<SessionPayload | null> {
   if (!token) {
-    return false;
+    return null;
   }
 
   const [encodedPayload, encodedSignature] = token.split(".");
 
   if (!encodedPayload || !encodedSignature) {
-    return false;
+    return null;
   }
 
   try {
@@ -95,23 +101,25 @@ export async function verifySessionToken(
     );
 
     if (!isValidSignature) {
-      return false;
+      return null;
     }
 
     const payload = JSON.parse(
       new TextDecoder().decode(base64UrlToBytes(encodedPayload))
-    ) as {
-      username?: string;
-      expiresAt?: number;
-    };
+    ) as Partial<SessionPayload>;
 
-    return (
-      payload.username === process.env.BASIC_AUTH_USER &&
-      typeof payload.expiresAt === "number" &&
-      payload.expiresAt > Date.now()
-    );
+    if (
+      typeof payload.usuarioId !== "string" ||
+      typeof payload.username !== "string" ||
+      typeof payload.expiresAt !== "number" ||
+      payload.expiresAt <= Date.now()
+    ) {
+      return null;
+    }
+
+    return payload as SessionPayload;
   } catch {
-    return false;
+    return null;
   }
 }
 

@@ -25,6 +25,13 @@ export type Deuda = {
   pagoMinimoPorcentaje?: number | null;
   pagoMinimoMonto?: number | null;
   cargoPagoAtrasado?: number | null;
+  // Límite y saldo heredado (solo tarjeta)
+  limiteCredito?: number | null;
+  // Saldo que ya existía antes de trackear compras una por una. Los pagos
+  // siguen contando como gasto hasta cubrir exactamente este monto —
+  // después, ya no (las compras nuevas generan su propio gasto cada una).
+  saldoHeredado?: number | null;
+  usuarioId: string;
 };
 
 // Progreso real: si hay detalle bancario (desembolso + saldo actual), se deriva
@@ -75,4 +82,39 @@ export function aplicarPago(deuda: Deuda, monto: number): Deuda {
 
   const totalPagado = Math.min(deuda.totalPagado + monto, deuda.totalAPagar);
   return { ...deuda, totalPagado };
+}
+
+/**
+ * Registra una compra con tarjeta: aumenta totalAPagar (el saldo que se
+ * debe crece). No toca totalPagado. Solo tiene sentido para deudas sin
+ * detalle bancario (hoy, tarjeta).
+ */
+export function aplicarCompra(deuda: Deuda, monto: number): Deuda {
+  return { ...deuda, totalAPagar: deuda.totalAPagar + monto };
+}
+
+/**
+ * Pago específico de tarjeta. A diferencia de aplicarPago (que se usa
+ * para préstamo/auto y siempre genera un gasto), acá el pago reduce el
+ * saldo igual, pero decide cuánto de ese pago corresponde a gasto real:
+ * solo la porción que todavía es "saldoHeredado" (compras de antes de
+ * trackearlas una por una con /api/compras-tarjeta). Una vez que el
+ * heredado llega a 0, los pagos futuros no generan gasto — las compras
+ * nuevas ya lo hicieron cada una por su lado, y contar el pago también
+ * sería duplicar.
+ */
+export function procesarPagoTarjeta(
+  deuda: Deuda,
+  monto: number
+): { deuda: Deuda; montoGasto: number } {
+  const heredadoActual = deuda.saldoHeredado ?? 0;
+  const montoGasto = Math.min(monto, heredadoActual);
+  const saldoHeredado = Math.max(heredadoActual - monto, 0);
+
+  const deudaConPago = aplicarPago(deuda, monto);
+
+  return {
+    deuda: { ...deudaConPago, saldoHeredado },
+    montoGasto,
+  };
 }

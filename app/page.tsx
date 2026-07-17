@@ -85,32 +85,45 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { totalIngresos, totalGastos, neto, categorias } = useMemo(() => {
-    let ingresos = 0;
-    let gastos = 0;
-    const porCategoria: Record<string, number> = {};
+  const { totalIngresos, totalGastos, neto, categorias, salarioFijo, pagosFijos, ingresosExtra } =
+    useMemo(() => {
+      let ingresos = 0;
+      let gastos = 0;
+      let salarioFijo = 0;
+      let pagosFijos = 0;
+      let ingresosExtra = 0;
+      const porCategoria: Record<string, number> = {};
 
-    movimientos.forEach((m) => {
-      const montoNum = Number(m.monto) || 0;
-      if (m.tipo === "ingreso") {
-        ingresos += montoNum;
-      } else {
-        gastos += montoNum;
-        porCategoria[m.categoria] = (porCategoria[m.categoria] || 0) + montoNum;
-      }
-    });
+      movimientos.forEach((m) => {
+        const montoNum = Number(m.monto) || 0;
+        if (m.tipo === "ingreso") {
+          ingresos += montoNum;
+          if (m.origen === "fijo") {
+            salarioFijo += montoNum;
+            pagosFijos += 1;
+          } else {
+            ingresosExtra += montoNum;
+          }
+        } else {
+          gastos += montoNum;
+          porCategoria[m.categoria] = (porCategoria[m.categoria] || 0) + montoNum;
+        }
+      });
 
-    const categorias = Object.entries(porCategoria)
-      .map(([categoria, monto]) => ({ categoria, monto }))
-      .sort((a, b) => b.monto - a.monto);
+      const categorias = Object.entries(porCategoria)
+        .map(([categoria, monto]) => ({ categoria, monto }))
+        .sort((a, b) => b.monto - a.monto);
 
-    return {
-      totalIngresos: ingresos,
-      totalGastos: gastos,
-      neto: ingresos - gastos,
-      categorias,
-    };
-  }, [movimientos]);
+      return {
+        totalIngresos: ingresos,
+        totalGastos: gastos,
+        neto: ingresos - gastos,
+        categorias,
+        salarioFijo,
+        pagosFijos,
+        ingresosExtra,
+      };
+    }, [movimientos]);
 
   const maxCategoria = categorias.length > 0 ? categorias[0].monto : 0;
   const movimientosOrdenados = [...movimientos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
@@ -182,6 +195,17 @@ export default function Home() {
             value={loading ? "..." : formatMoney(totalIngresos)}
             icon={Wallet}
             accent="sage"
+            detalles={
+              loading || totalIngresos === 0
+                ? undefined
+                : [
+                    {
+                      label: `Salario fijo${pagosFijos > 0 ? ` · ${pagosFijos} pago${pagosFijos === 1 ? "" : "s"}` : ""}`,
+                      value: formatMoney(salarioFijo),
+                    },
+                    { label: "Ingresos extra", value: formatMoney(ingresosExtra) },
+                  ]
+            }
           />
           <StatCard
             label="Gastos"

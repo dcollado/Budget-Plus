@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
 import { getUsuarioId } from "@/lib/current-user";
-import { aplicarPago, procesarPagoTarjeta } from "@/lib/deudas";
+import { aplicarCompra } from "@/lib/deudas";
 import { DEUDAS_SHEET, DEUDAS_RANGE, buildDeuda, deudaToRow } from "@/lib/deudas-sheet";
+import { categoriasFactura } from "@/lib/facturas";
 import type { Movimiento } from "@/lib/movimientos-store";
 
 const MOVIMIENTOS_SHEET = "Movimientos";
@@ -34,14 +35,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const deudaId = String((body as Record<string, unknown>)?.deudaId ?? "").trim();
     const montoRaw = String((body as Record<string, unknown>)?.monto ?? "").trim();
+    const categoria = String((body as Record<string, unknown>)?.categoria ?? "").trim();
+    const descripcion = String((body as Record<string, unknown>)?.descripcion ?? "").trim();
     const fechaRaw = String((body as Record<string, unknown>)?.fecha ?? "").trim();
-    const descripcionRaw = String(
-      (body as Record<string, unknown>)?.descripcion ?? ""
-    ).trim();
 
     if (!deudaId) {
       return NextResponse.json(
-        { success: false, message: "Falta la deuda a la que aplicar el pago." },
+        { success: false, message: "Falta la tarjeta con la que se hizo la compra." },
         { status: 400 }
       );
     }
@@ -54,13 +54,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!descripcion) {
+      return NextResponse.json(
+        { success: false, message: "La descripción es obligatoria." },
+        { status: 400 }
+      );
+    }
+
+    if (!categoria || !categoriasFactura.includes(categoria)) {
+      return NextResponse.json(
+        { success: false, message: "La categoría seleccionada no es válida." },
+        { status: 400 }
+      );
+    }
+
     const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaRaw)
       ? fechaRaw
       : new Date().toISOString().slice(0, 10);
 
     const sheets = await getSheetsClient();
 
-    // 1. Buscar la deuda (del usuario actual) y aplicar el pago.
+    // 1. Buscar la tarjeta (del usuario actual) y aumentar el saldo.
     const deudasResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: DEUDAS_RANGE,
@@ -75,27 +89,21 @@ export async function POST(req: NextRequest) {
 
     if (dataIndex === -1) {
       return NextResponse.json(
-        { success: false, message: "Deuda no encontrada." },
+        { success: false, message: "Tarjeta no encontrada." },
         { status: 404 }
       );
     }
 
     const deuda = buildDeuda(dataRows[dataIndex]);
 
-    // Tarjeta: el pago reduce el saldo, pero solo genera gasto por la
-    // porción que todavía es saldo heredado — evita duplicar el gasto de
-    // compras que ya se registraron una por una con /api/compras-tarjeta.
-    // Cualquier otra deuda (préstamo, auto): el pago siempre es gasto,
-    // como hasta ahora.
-    const esTarjeta = deuda.tipo === "tarjeta";
+    if (deuda.tipo !== "tarjeta") {
+      return NextResponse.json(
+        { success: false, message: "Solo se pueden registrar compras sobre una tarjeta de crédito." },
+        { status: 400 }
+      );
+    }
 
-    const { deudaActualizada, montoGasto } = esTarjeta
-      ? (() => {
-          const resultado = procesarPagoTarjeta(deuda, monto);
-          return { deudaActualizada: resultado.deuda, montoGasto: resultado.montoGasto };
-        })()
-      : { deudaActualizada: aplicarPago(deuda, monto), montoGasto: monto };
-
+    const deudaActualizada = aplicarCompra(deuda, monto);
     const sheetRowNumber = dataIndex + 2;
 
     await sheets.spreadsheets.values.update({
@@ -107,67 +115,62 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 2. Crear el movimiento de gasto asociado — solo si corresponde
-    // registrar algo como gasto (siempre en deudas no-tarjeta; en
-    // tarjeta, solo mientras quede saldo heredado por cubrir).
-    let movimiento: Movimiento | null = null;
+    // 2. Crear el movimiento de gasto asociado a la compra.
+    const { mes, anio } = getMesAnioFromFecha(fecha);
 
-    if (montoGasto > 0) {
-      const { mes, anio } = getMesAnioFromFecha(fecha);
+    const movimiento: Movimiento = {
+      id: crypto.randomUUID(),
+      fecha,
+      tipo: "gasto",
+      origen: "tarjeta",
+      monto: String(monto),
+      categoria,
+      descripcion,
+      mes,
+      anio,
+      numeroFactura: "",
+      ruc: "",
+      notas: "",
+      deudaId,
+      usuarioId,
+      metodoPago: "tarjeta",
+    };
 
-      movimiento = {
-        id: crypto.randomUUID(),
-        fecha,
-        tipo: "gasto",
-        origen: "deuda",
-        monto: String(montoGasto),
-        categoria: "Deuda",
-        descripcion: descripcionRaw || `Pago: ${deuda.label}`,
-        mes,
-        anio,
-        numeroFactura: "",
-        ruc: "",
-        notas: esTarjeta && montoGasto < monto ? "Cubre el resto del saldo heredado" : "",
-        deudaId,
-        usuarioId,
-      };
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: MOVIMIENTOS_RANGE,
-        valueInputOption: "RAW",
-        requestBody: {
-          values: [[
-            movimiento.id,
-            movimiento.fecha,
-            movimiento.tipo,
-            movimiento.origen,
-            movimiento.monto,
-            movimiento.categoria,
-            movimiento.descripcion,
-            movimiento.mes,
-            movimiento.anio,
-            movimiento.numeroFactura ?? "",
-            movimiento.ruc ?? "",
-            movimiento.notas ?? "",
-            "",
-            movimiento.deudaId ?? "",
-            movimiento.usuarioId,
-            "",
-          ]],
-        },
-      });
-    }
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: MOVIMIENTOS_RANGE,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          movimiento.id,
+          movimiento.fecha,
+          movimiento.tipo,
+          movimiento.origen,
+          movimiento.monto,
+          movimiento.categoria,
+          movimiento.descripcion,
+          movimiento.mes,
+          movimiento.anio,
+          movimiento.numeroFactura ?? "",
+          movimiento.ruc ?? "",
+          movimiento.notas ?? "",
+          "",
+          movimiento.deudaId ?? "",
+          movimiento.usuarioId,
+          movimiento.metodoPago ?? "",
+        ]],
+      },
+    });
 
     return NextResponse.json({
       success: true,
       data: { movimiento, deuda: deudaActualizada },
     });
   } catch (error) {
-    console.error("Error registrando pago de deuda:", error);
+    console.error("Error registrando compra con tarjeta:", error);
 
     return NextResponse.json(
-      { success: false, message: "No se pudo registrar el pago de la deuda." },
+      { success: false, message: "No se pudo registrar la compra." },
       { status: 500 }
     );
   }

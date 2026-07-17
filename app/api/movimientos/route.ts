@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
+import { getUsuarioId } from "@/lib/current-user";
 import type { Movimiento } from "@/lib/movimientos-store";
 import { validarMovimiento } from "@/lib/validar-movimiento";
 import { sincronizarTodosLosActivos } from "@/lib/sincronizar-items-fijos";
 
 const SHEET_NAME = "Movimientos";
 const SHEET_MESES_GENERADOS = "MesesGenerados";
-const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:N`;
+const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:P`;
 
 function buildMovimiento(row: string[]): Movimiento {
   return {
@@ -27,6 +28,11 @@ function buildMovimiento(row: string[]): Movimiento {
     notas: row[11] ?? "",
     itemFijoId: row[12] ?? "",
     deudaId: row[13] ?? "",
+    usuarioId: row[14] ?? "",
+    metodoPago:
+      row[15] === "efectivo" || row[15] === "debito" || row[15] === "tarjeta"
+        ? row[15]
+        : undefined,
   };
 }
 
@@ -53,17 +59,16 @@ function getPeriodoActual(): string {
   return `${hoy.getFullYear()}-${mes}`;
 }
 
-// Si el período pedido es el mes actual y todavía no fue "abierto" (no hay
-// registro en MesesGenerados), sincroniza TODOS los ítems fijos activos de
-// una vez — cubre los que ya existían antes de este mes. Esto es solo una
-// optimización para no recorrer ItemsFijos en cada carga del dashboard;
-// no es la única vía de sincronización. Cualquier ítem fijo creado,
-// editado, activado o desactivado se sincroniza de inmediato desde
-// app/api/items-fijos/route.ts, sin depender de esto.
+// Si el período pedido es el mes actual y todavía no fue "abierto" PARA
+// ESTE USUARIO (no hay registro en MesesGenerados para ese periodo +
+// usuarioId), sincroniza todos sus ítems fijos activos de una vez — cubre
+// los que ya existían antes de este mes. El registro es por usuario:
+// que el mes ya se haya abierto para uno no debe saltear al otro.
 async function asegurarMesGenerado(
   sheets: Awaited<ReturnType<typeof getSheetsClient>>,
   sheetId: string,
-  periodo: string
+  periodo: string,
+  usuarioId: string
 ) {
   if (periodo !== getPeriodoActual()) {
     return;
@@ -71,26 +76,29 @@ async function asegurarMesGenerado(
 
   const mesesResponse = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${SHEET_MESES_GENERADOS}!A:A`,
+    range: `${SHEET_MESES_GENERADOS}!A:B`,
   });
 
   const mesesRows = mesesResponse.data.values ?? [];
   const yaGenerado = mesesRows
     .slice(1)
-    .some((row) => (row[0] ?? "").trim() === periodo);
+    .some(
+      (row) =>
+        (row[0] ?? "").trim() === periodo && (row[1] ?? "").trim() === usuarioId
+    );
 
   if (yaGenerado) {
     return;
   }
 
-  await sincronizarTodosLosActivos(sheets, sheetId);
+  await sincronizarTodosLosActivos(sheets, sheetId, usuarioId);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${SHEET_MESES_GENERADOS}!A:B`,
+    range: `${SHEET_MESES_GENERADOS}!A:C`,
     valueInputOption: "RAW",
     requestBody: {
-      values: [[periodo, new Date().toISOString()]],
+      values: [[periodo, usuarioId, new Date().toISOString()]],
     },
   });
 }
@@ -103,11 +111,20 @@ export async function GET(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const periodo = req.nextUrl.searchParams.get("periodo")?.trim();
     const sheets = await getSheetsClient();
 
     if (periodo && /^\d{4}-\d{2}$/.test(periodo)) {
-      await asegurarMesGenerado(sheets, sheetId, periodo);
+      await asegurarMesGenerado(sheets, sheetId, periodo, usuarioId);
     }
 
     const response = await sheets.spreadsheets.values.get({
@@ -126,7 +143,8 @@ export async function GET(req: NextRequest) {
 
     let movimientos: Movimiento[] = rows
       .slice(1)
-      .map((row) => buildMovimiento(row));
+      .map((row) => buildMovimiento(row))
+      .filter((movimiento) => movimiento.usuarioId === usuarioId);
 
     if (periodo && /^\d{4}-\d{2}$/.test(periodo)) {
       const [anio, mes] = periodo.split("-");
@@ -162,6 +180,15 @@ export async function POST(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const validacion = validarMovimiento(body);
 
@@ -185,7 +212,10 @@ export async function POST(req: NextRequest) {
     ).trim();
 
     const origen =
-      origenRaw === "fijo" || origenRaw === "factura" || origenRaw === "deuda"
+      origenRaw === "fijo" ||
+      origenRaw === "factura" ||
+      origenRaw === "deuda" ||
+      origenRaw === "tarjeta"
         ? origenRaw
         : "variable";
 
@@ -198,6 +228,15 @@ export async function POST(req: NextRequest) {
       typeof (body as Record<string, unknown>).deudaId === "string"
         ? String((body as Record<string, unknown>).deudaId).trim()
         : "";
+
+    const metodoPagoRaw = String(
+      (body as Record<string, unknown>)?.metodoPago ?? ""
+    ).trim();
+
+    const metodoPago =
+      metodoPagoRaw === "efectivo" || metodoPagoRaw === "debito" || metodoPagoRaw === "tarjeta"
+        ? metodoPagoRaw
+        : undefined;
 
     const movimiento: Movimiento = {
       id: crypto.randomUUID(),
@@ -214,6 +253,8 @@ export async function POST(req: NextRequest) {
       notas,
       itemFijoId,
       deudaId,
+      usuarioId,
+      metodoPago,
     };
 
     const sheets = await getSheetsClient();
@@ -238,6 +279,8 @@ export async function POST(req: NextRequest) {
           movimiento.notas ?? "",
           movimiento.itemFijoId ?? "",
           movimiento.deudaId ?? "",
+          movimiento.usuarioId,
+          movimiento.metodoPago ?? "",
         ]],
       },
     });
@@ -267,6 +310,15 @@ export async function DELETE(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
@@ -283,7 +335,7 @@ export async function DELETE(req: NextRequest) {
 
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: MOVIMIENTOS_RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
@@ -299,8 +351,11 @@ export async function DELETE(req: NextRequest) {
     }
 
     const dataRows = rows.slice(1);
+    // Busca por id Y por usuarioId — así un usuario nunca puede borrar
+    // un movimiento de otro, ni siquiera adivinando el id.
     const dataIndex = dataRows.findIndex(
-      (row) => (row[0] ?? "").trim() === id
+      (row) =>
+        (row[0] ?? "").trim() === id && (row[14] ?? "").trim() === usuarioId
     );
 
     if (dataIndex === -1) {

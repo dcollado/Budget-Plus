@@ -1,8 +1,10 @@
 import type { Deuda, TipoDeuda } from "@/lib/deudas";
 
 export const DEUDAS_SHEET = "Deudas";
-// A:V — 22 columnas, ver IMPLEMENTACION.md sección 2 para el layout completo.
-export const DEUDAS_RANGE = `${DEUDAS_SHEET}!A:V`;
+// A:Y — 25 columnas (23 + límite de crédito + saldo heredado). Se agregan
+// al final, después de usuarioId, para no correr el índice de esa
+// columna (varias rutas la referencian por posición para verificar dueño).
+export const DEUDAS_RANGE = `${DEUDAS_SHEET}!A:Y`;
 
 function numOrNull(valor: string | undefined): number | null {
   const trimmed = (valor ?? "").trim();
@@ -45,6 +47,9 @@ export function buildDeuda(row: string[]): Deuda {
     pagoMinimoMonto: numOrNull(row[19]),
     cargoPagoAtrasado: numOrNull(row[20]),
     nota: row[21] ?? "",
+    usuarioId: row[22] ?? "",
+    limiteCredito: numOrNull(row[23]),
+    saldoHeredado: numOrNull(row[24]),
   };
 }
 
@@ -72,5 +77,8 @@ export function deudaToRow(deuda: Deuda): (string | number)[] {
     deuda.pagoMinimoMonto ?? "",
     deuda.cargoPagoAtrasado ?? "",
     deuda.nota ?? "",
+    deuda.usuarioId,
+    deuda.limiteCredito ?? "",
+    deuda.saldoHeredado ?? "",
   ];
 }

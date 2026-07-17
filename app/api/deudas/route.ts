@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
+import { getUsuarioId } from "@/lib/current-user";
 import type { Deuda } from "@/lib/deudas";
 import { DEUDAS_SHEET, DEUDAS_RANGE, buildDeuda, deudaToRow } from "@/lib/deudas-sheet";
 
 const SHEET_NAME = DEUDAS_SHEET;
 const RANGE = DEUDAS_RANGE;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
     if (!sheetId) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    }
+
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
     }
 
     const sheets = await getSheetsClient();
@@ -28,7 +38,9 @@ export async function GET() {
     }
 
     const dataRows = rows.slice(1);
-    const deudas: Deuda[] = dataRows.map((row) => buildDeuda(row));
+    const deudas: Deuda[] = dataRows
+      .map((row) => buildDeuda(row))
+      .filter((deuda) => deuda.usuarioId === usuarioId);
 
     return NextResponse.json({ success: true, data: deudas });
   } catch (error) {
@@ -47,6 +59,15 @@ export async function PUT(req: NextRequest) {
 
     if (!sheetId) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    }
+
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
     }
 
     const id = req.nextUrl.searchParams.get("id")?.trim();
@@ -78,7 +99,7 @@ export async function PUT(req: NextRequest) {
 
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
@@ -91,7 +112,12 @@ export async function PUT(req: NextRequest) {
     }
 
     const dataRows = rows.slice(1);
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    // Busca por id Y por usuarioId — no se puede editar una deuda de otro
+    // usuario ni adivinando el id.
+    const dataIndex = dataRows.findIndex(
+      (row) =>
+        (row[0] ?? "").trim() === id && (row[22] ?? "").trim() === usuarioId
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
@@ -102,16 +128,19 @@ export async function PUT(req: NextRequest) {
 
     const sheetRowNumber = dataIndex + 2;
 
+    // El usuarioId lo pone el servidor, nunca el cliente.
+    const deudaActualizada: Deuda = { ...body, usuarioId };
+
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A${sheetRowNumber}:V${sheetRowNumber}`,
+      range: `${SHEET_NAME}!A${sheetRowNumber}:Y${sheetRowNumber}`,
       valueInputOption: "RAW",
       requestBody: {
-        values: [deudaToRow(body)],
+        values: [deudaToRow(deudaActualizada)],
       },
     });
 
-    return NextResponse.json({ success: true, data: body });
+    return NextResponse.json({ success: true, data: deudaActualizada });
   } catch (error) {
     console.error("Error actualizando deuda:", error);
 

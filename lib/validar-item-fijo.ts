@@ -2,7 +2,7 @@ import { categoriasFactura, categoriasIngreso } from "@/lib/facturas";
 import type { ItemFijo } from "@/lib/items-fijos-store";
 
 export type ResultadoValidacionItemFijo =
-  | { ok: true; data: Omit<ItemFijo, "id"> }
+  | { ok: true; data: Omit<ItemFijo, "id" | "usuarioId"> }
   | { ok: false; errores: string[] };
 
 const MAX_TEXTO = 200;

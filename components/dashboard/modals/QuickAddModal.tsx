@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { categoriasFactura, categoriasIngreso } from "@/lib/facturas";
-import type { Movimiento, TipoMovimiento } from "@/lib/movimientos-store";
+import type { Movimiento, TipoMovimiento, MetodoPago } from "@/lib/movimientos-store";
 import type { Deuda } from "@/lib/deudas";
 import {
   fieldBaseClass,
@@ -28,6 +28,8 @@ export default function QuickAddModal({
 }: Props) {
   const [tipo, setTipo] = useState<TipoMovimiento>(tipoInicial);
   const [deudaId, setDeudaId] = useState("");
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
+  const [tarjetaCompraId, setTarjetaCompraId] = useState("");
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -37,6 +39,8 @@ export default function QuickAddModal({
   const categorias = tipo === "gasto" ? categoriasFactura : categoriasIngreso;
   const esPagoDeuda = tipo === "gasto" && deudaId !== "";
   const deudaSeleccionada = deudas.find((d) => d.id === deudaId) || null;
+  const tarjetas = deudas.filter((d) => d.tipo === "tarjeta");
+  const esCompraConTarjeta = tipo === "gasto" && !esPagoDeuda && metodoPago === "tarjeta";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,6 +88,40 @@ export default function QuickAddModal({
       return;
     }
 
+    if (esCompraConTarjeta) {
+      if (!tarjetaCompraId) {
+        setError("Selecciona con qué tarjeta se hizo la compra.");
+        return;
+      }
+
+      setGuardando(true);
+      try {
+        const res = await fetch("/api/compras-tarjeta", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deudaId: tarjetaCompraId,
+            monto,
+            categoria,
+            descripcion: descripcion.trim(),
+            fecha: new Date().toISOString().slice(0, 10),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "No se pudo registrar la compra.");
+        }
+        onAdded(data.data.movimiento as Movimiento);
+        onDeudaActualizada(data.data.deuda as Deuda);
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error guardando.");
+      } finally {
+        setGuardando(false);
+      }
+      return;
+    }
+
     setGuardando(true);
     try {
       const res = await fetch("/api/movimientos", {
@@ -97,6 +135,7 @@ export default function QuickAddModal({
           descripcion: descripcion.trim(),
           origen: "variable",
           notas: "",
+          metodoPago: tipo === "gasto" ? metodoPago : undefined,
         }),
       });
       const data = await res.json();
@@ -135,6 +174,8 @@ export default function QuickAddModal({
               setTipo("gasto");
               setCategoria("");
               setDeudaId("");
+              setMetodoPago("efectivo");
+              setTarjetaCompraId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "gasto" ? "bg-rust-soft text-rust" : "text-text-muted"
@@ -148,6 +189,8 @@ export default function QuickAddModal({
               setTipo("ingreso");
               setCategoria("");
               setDeudaId("");
+              setMetodoPago("efectivo");
+              setTarjetaCompraId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "ingreso" ? "bg-sage-soft text-sage" : "text-text-muted"
@@ -166,6 +209,8 @@ export default function QuickAddModal({
                 onChange={(e) => {
                   setDeudaId(e.target.value);
                   setCategoria("");
+                  setMetodoPago("efectivo");
+                  setTarjetaCompraId("");
                 }}
                 className={`${fieldBaseClass} ${fieldNormalClass} appearance-none text-text`}
               >
@@ -173,6 +218,44 @@ export default function QuickAddModal({
                 {deudas.map((d) => (
                   <option key={d.id} value={d.id}>
                     Pago: {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {tipo === "gasto" && !esPagoDeuda ? (
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Método de pago</label>
+              <select
+                value={metodoPago}
+                onChange={(e) => {
+                  setMetodoPago(e.target.value as MetodoPago);
+                  setTarjetaCompraId("");
+                }}
+                className={`${fieldBaseClass} ${fieldNormalClass} appearance-none text-text`}
+              >
+                <option value="efectivo">Efectivo</option>
+                <option value="debito">Débito</option>
+                {tarjetas.length > 0 ? <option value="tarjeta">Tarjeta de crédito</option> : null}
+              </select>
+            </div>
+          ) : null}
+
+          {esCompraConTarjeta ? (
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>¿Con qué tarjeta?</label>
+              <select
+                value={tarjetaCompraId}
+                onChange={(e) => setTarjetaCompraId(e.target.value)}
+                className={`${fieldBaseClass} ${fieldNormalClass} appearance-none ${
+                  tarjetaCompraId ? "text-text" : "text-text-muted"
+                }`}
+              >
+                <option value="">Selecciona</option>
+                {tarjetas.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
                   </option>
                 ))}
               </select>
@@ -253,6 +336,8 @@ export default function QuickAddModal({
               ? "Guardando..."
               : esPagoDeuda
               ? "Registrar pago"
+              : esCompraConTarjeta
+              ? "Registrar compra"
               : `Agregar ${tipo === "gasto" ? "gasto" : "ingreso"}`}
           </button>
         </form>

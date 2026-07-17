@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "@/lib/google-sheets";
+import { getUsuarioId } from "@/lib/current-user";
 import type { ItemFijo } from "@/lib/items-fijos-store";
 import { validarItemFijo } from "@/lib/validar-item-fijo";
 import {
@@ -9,14 +10,23 @@ import {
 } from "@/lib/sincronizar-items-fijos";
 
 const SHEET_NAME = "ItemsFijos";
-const ITEMS_RANGE = `${SHEET_NAME}!A:F`;
+const ITEMS_RANGE = `${SHEET_NAME}!A:G`;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID;
 
     if (!sheetId) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    }
+
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
     }
 
     const sheets = await getSheetsClient();
@@ -35,7 +45,10 @@ export async function GET() {
       });
     }
 
-    const items: ItemFijo[] = rows.slice(1).map((row) => buildItemFijo(row));
+    const items: ItemFijo[] = rows
+      .slice(1)
+      .map((row) => buildItemFijo(row))
+      .filter((item) => item.usuarioId === usuarioId);
 
     return NextResponse.json({
       success: true,
@@ -62,6 +75,15 @@ export async function POST(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const validacion = validarItemFijo(body);
 
@@ -78,6 +100,7 @@ export async function POST(req: NextRequest) {
     const item: ItemFijo = {
       id: crypto.randomUUID(),
       ...validacion.data,
+      usuarioId,
     };
 
     const sheets = await getSheetsClient();
@@ -94,6 +117,7 @@ export async function POST(req: NextRequest) {
           item.monto,
           item.categoria,
           String(item.activo),
+          item.usuarioId,
         ]],
       },
     });
@@ -126,6 +150,15 @@ export async function PUT(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
@@ -151,22 +184,22 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const item: ItemFijo = {
-      id,
-      ...validacion.data,
-    };
-
     const sheets = await getSheetsClient();
 
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: ITEMS_RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
     const dataRows = rows.slice(1);
 
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    // Busca por id Y por usuarioId — no se puede editar un ítem fijo de
+    // otro usuario ni adivinando el id.
+    const dataIndex = dataRows.findIndex(
+      (row) =>
+        (row[0] ?? "").trim() === id && (row[6] ?? "").trim() === usuarioId
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
@@ -178,11 +211,17 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const item: ItemFijo = {
+      id,
+      ...validacion.data,
+      usuarioId,
+    };
+
     const sheetRowNumber = dataIndex + 2;
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A${sheetRowNumber}:F${sheetRowNumber}`,
+      range: `${SHEET_NAME}!A${sheetRowNumber}:G${sheetRowNumber}`,
       valueInputOption: "RAW",
       requestBody: {
         values: [[
@@ -192,6 +231,7 @@ export async function PUT(req: NextRequest) {
           item.monto,
           item.categoria,
           String(item.activo),
+          item.usuarioId,
         ]],
       },
     });
@@ -227,6 +267,15 @@ export async function DELETE(req: NextRequest) {
       throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
     }
 
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
@@ -243,13 +292,16 @@ export async function DELETE(req: NextRequest) {
 
     const valuesResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A:A`,
+      range: ITEMS_RANGE,
     });
 
     const rows = valuesResponse.data.values ?? [];
     const dataRows = rows.slice(1);
 
-    const dataIndex = dataRows.findIndex((row) => (row[0] ?? "").trim() === id);
+    const dataIndex = dataRows.findIndex(
+      (row) =>
+        (row[0] ?? "").trim() === id && (row[6] ?? "").trim() === usuarioId
+    );
 
     if (dataIndex === -1) {
       return NextResponse.json(
@@ -263,7 +315,7 @@ export async function DELETE(req: NextRequest) {
 
     // Borra solamente el movimiento del mes actual asociado al ítem.
     // Los meses anteriores permanecen intactos.
-    await eliminarMovimientoMesActualDeItem(sheets, sheetId, id);
+    await eliminarMovimientoMesActualDeItem(sheets, sheetId, id, usuarioId);
 
     const sheetRowNumber = dataIndex + 2;
 

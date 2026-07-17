@@ -186,6 +186,31 @@ export default function DeudaCard({ deuda, onEdit }: DeudaCardProps) {
           </button>
           {tarjetaAbierto ? (
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              {deuda.limiteCredito != null ? (
+                <>
+                  <span className="text-text-muted">Límite de crédito</span>
+                  <span className="text-right font-mono text-text">
+                    {formatMoney(deuda.limiteCredito)}
+                  </span>
+
+                  <span className="text-text-muted">Disponible</span>
+                  <span className="text-right font-mono text-text">
+                    {formatMoney(
+                      Math.max(deuda.limiteCredito - (deuda.totalAPagar - deuda.totalPagado), 0)
+                    )}
+                  </span>
+                </>
+              ) : null}
+
+              {deuda.saldoHeredado != null && deuda.saldoHeredado > 0 ? (
+                <>
+                  <span className="text-text-muted">Saldo heredado pendiente</span>
+                  <span className="text-right font-mono text-gold">
+                    {formatMoney(deuda.saldoHeredado)}
+                  </span>
+                </>
+              ) : null}
+
               <span className="text-text-muted">Tasa por adelantos/quasi-cash</span>
               <span className="text-right font-mono text-text">
                 {deuda.tasaInteresAdelantos}% anual

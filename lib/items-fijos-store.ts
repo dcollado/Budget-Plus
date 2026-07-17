@@ -5,4 +5,5 @@ export type ItemFijo = {
   monto: number;
   categoria: string;
   activo: boolean;
+  usuarioId: string;
 };

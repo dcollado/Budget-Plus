@@ -15,9 +15,9 @@ export async function middleware(req: NextRequest) {
   );
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
-  const hasValidSession = await verifySessionToken(token);
+  const session = await verifySessionToken(token);
 
-  if (pathname === "/login" && hasValidSession) {
+  if (pathname === "/login" && session) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!hasValidSession) {
+  if (!session) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { error: "No autorizado." },
@@ -39,7 +39,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  // Pasa la identidad ya verificada a las rutas vía headers, para que no
+  // tengan que re-verificar la cookie cada una por su cuenta (ver
+  // lib/current-user.ts).
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-usuario-id", session.usuarioId);
+  requestHeaders.set("x-usuario-nombre", session.username);
+
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 export const config = {

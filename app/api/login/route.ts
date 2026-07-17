@@ -3,6 +3,8 @@ import {
   COOKIE_NAME,
   createSessionToken,
 } from "@/lib/auth-session";
+import { buscarUsuarioPorNombreDeUsuario } from "@/lib/usuarios-sheet";
+import { verifyPassword } from "@/lib/password-hash";
 
 export async function POST(request: Request) {
   try {
@@ -16,17 +18,32 @@ export async function POST(request: Request) {
     const password =
       typeof body.password === "string" ? body.password : "";
 
-    if (
-      username !== process.env.BASIC_AUTH_USER ||
-      password !== process.env.BASIC_AUTH_PASSWORD
-    ) {
+    if (!username || !password) {
       return NextResponse.json(
         { error: "Usuario o contraseña incorrectos." },
         { status: 401 }
       );
     }
 
-    const token = await createSessionToken(username);
+    const usuario = await buscarUsuarioPorNombreDeUsuario(username);
+
+    if (!usuario || !usuario.activo) {
+      return NextResponse.json(
+        { error: "Usuario o contraseña incorrectos." },
+        { status: 401 }
+      );
+    }
+
+    const passwordValida = await verifyPassword(password, usuario.passwordHash);
+
+    if (!passwordValida) {
+      return NextResponse.json(
+        { error: "Usuario o contraseña incorrectos." },
+        { status: 401 }
+      );
+    }
+
+    const token = await createSessionToken(usuario.id, usuario.usuario);
     const response = NextResponse.json({ success: true });
 
     response.cookies.set(COOKIE_NAME, token, {
