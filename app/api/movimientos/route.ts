@@ -4,6 +4,8 @@ import { getUsuarioId } from "@/lib/current-user";
 import type { Movimiento } from "@/lib/movimientos-store";
 import { validarMovimiento } from "@/lib/validar-movimiento";
 import { sincronizarTodosLosActivos } from "@/lib/sincronizar-items-fijos";
+import { ajustarSaldoPorEdicion } from "@/lib/deudas";
+import { DEUDAS_SHEET, DEUDAS_RANGE, buildDeuda, deudaToRow } from "@/lib/deudas-sheet";
 
 const SHEET_NAME = "Movimientos";
 const SHEET_MESES_GENERADOS = "MesesGenerados";
@@ -297,6 +299,169 @@ export async function POST(req: NextRequest) {
         success: false,
         message: "No se pudo guardar el movimiento.",
       },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+
+    if (!sheetId) {
+      throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    }
+
+    const usuarioId = getUsuarioId(req);
+
+    if (!usuarioId) {
+      return NextResponse.json(
+        { success: false, message: "No autorizado." },
+        { status: 401 }
+      );
+    }
+
+    const id = req.nextUrl.searchParams.get("id")?.trim();
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Falta el id del movimiento." },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const validacion = validarMovimiento(body);
+
+    if (!validacion.ok) {
+      return NextResponse.json(
+        { success: false, message: validacion.errores.join(" ") },
+        { status: 400 }
+      );
+    }
+
+    const sheets = await getSheetsClient();
+
+    const valuesResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: MOVIMIENTOS_RANGE,
+    });
+
+    const rows = valuesResponse.data.values ?? [];
+    const dataRows = rows.slice(1);
+
+    // Busca por id Y por usuarioId — no se puede editar un movimiento de
+    // otro usuario ni adivinando el id.
+    const dataIndex = dataRows.findIndex(
+      (row) => (row[0] ?? "").trim() === id && (row[14] ?? "").trim() === usuarioId
+    );
+
+    if (dataIndex === -1) {
+      return NextResponse.json(
+        { success: false, message: "Movimiento no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    const movimientoViejo = buildMovimiento(dataRows[dataIndex]);
+    const { fecha, tipo, monto, categoria, descripcion, notas } = validacion.data;
+    const { mes, anio } = getMesAnioFromFecha(fecha);
+
+    const movimientoActualizado: Movimiento = {
+      ...movimientoViejo,
+      fecha,
+      tipo,
+      monto,
+      categoria,
+      descripcion,
+      notas,
+      mes,
+      anio,
+    };
+
+    const sheetRowNumber = dataIndex + 2;
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${SHEET_NAME}!A${sheetRowNumber}:P${sheetRowNumber}`,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          movimientoActualizado.id,
+          movimientoActualizado.fecha,
+          movimientoActualizado.tipo,
+          movimientoActualizado.origen,
+          movimientoActualizado.monto,
+          movimientoActualizado.categoria,
+          movimientoActualizado.descripcion,
+          movimientoActualizado.mes,
+          movimientoActualizado.anio,
+          movimientoActualizado.numeroFactura ?? "",
+          movimientoActualizado.ruc ?? "",
+          movimientoActualizado.notas ?? "",
+          movimientoActualizado.itemFijoId ?? "",
+          movimientoActualizado.deudaId ?? "",
+          movimientoActualizado.usuarioId,
+          movimientoActualizado.metodoPago ?? "",
+        ]],
+      },
+    });
+
+    // Si el movimiento está ligado a una deuda (un pago o una compra) y
+    // el monto cambió, ajustar el saldo de esa deuda por la diferencia.
+    let deudaActualizada = null;
+    const montoViejo = Number(movimientoViejo.monto) || 0;
+    const montoNuevo = Number(monto) || 0;
+
+    if (
+      movimientoViejo.deudaId &&
+      (movimientoViejo.origen === "deuda" || movimientoViejo.origen === "tarjeta") &&
+      montoViejo !== montoNuevo
+    ) {
+      const deudasResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: DEUDAS_RANGE,
+      });
+
+      const deudasRows = deudasResponse.data.values ?? [];
+      const deudaDataRows = deudasRows.slice(1);
+      const deudaIndex = deudaDataRows.findIndex(
+        (row) =>
+          (row[0] ?? "").trim() === movimientoViejo.deudaId &&
+          (row[22] ?? "").trim() === usuarioId
+      );
+
+      if (deudaIndex !== -1) {
+        const deuda = buildDeuda(deudaDataRows[deudaIndex]);
+        deudaActualizada = ajustarSaldoPorEdicion(
+          deuda,
+          montoViejo,
+          montoNuevo,
+          movimientoViejo.origen as "deuda" | "tarjeta"
+        );
+
+        const deudaRowNumber = deudaIndex + 2;
+
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: `${DEUDAS_SHEET}!A${deudaRowNumber}:Y${deudaRowNumber}`,
+          valueInputOption: "RAW",
+          requestBody: {
+            values: [deudaToRow(deudaActualizada)],
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { movimiento: movimientoActualizado, deuda: deudaActualizada },
+    });
+  } catch (error) {
+    console.error("Error actualizando movimiento:", error);
+
+    return NextResponse.json(
+      { success: false, message: "No se pudo actualizar el movimiento." },
       { status: 500 }
     );
   }

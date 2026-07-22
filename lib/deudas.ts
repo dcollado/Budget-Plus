@@ -118,3 +118,41 @@ export function procesarPagoTarjeta(
     montoGasto,
   };
 }
+
+/**
+ * Ajusta el saldo de una deuda cuando se edita el monto de un movimiento
+ * ya existente que está ligado a ella (un pago o una compra). Aplica
+ * directamente la diferencia entre el monto viejo y el nuevo — mismo
+ * resultado que "deshacer y reaplicar", más simple y predecible.
+ *
+ * - origenMovimiento "tarjeta" (una compra): la diferencia se suma a
+ *   totalAPagar (si el monto subió, se debe más; si bajó, menos).
+ * - origenMovimiento "deuda" (un pago): la diferencia se aplica como si
+ *   fuera un pago adicional (o negativo) — reduce/aumenta saldoActual en
+ *   deudas con detalle bancario, o totalPagado en las demás.
+ */
+export function ajustarSaldoPorEdicion(
+  deuda: Deuda,
+  montoViejo: number,
+  montoNuevo: number,
+  origenMovimiento: "tarjeta" | "deuda"
+): Deuda {
+  const delta = montoNuevo - montoViejo;
+  if (delta === 0) return deuda;
+
+  if (origenMovimiento === "tarjeta") {
+    return { ...deuda, totalAPagar: Math.max(deuda.totalAPagar + delta, 0) };
+  }
+
+  const tieneDetalleBancario = deuda.montoDesembolsado != null && deuda.saldoActual != null;
+
+  if (tieneDetalleBancario) {
+    const saldoActual = Math.max((deuda.saldoActual ?? 0) - delta, 0);
+    const saldoTotal =
+      deuda.saldoTotal != null ? Math.max(deuda.saldoTotal - delta, 0) : deuda.saldoTotal;
+    return { ...deuda, saldoActual, saldoTotal };
+  }
+
+  const totalPagado = Math.min(Math.max(deuda.totalPagado + delta, 0), deuda.totalAPagar);
+  return { ...deuda, totalPagado };
+}

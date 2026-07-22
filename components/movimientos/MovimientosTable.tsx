@@ -6,19 +6,25 @@ import {
   ArrowUpRight,
   CalendarDays,
   ChevronDown,
+  Pencil,
   RotateCcw,
   Search,
   Trash2,
 } from "lucide-react";
 import type { Movimiento, TipoMovimiento } from "@/lib/movimientos-store";
+import type { Deuda } from "@/lib/deudas";
+import EditarMovimientoModal from "@/components/movimientos/EditarMovimientoModal";
 
 const MOVIMIENTOS_POR_CARGA = 10;
 
 type Props = {
   movimientos: Movimiento[];
+  deudas?: Deuda[];
   loading?: boolean;
   eliminandoId?: string | null;
   onEliminar?: (id: string) => Promise<void> | void;
+  onMovimientoActualizado?: (movimiento: Movimiento) => void;
+  onDeudaActualizada?: (deuda: Deuda) => void;
 };
 
 function formatMoney(value: number): string {
@@ -48,9 +54,12 @@ function formatFecha(fecha: string): string {
 
 export default function MovimientosTable({
   movimientos,
+  deudas = [],
   loading = false,
   eliminandoId = null,
   onEliminar,
+  onMovimientoActualizado,
+  onDeudaActualizada,
 }: Props) {
   const [busqueda, setBusqueda] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
@@ -61,6 +70,7 @@ export default function MovimientosTable({
   const [cantidadVisible, setCantidadVisible] = useState(
     MOVIMIENTOS_POR_CARGA
   );
+  const [editando, setEditando] = useState<Movimiento | null>(null);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
@@ -390,13 +400,11 @@ export default function MovimientosTable({
                     Monto
                   </th>
 
-                  {onEliminar ? (
-                    <th className="w-14 px-4 py-3">
-                      <span className="sr-only">
-                        Acciones
-                      </span>
-                    </th>
-                  ) : null}
+                  <th className="w-20 px-4 py-3">
+                    <span className="sr-only">
+                      Acciones
+                    </span>
+                  </th>
                 </tr>
               </thead>
 
@@ -465,33 +473,46 @@ export default function MovimientosTable({
                         )}
                       </td>
 
-                      {onEliminar ? (
-                        <td className="px-4 py-4 text-right">
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
-                            onClick={() =>
-                              onEliminar(movimiento.id)
-                            }
-                            disabled={
-                              eliminandoId === movimiento.id
-                            }
-                            className="rounded-full p-2 text-text-muted transition hover:bg-rust-soft hover:text-rust disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label={`Eliminar ${
-                              movimiento.descripcion ||
-                              "movimiento"
+                            onClick={() => setEditando(movimiento)}
+                            className="rounded-full p-2 text-text-muted transition hover:bg-surface-raised hover:text-gold"
+                            aria-label={`Editar ${
+                              movimiento.descripcion || "movimiento"
                             }`}
                           >
-                            {eliminandoId ===
-                            movimiento.id ? (
-                              <span className="text-xs">
-                                ...
-                              </span>
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
+                            <Pencil size={16} />
                           </button>
-                        </td>
-                      ) : null}
+
+                          {onEliminar ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onEliminar(movimiento.id)
+                              }
+                              disabled={
+                                eliminandoId === movimiento.id
+                              }
+                              className="rounded-full p-2 text-text-muted transition hover:bg-rust-soft hover:text-rust disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`Eliminar ${
+                                movimiento.descripcion ||
+                                "movimiento"
+                              }`}
+                            >
+                              {eliminandoId ===
+                              movimiento.id ? (
+                                <span className="text-xs">
+                                  ...
+                                </span>
+                              ) : (
+                                <Trash2 size={18} />
+                              )}
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -564,8 +585,17 @@ export default function MovimientosTable({
                         </p>
                       ) : null}
 
-                      {onEliminar ? (
-                        <div className="mt-3 flex justify-end">
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditando(movimiento)}
+                          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-text-muted transition hover:bg-surface hover:text-gold"
+                        >
+                          <Pencil size={16} />
+                          Editar
+                        </button>
+
+                        {onEliminar ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -583,8 +613,8 @@ export default function MovimientosTable({
                               ? "Eliminando..."
                               : "Eliminar"}
                           </button>
-                        </div>
-                      ) : null}
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -620,6 +650,20 @@ export default function MovimientosTable({
           )}
         </>
       )}
+
+      {editando ? (
+        <EditarMovimientoModal
+          movimiento={editando}
+          deudas={deudas}
+          onClose={() => setEditando(null)}
+          onGuardado={(movimientoActualizado, deudaActualizada) => {
+            onMovimientoActualizado?.(movimientoActualizado);
+            if (deudaActualizada) {
+              onDeudaActualizada?.(deudaActualizada);
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }

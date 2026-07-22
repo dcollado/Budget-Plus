@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Movimiento } from "@/lib/movimientos-store";
+import type { Deuda } from "@/lib/deudas";
 import MovimientosTable from "@/components/movimientos/MovimientosTable";
 
 const mesesCompletos = [
@@ -42,11 +43,24 @@ function etiquetaPeriodo(periodo: string): string {
 export default function MovimientosPage() {
   const [periodo, setPeriodo] = useState(periodoInicial);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
+  const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   const etiqueta = useMemo(() => etiquetaPeriodo(periodo), [periodo]);
+
+  async function cargarDeudas() {
+    try {
+      const respuesta = await fetch("/api/deudas", { cache: "no-store" });
+      const data = await respuesta.json();
+      if (respuesta.ok && data.success) {
+        setDeudas(data.data ?? []);
+      }
+    } catch (err) {
+      console.error("Error cargando deudas:", err);
+    }
+  }
 
   async function cargarMovimientos() {
     setLoading(true);
@@ -84,6 +98,7 @@ export default function MovimientosPage() {
 
   useEffect(() => {
     void cargarMovimientos();
+    void cargarDeudas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodo]);
 
@@ -137,13 +152,25 @@ export default function MovimientosPage() {
     }
   }
 
+  function handleMovimientoActualizado(movimiento: Movimiento) {
+    setMovimientos((actuales) =>
+      actuales.map((item) => (item.id === movimiento.id ? movimiento : item))
+    );
+  }
+
+  function handleDeudaActualizada(deuda: Deuda) {
+    setDeudas((actuales) =>
+      actuales.map((item) => (item.id === deuda.id ? deuda : item))
+    );
+  }
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gold">Historial</p>
 
-          <h1 className="font-serif text-3xl font-semibold text-text">
+          <h1 className="font-display text-3xl font-semibold text-text">
             Movimientos
           </h1>
 
@@ -174,9 +201,12 @@ export default function MovimientosPage() {
 
       <MovimientosTable
         movimientos={movimientos}
+        deudas={deudas}
         loading={loading}
         eliminandoId={eliminandoId}
         onEliminar={eliminarMovimiento}
+        onMovimientoActualizado={handleMovimientoActualizado}
+        onDeudaActualizada={handleDeudaActualizada}
       />
     </main>
   );

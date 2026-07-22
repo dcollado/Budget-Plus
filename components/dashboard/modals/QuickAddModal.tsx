@@ -27,6 +27,7 @@ export default function QuickAddModal({
   onDeudaActualizada,
 }: Props) {
   const [tipo, setTipo] = useState<TipoMovimiento>(tipoInicial);
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [deudaId, setDeudaId] = useState("");
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
   const [tarjetaCompraId, setTarjetaCompraId] = useState("");
@@ -60,7 +61,7 @@ export default function QuickAddModal({
           body: JSON.stringify({
             deudaId,
             monto,
-            fecha: new Date().toISOString().slice(0, 10),
+            fecha,
             descripcion: descripcion.trim(),
           }),
         });
@@ -104,7 +105,7 @@ export default function QuickAddModal({
             monto,
             categoria,
             descripcion: descripcion.trim(),
-            fecha: new Date().toISOString().slice(0, 10),
+            fecha,
           }),
         });
         const data = await res.json();
@@ -128,7 +129,7 @@ export default function QuickAddModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fecha: new Date().toISOString().slice(0, 10),
+          fecha,
           tipo,
           monto,
           categoria,
@@ -279,6 +280,16 @@ export default function QuickAddModal({
               </div>
             </div>
           ) : null}
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass}>Fecha</label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className={`${fieldBaseClass} ${fieldNormalClass}`}
+            />
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}>
