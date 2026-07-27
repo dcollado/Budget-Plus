@@ -86,8 +86,6 @@ export default function Home() {
       const porCategoria: Record<string, number> = {};
 
       movimientos.forEach((m) => {
-        if (m.contarComoGasto === false) return;
-
         const montoNum = Number(m.monto) || 0;
         if (m.tipo === "ingreso") {
           ingresos += montoNum;
