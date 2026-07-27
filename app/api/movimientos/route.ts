@@ -7,7 +7,7 @@ import { sincronizarTodosLosActivos } from "@/lib/sincronizar-items-fijos";
 
 const SHEET_NAME = "Movimientos";
 const SHEET_MESES_GENERADOS = "MesesGenerados";
-const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:P`;
+const MOVIMIENTOS_RANGE = `${SHEET_NAME}!A:Q`;
 
 function buildMovimiento(row: string[]): Movimiento {
   return {
@@ -15,7 +15,10 @@ function buildMovimiento(row: string[]): Movimiento {
     fecha: row[1] ?? "",
     tipo: row[2] === "ingreso" ? "ingreso" : "gasto",
     origen:
-      row[3] === "fijo" || row[3] === "factura" || row[3] === "deuda"
+      row[3] === "fijo" ||
+      row[3] === "factura" ||
+      row[3] === "deuda" ||
+      row[3] === "tarjeta"
         ? row[3]
         : "variable",
     monto: row[4] ?? "",
@@ -33,6 +36,7 @@ function buildMovimiento(row: string[]): Movimiento {
       row[15] === "efectivo" || row[15] === "debito" || row[15] === "tarjeta"
         ? row[15]
         : undefined,
+    contarComoGasto: (row[16] ?? "").trim().toLowerCase() !== "false",
   };
 }
 
@@ -238,6 +242,9 @@ export async function POST(req: NextRequest) {
         ? metodoPagoRaw
         : undefined;
 
+    const contarComoGasto =
+      (body as Record<string, unknown>)?.contarComoGasto === false ? false : true;
+
     const movimiento: Movimiento = {
       id: crypto.randomUUID(),
       fecha,
@@ -255,6 +262,7 @@ export async function POST(req: NextRequest) {
       deudaId,
       usuarioId,
       metodoPago,
+      contarComoGasto,
     };
 
     const sheets = await getSheetsClient();
@@ -281,6 +289,7 @@ export async function POST(req: NextRequest) {
           movimiento.deudaId ?? "",
           movimiento.usuarioId,
           movimiento.metodoPago ?? "",
+          String(movimiento.contarComoGasto),
         ]],
       },
     });

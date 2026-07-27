@@ -7,7 +7,7 @@ import { categoriasFactura } from "@/lib/facturas";
 import type { Movimiento } from "@/lib/movimientos-store";
 
 const MOVIMIENTOS_SHEET = "Movimientos";
-const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:P`;
+const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:Q`;
 
 function getMesAnioFromFecha(fecha: string) {
   const parts = fecha.split("-");
@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
     const categoria = String((body as Record<string, unknown>)?.categoria ?? "").trim();
     const descripcion = String((body as Record<string, unknown>)?.descripcion ?? "").trim();
     const fechaRaw = String((body as Record<string, unknown>)?.fecha ?? "").trim();
+    const contarComoGasto =
+      (body as Record<string, unknown>)?.contarComoGasto === false ? false : true;
 
     if (!deudaId) {
       return NextResponse.json(
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
       deudaId,
       usuarioId,
       metodoPago: "tarjeta",
+      contarComoGasto,
     };
 
     await sheets.spreadsheets.values.append({
@@ -158,6 +161,7 @@ export async function POST(req: NextRequest) {
           movimiento.deudaId ?? "",
           movimiento.usuarioId,
           movimiento.metodoPago ?? "",
+          String(movimiento.contarComoGasto),
         ]],
       },
     });

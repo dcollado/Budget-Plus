@@ -4,7 +4,7 @@ import { getUsuarioId } from "@/lib/current-user";
 import { listarUsuarios } from "@/lib/usuarios-sheet";
 
 const MOVIMIENTOS_SHEET = "Movimientos";
-const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:O`;
+const MOVIMIENTOS_RANGE = `${MOVIMIENTOS_SHEET}!A:Q`;
 
 type FilaMovimiento = {
   tipo: string;
@@ -14,6 +14,7 @@ type FilaMovimiento = {
   mes: string;
   anio: string;
   usuarioId: string;
+  contarComoGasto: boolean;
 };
 
 function buildFila(row: string[]): FilaMovimiento {
@@ -25,6 +26,7 @@ function buildFila(row: string[]): FilaMovimiento {
     mes: row[7] ?? "",
     anio: row[8] ?? "",
     usuarioId: row[14] ?? "",
+    contarComoGasto: (row[16] ?? "").trim().toLowerCase() !== "false",
   };
 }
 
@@ -75,7 +77,7 @@ export async function GET(req: NextRequest) {
     const filas = rows
       .slice(1)
       .map((row) => buildFila(row))
-      .filter((f) => f.mes === mes && f.anio === anio);
+      .filter((f) => f.mes === mes && f.anio === anio && f.contarComoGasto);
 
     const ingresosPorUsuario = new Map<string, number>();
     const gastosPorUsuario = new Map<string, number>();

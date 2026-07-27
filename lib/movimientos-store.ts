@@ -21,4 +21,9 @@ export type Movimiento = {
   deudaId?: string;
   usuarioId: string;
   metodoPago?: MetodoPago;
+  // Por defecto true (cuenta). false = actualiza saldos (ej. tarjeta)
+  // pero no se suma a Ingresos/Gastos/Neto ni a "Adónde va el dinero" —
+  // para cargos que no son una decisión de gasto propia (comisiones
+  // bancarias, cargos automáticos).
+  contarComoGasto?: boolean;
 };

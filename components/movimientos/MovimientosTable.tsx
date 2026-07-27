@@ -434,9 +434,14 @@ export default function MovimientosTable({
                           </span>
 
                           <div className="min-w-0">
-                            <p className="font-medium text-text">
+                            <p className="flex flex-wrap items-center gap-1.5 font-medium text-text">
                               {movimiento.descripcion ||
                                 "Sin descripción"}
+                              {movimiento.contarComoGasto === false ? (
+                                <span className="rounded-full bg-surface-raised px-1.5 py-0.5 text-[10px] font-normal text-text-muted">
+                                  No cuenta en el total
+                                </span>
+                              ) : null}
                             </p>
 
                             {movimiento.notas ? (
@@ -530,9 +535,14 @@ export default function MovimientosTable({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate font-medium text-text">
+                          <h3 className="flex flex-wrap items-center gap-1.5 truncate font-medium text-text">
                             {movimiento.descripcion ||
                               "Sin descripción"}
+                            {movimiento.contarComoGasto === false ? (
+                              <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-normal text-text-muted">
+                                No cuenta en el total
+                              </span>
+                            ) : null}
                           </h3>
 
                           <p className="mt-1 text-xs text-text-muted">

@@ -30,6 +30,7 @@ export default function QuickAddModal({
   const [deudaId, setDeudaId] = useState("");
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
   const [tarjetaCompraId, setTarjetaCompraId] = useState("");
+  const [esCargoNoGasto, setEsCargoNoGasto] = useState(false);
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -105,6 +106,7 @@ export default function QuickAddModal({
             categoria,
             descripcion: descripcion.trim(),
             fecha: new Date().toISOString().slice(0, 10),
+            contarComoGasto: !esCargoNoGasto,
           }),
         });
         const data = await res.json();
@@ -176,6 +178,7 @@ export default function QuickAddModal({
               setDeudaId("");
               setMetodoPago("efectivo");
               setTarjetaCompraId("");
+              setEsCargoNoGasto(false);
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "gasto" ? "bg-rust-soft text-rust" : "text-text-muted"
@@ -191,6 +194,7 @@ export default function QuickAddModal({
               setDeudaId("");
               setMetodoPago("efectivo");
               setTarjetaCompraId("");
+              setEsCargoNoGasto(false);
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "ingreso" ? "bg-sage-soft text-sage" : "text-text-muted"
@@ -239,6 +243,7 @@ export default function QuickAddModal({
                   onChange={(e) => {
                     setMetodoPago(e.target.value as MetodoPago);
                     setTarjetaCompraId("");
+                    setEsCargoNoGasto(false);
                   }}
                   className={`${fieldBaseClass} ${fieldNormalClass} appearance-none pr-9 text-text`}
                 >
@@ -277,6 +282,20 @@ export default function QuickAddModal({
                   className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
                 />
               </div>
+
+              <label className="mt-1 flex items-start gap-2 text-xs text-text-muted">
+                <input
+                  type="checkbox"
+                  checked={esCargoNoGasto}
+                  onChange={(e) => setEsCargoNoGasto(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-line accent-gold"
+                />
+                <span>
+                  Es un cargo del banco, no algo que decidí gastar (ej. comisión) — que
+                  actualice el saldo de la tarjeta pero no lo cuente en mis gastos ni en
+                  el neto.
+                </span>
+              </label>
             </div>
           ) : null}
 
