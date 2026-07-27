@@ -29,7 +29,6 @@ export default function QuickAddModal({
   const [tipo, setTipo] = useState<TipoMovimiento>(tipoInicial);
   const [deudaId, setDeudaId] = useState("");
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
-  const [tarjetaCompraId, setTarjetaCompraId] = useState("");
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -39,8 +38,6 @@ export default function QuickAddModal({
   const categorias = tipo === "gasto" ? categoriasFactura : categoriasIngreso;
   const esPagoDeuda = tipo === "gasto" && deudaId !== "";
   const deudaSeleccionada = deudas.find((d) => d.id === deudaId) || null;
-  const tarjetas = deudas.filter((d) => d.tipo === "tarjeta");
-  const esCompraConTarjeta = tipo === "gasto" && !esPagoDeuda && metodoPago === "tarjeta";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,40 +82,6 @@ export default function QuickAddModal({
     }
     if (!categoria) {
       setError("Selecciona una categoría.");
-      return;
-    }
-
-    if (esCompraConTarjeta) {
-      if (!tarjetaCompraId) {
-        setError("Selecciona con qué tarjeta se hizo la compra.");
-        return;
-      }
-
-      setGuardando(true);
-      try {
-        const res = await fetch("/api/compras-tarjeta", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            deudaId: tarjetaCompraId,
-            monto,
-            categoria,
-            descripcion: descripcion.trim(),
-            fecha: new Date().toISOString().slice(0, 10),
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.message || "No se pudo registrar la compra.");
-        }
-        onAdded(data.data.movimiento as Movimiento);
-        onDeudaActualizada(data.data.deuda as Deuda);
-        onClose();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Ocurrió un error guardando.");
-      } finally {
-        setGuardando(false);
-      }
       return;
     }
 
@@ -175,7 +138,6 @@ export default function QuickAddModal({
               setCategoria("");
               setDeudaId("");
               setMetodoPago("efectivo");
-              setTarjetaCompraId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "gasto" ? "bg-rust-soft text-rust" : "text-text-muted"
@@ -190,7 +152,6 @@ export default function QuickAddModal({
               setCategoria("");
               setDeudaId("");
               setMetodoPago("efectivo");
-              setTarjetaCompraId("");
             }}
             className={`flex-1 py-2 text-sm font-medium transition ${
               tipo === "ingreso" ? "bg-sage-soft text-sage" : "text-text-muted"
@@ -211,7 +172,6 @@ export default function QuickAddModal({
                     setDeudaId(e.target.value);
                     setCategoria("");
                     setMetodoPago("efectivo");
-                    setTarjetaCompraId("");
                   }}
                   className={`${fieldBaseClass} ${fieldNormalClass} appearance-none pr-9 text-text`}
                 >
@@ -236,41 +196,12 @@ export default function QuickAddModal({
               <div className="relative">
                 <select
                   value={metodoPago}
-                  onChange={(e) => {
-                    setMetodoPago(e.target.value as MetodoPago);
-                    setTarjetaCompraId("");
-                  }}
+                  onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
                   className={`${fieldBaseClass} ${fieldNormalClass} appearance-none pr-9 text-text`}
                 >
                   <option value="efectivo">Efectivo</option>
                   <option value="debito">Débito</option>
-                  {tarjetas.length > 0 ? <option value="tarjeta">Tarjeta de crédito</option> : null}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
-                />
-              </div>
-            </div>
-          ) : null}
-
-          {esCompraConTarjeta ? (
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>¿Con qué tarjeta?</label>
-              <div className="relative">
-                <select
-                  value={tarjetaCompraId}
-                  onChange={(e) => setTarjetaCompraId(e.target.value)}
-                  className={`${fieldBaseClass} ${fieldNormalClass} appearance-none pr-9 ${
-                    tarjetaCompraId ? "text-text" : "text-text-muted"
-                  }`}
-                >
-                  <option value="">Selecciona</option>
-                  {tarjetas.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
+                  <option value="tarjeta">Tarjeta de crédito</option>
                 </select>
                 <ChevronDown
                   size={16}
@@ -360,8 +291,6 @@ export default function QuickAddModal({
               ? "Guardando..."
               : esPagoDeuda
               ? "Registrar pago"
-              : esCompraConTarjeta
-              ? "Registrar compra"
               : `Agregar ${tipo === "gasto" ? "gasto" : "ingreso"}`}
           </button>
         </form>

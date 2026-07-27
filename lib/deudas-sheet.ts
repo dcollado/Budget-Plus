@@ -1,9 +1,10 @@
 import type { Deuda, TipoDeuda } from "@/lib/deudas";
 
 export const DEUDAS_SHEET = "Deudas";
-// A:Y — 25 columnas (23 + límite de crédito + saldo heredado). Se agregan
-// al final, después de usuarioId, para no correr el índice de esa
-// columna (varias rutas la referencian por posición para verificar dueño).
+// A:Y — se mantiene el mismo ancho aunque tarjeta ya no se use, para no
+// correr el índice de usuarioId (columna W / índice 22), que varias
+// rutas usan para verificar dueño. Las columnas que eran de tarjeta
+// (X17-U21, límite y saldo heredado en X-Y) quedan vacías.
 export const DEUDAS_RANGE = `${DEUDAS_SHEET}!A:Y`;
 
 function numOrNull(valor: string | undefined): number | null {
@@ -21,8 +22,7 @@ function numOrZero(valor: string | undefined): number {
 
 export function buildDeuda(row: string[]): Deuda {
   const tipoRaw = row[1] ?? "generico";
-  const tipo: TipoDeuda =
-    tipoRaw === "prestamo" || tipoRaw === "tarjeta" ? tipoRaw : "generico";
+  const tipo: TipoDeuda = tipoRaw === "prestamo" ? tipoRaw : "generico";
 
   return {
     id: row[0] ?? "",
@@ -41,15 +41,9 @@ export function buildDeuda(row: string[]): Deuda {
     saldoTotal: numOrNull(row[13]),
     cargosPagados: numOrNull(row[14]),
     cargosPendientes: numOrNull(row[15]),
-    tasaInteresAdelantos: numOrNull(row[16]),
-    membresiaAnual: numOrNull(row[17]),
-    pagoMinimoPorcentaje: numOrNull(row[18]),
-    pagoMinimoMonto: numOrNull(row[19]),
-    cargoPagoAtrasado: numOrNull(row[20]),
+    // Columnas 16-20 y 23-24 eran de tarjeta — ya no se leen.
     nota: row[21] ?? "",
     usuarioId: row[22] ?? "",
-    limiteCredito: numOrNull(row[23]),
-    saldoHeredado: numOrNull(row[24]),
   };
 }
 
@@ -71,14 +65,16 @@ export function deudaToRow(deuda: Deuda): (string | number)[] {
     deuda.saldoTotal ?? "",
     deuda.cargosPagados ?? "",
     deuda.cargosPendientes ?? "",
-    deuda.tasaInteresAdelantos ?? "",
-    deuda.membresiaAnual ?? "",
-    deuda.pagoMinimoPorcentaje ?? "",
-    deuda.pagoMinimoMonto ?? "",
-    deuda.cargoPagoAtrasado ?? "",
+    // Columnas 16-20: antes detalle de tarjeta, ahora vacías.
+    "",
+    "",
+    "",
+    "",
+    "",
     deuda.nota ?? "",
     deuda.usuarioId,
-    deuda.limiteCredito ?? "",
-    deuda.saldoHeredado ?? "",
+    // Columnas 23-24: antes límite/saldo heredado de tarjeta, ahora vacías.
+    "",
+    "",
   ];
 }

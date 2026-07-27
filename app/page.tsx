@@ -9,7 +9,6 @@ import CategoryBar from "@/components/dashboard/CategoryBar";
 import DeudaCard from "@/components/dashboard/DeudaCard";
 import QuickAddModal from "@/components/dashboard/modals/QuickAddModal";
 import PrestamoEditModal from "@/components/dashboard/modals/PrestamoEditModal";
-import TarjetaEditModal from "@/components/dashboard/modals/TarjetaEditModal";
 import DeudaEditModal from "@/components/dashboard/modals/DeudaEditModal";
 
 const mesesCompletos = [
@@ -87,6 +86,8 @@ export default function Home() {
       const porCategoria: Record<string, number> = {};
 
       movimientos.forEach((m) => {
+        if (m.contarComoGasto === false) return;
+
         const montoNum = Number(m.monto) || 0;
         if (m.tipo === "ingreso") {
           ingresos += montoNum;
@@ -249,14 +250,6 @@ export default function Home() {
 
       {deudaEnEdicion && deudaEnEdicion.tipo === "prestamo" ? (
         <PrestamoEditModal
-          deuda={deudaEnEdicion}
-          onClose={() => setEditandoDeudaId(null)}
-          onSaved={handleDeudaSaved}
-        />
-      ) : null}
-
-      {deudaEnEdicion && deudaEnEdicion.tipo === "tarjeta" ? (
-        <TarjetaEditModal
           deuda={deudaEnEdicion}
           onClose={() => setEditandoDeudaId(null)}
           onSaved={handleDeudaSaved}
