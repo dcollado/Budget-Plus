@@ -1,0 +1,75 @@
+# Budget app revamp: spec (draft)
+
+Status: draft for review. Items marked **[DEFAULT]** are assumptions to confirm.
+
+## Goals
+- One shared household budget for two members (David and his wife).
+- Plan (monthly category budgets) and track (actual vs planned) in the same view.
+- Debts and cards are tracked only. No payoff planner.
+- USD only.
+- Input: manual and bank import. Chat capture (WhatsApp/Telegram) is deferred to a later phase.
+
+## Non-goals
+- Multi-household or public product.
+- Multi-currency.
+- Debt-payoff optimisation, investment tracking.
+
+## Data model
+Money is stored as integer cents (USD).
+
+- **household**: id, name.
+- **member**: id, household_id, user_id, display_name, role.
+- **account**: id, household_id, name, type (cash | bank | card | loan), owner (member id or null = joint), opening_balance. Cards and loans are accounts with negative balances.
+- **category**: id, household_id, name, kind (expense | income), archived.
+- **transaction**: id, household_id, account_id, date, amount, category_id, payee, note, member_id (who entered), owner (member id or null = joint), type (expense | income | transfer), transfer_account_id (for transfers), source (manual | import | chat | qr), external_id (for dedupe), created_at.
+- **budget**: household_id, category_id, month (YYYY-MM), planned_amount.
+- **recurring_rule**: id, household_id, template fields, cadence, next_due. Rules project expected bills. They never copy rows into the ledger ahead of time. A due item becomes a real transaction when confirmed or auto-posted.
+- **import_batch / import_row**: raw rows land in an inbox for review. Dedupe key: account + date + amount + normalised payee + bank reference.
+- **payee_rule**: payee pattern -> category, learned from confirmed rows.
+
+Rules:
+- Transfers (including card and loan payments) never count as spending.
+- Actual spending is always computed from transactions, never stored.
+
+## Screens
+1. **Home**: left to spend this month (overall and by category), planned vs actual, upcoming bills.
+2. **Transactions**: filter by All / Mine / Hers / Joint, quick-add.
+3. **Budget**: edit monthly caps per category. **[DEFAULT]** category caps, not envelopes.
+4. **Accounts**: balances, including cards and loans.
+5. **Import inbox**: review, categorise, confirm imported and chat-captured rows.
+6. **Recurring**: manage rules and upcoming bills.
+7. **Reports**: monthly review, trends.
+
+## Visibility
+**[DEFAULT]** Both members see full detail of all household transactions. Personal ownership is a filter, not a privacy wall.
+
+## Input channels
+1. Manual quick-add (built first).
+2. Bank import via CSV/OFX upload with per-bank column mapping. Needs sample statements from each bank.
+3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
+4. DGI QR scan is kept as an additional manual entry method (existing parser).
+
+## Tech direction
+- Stay on Vercel (GitHub deploys). Build on a branch, use preview deployments.
+- Postgres via Neon or Supabase (free tier). ORM: Drizzle or Prisma **[DEFAULT]** Drizzle.
+- Reuse: password hashing, session signing, DGI QR parser.
+- Replace: all Google Sheets routes (no data carried over).
+- Rename `middleware.ts` to `proxy.ts` (deprecated convention in this Next version).
+- Login rate limiting; revocable sessions (check user active on each session refresh).
+- Keep the current URL. Custom subdomain later.
+
+## Build order
+1. Schema, auth, household with two members.
+2. Accounts, categories, manual transactions.
+3. Budgets and Home ("left to spend").
+4. Recurring rules and upcoming bills.
+5. Bank import inbox.
+
+## Migration
+None. Existing sheet data is old and will not be migrated. The new app starts clean. Keep the current app live on `main` until the new one is ready, then switch.
+
+## Open questions
+- Visibility between members (see default).
+- Caps vs envelope budgeting (see default).
+- Which banks and their export formats.
+- Chat capture channel (Telegram vs WhatsApp) when that phase starts.
