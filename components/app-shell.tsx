@@ -22,6 +22,10 @@ const navLinks = [
     label: "Movimientos",
   },
   {
+    href: "/presupuesto",
+    label: "Presupuesto",
+  },
+  {
     href: "/familia",
     label: "Familia",
   },

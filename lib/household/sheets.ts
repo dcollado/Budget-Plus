@@ -274,3 +274,68 @@ export async function crearTransaction(
 
   return transaction;
 }
+
+// Borra por id Y por householdId — así nadie borra una transacción de
+// otro hogar ni siquiera adivinando el id. Devuelve false si no la
+// encontró (ya borrada, o no es de este hogar).
+export async function eliminarTransaction(
+  id: string,
+  householdId: string
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: TRANSACTIONS_FULL_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) =>
+      (row[0] ?? "").trim() === id && (row[1] ?? "").trim() === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+
+  const spreadsheetResponse = await sheets.spreadsheets.get({
+    spreadsheetId: sheetId,
+    fields: "sheets.properties",
+  });
+
+  const targetSheet = spreadsheetResponse.data.sheets?.find(
+    (sheet) => sheet.properties?.title === TRANSACTIONS_SHEET
+  );
+
+  const sheetNumericId = targetSheet?.properties?.sheetId;
+
+  if (sheetNumericId === undefined) {
+    throw new Error(`No se encontró la hoja ${TRANSACTIONS_SHEET}`);
+  }
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheetNumericId,
+              dimension: "ROWS",
+              startIndex: sheetRowNumber - 1,
+              endIndex: sheetRowNumber,
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  return true;
+}
