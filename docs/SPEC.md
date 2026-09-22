@@ -50,10 +50,11 @@ Rules:
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
 ## Tech direction
+- **[CHANGED]** Stay on Google Sheets as the datastore for now, to move faster and skip the Postgres/Neon setup step. The new model (household, member, account, category, transaction — see Data model) lives in new sheet tabs (`Households`, `Members`, `Accounts`, `Categories`, `Transactions`), read/written through `lib/household/sheets.ts`, in the same style as the existing `lib/deudas-sheet.ts`. The old `Sheet1`/`Usuarios`/etc. tabs stay untouched until the old routes are removed.
+  - Trade-off accepted: no real transactions, whole-sheet reads filtered in memory, eventual consistency on concurrent writes (same limits as the current app). Revisit Postgres later if this becomes a bottleneck — the schema in `lib/household/schema.ts` maps directly to the Drizzle tables previously drafted, so moving later is a lift-and-shift, not a redesign.
 - Stay on Vercel (GitHub deploys). Build on a branch, use preview deployments.
-- Postgres via Neon or Supabase (free tier). ORM: Drizzle or Prisma **[DEFAULT]** Drizzle.
-- Reuse: password hashing, session signing, DGI QR parser.
-- Replace: all Google Sheets routes (no data carried over).
+- Reuse: password hashing, session signing, DGI QR parser, `usuarios-sheet.ts` (a member links to an existing user by `userId`).
+- Replace: `facturas`/`reportes`/`deudas`/`items-fijos` routes and pages, once their replacements exist.
 - Rename `middleware.ts` to `proxy.ts` (deprecated convention in this Next version).
 - Login rate limiting; revocable sessions (check user active on each session refresh).
 - Keep the current URL. Custom subdomain later.
