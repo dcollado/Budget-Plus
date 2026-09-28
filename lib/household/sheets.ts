@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { getSheetsClient } from "@/lib/google-sheets";
 import type {
   Account,
+  Budget,
   Category,
   Household,
   Member,
@@ -22,7 +23,10 @@ export const ACCOUNTS_SHEET = "Accounts";
 export const ACCOUNTS_RANGE = `${ACCOUNTS_SHEET}!A:G`; // id, householdId, name, type, ownerMemberId, openingBalanceCents, archived
 
 export const CATEGORIES_SHEET = "Categories";
-export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:E`; // id, householdId, name, kind, archived
+export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:F`; // id, householdId, name, kind, archived, fixed
+
+export const BUDGETS_SHEET = "Budgets";
+export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:E`; // id, householdId, categoryId, month, plannedAmountCents
 
 export const TRANSACTIONS_SHEET = "Transactions";
 export const TRANSACTIONS_RANGE = `${TRANSACTIONS_SHEET}!A:M`;
@@ -188,6 +192,7 @@ function buildCategory(row: string[]): Category {
     name: row[2] ?? "",
     kind: (row[3] as Category["kind"]) || "expense",
     archived: boolFrom(row[4]),
+    fixed: boolFrom(row[5]),
   };
 }
 
@@ -210,9 +215,89 @@ export async function crearCategory(
     category.name,
     category.kind,
     "false",
+    category.fixed ? "true" : "false",
   ]);
 
   return category;
+}
+
+// ---------- Budgets ----------
+
+function buildBudget(row: string[]): Budget {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    categoryId: row[2] ?? "",
+    month: row[3] ?? "",
+    plannedAmountCents: numFrom(row[4]),
+  };
+}
+
+export async function listBudgets(householdId: string): Promise<Budget[]> {
+  return (await readRows(BUDGETS_RANGE))
+    .map(buildBudget)
+    .filter((b) => b.householdId === householdId);
+}
+
+// Crea o actualiza el monto planeado de una categoría para un mes. No hay
+// un índice de fila estable para hacer un update parcial barato, así que
+// lee todo, busca la fila (household+categoria+mes) y actualiza esa celda
+// puntual si existe, o agrega una fila nueva si no.
+export async function upsertBudget(
+  householdId: string,
+  categoryId: string,
+  month: string,
+  plannedAmountCents: number
+): Promise<Budget> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: BUDGETS_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) =>
+      (row[1] ?? "") === householdId &&
+      (row[2] ?? "") === categoryId &&
+      (row[3] ?? "") === month
+  );
+
+  if (dataIndex === -1) {
+    const budget: Budget = {
+      id: randomUUID(),
+      householdId,
+      categoryId,
+      month,
+      plannedAmountCents,
+    };
+
+    await appendRow(BUDGETS_SHEET, [
+      budget.id,
+      budget.householdId,
+      budget.categoryId,
+      budget.month,
+      budget.plannedAmountCents,
+    ]);
+
+    return budget;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+  const id = dataRows[dataIndex][0] ?? "";
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${BUDGETS_SHEET}!E${sheetRowNumber}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[plannedAmountCents]] },
+  });
+
+  return { id, householdId, categoryId, month, plannedAmountCents };
 }
 
 // ---------- Transactions ----------

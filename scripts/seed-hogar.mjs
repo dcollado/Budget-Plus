@@ -18,15 +18,17 @@ import { google } from "googleapis";
 
 const HOGAR_NOMBRE = "Casa";
 
+// fixed = gasto comprometido/inamovible (alquiler, suscripciones): su
+// presupuesto se hereda de un mes al otro en vez de arrancar en 0.
 const CATEGORIAS_DEFAULT = [
-  { name: "Comida", kind: "expense" },
-  { name: "Alquiler", kind: "expense" },
-  { name: "Servicios", kind: "expense" },
-  { name: "Transporte", kind: "expense" },
-  { name: "Restaurantes", kind: "expense" },
-  { name: "Salud", kind: "expense" },
-  { name: "Entretenimiento", kind: "expense" },
-  { name: "Ingreso", kind: "income" },
+  { name: "Alquiler", kind: "expense", fixed: true },
+  { name: "Servicios", kind: "expense", fixed: true },
+  { name: "Comida", kind: "expense", fixed: false },
+  { name: "Transporte", kind: "expense", fixed: false },
+  { name: "Restaurantes", kind: "expense", fixed: false },
+  { name: "Salud", kind: "expense", fixed: false },
+  { name: "Entretenimiento", kind: "expense", fixed: false },
+  { name: "Ingreso", kind: "income", fixed: false },
 ];
 
 const CUENTAS_DEFAULT = [
@@ -180,6 +182,7 @@ async function main() {
         categoria.name,
         categoria.kind,
         "false",
+        categoria.fixed ? "true" : "false",
       ]);
     }
     console.log(

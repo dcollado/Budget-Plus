@@ -4,12 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Trash2 } from "lucide-react";
 import type { Account, Category, Member, Transaction } from "@/lib/household/schema";
 import { formatearCentavos } from "@/lib/household/formato";
+import PlanDelMes from "@/components/presupuesto/PlanDelMes";
 import {
   fieldBaseClass,
   fieldNormalClass,
   labelClass,
   sectionCardClass,
 } from "@/lib/ui";
+
+function mesActualISO(): string {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
+}
 
 type ConfigHogar = {
   hogarConfigurado: boolean;
@@ -44,6 +50,8 @@ export default function PresupuestoPage() {
   const [error, setError] = useState("");
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
   const [filtroMiembro, setFiltroMiembro] = useState<"todos" | string>("todos");
+  const [month, setMonth] = useState(mesActualISO);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [tipo, setTipo] = useState<"expense" | "income" | "transfer">("expense");
   const [accountId, setAccountId] = useState("");
@@ -106,10 +114,12 @@ export default function PresupuestoPage() {
   }, [config, tipo]);
 
   const transaccionesFiltradas = useMemo(() => {
-    if (filtroMiembro === "todos") return transacciones;
-    if (filtroMiembro === "conjunto") return transacciones.filter((t) => !t.ownerMemberId);
-    return transacciones.filter((t) => t.ownerMemberId === filtroMiembro);
-  }, [transacciones, filtroMiembro]);
+    const delMes = transacciones.filter((t) => t.date.startsWith(month));
+
+    if (filtroMiembro === "todos") return delMes;
+    if (filtroMiembro === "conjunto") return delMes.filter((t) => !t.ownerMemberId);
+    return delMes.filter((t) => t.ownerMemberId === filtroMiembro);
+  }, [transacciones, filtroMiembro, month]);
 
   const totalGastos = useMemo(
     () =>
@@ -175,6 +185,7 @@ export default function PresupuestoPage() {
       setAmount("");
       setPayee("");
       setNote("");
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Ocurrió un error guardando.");
     } finally {
@@ -199,6 +210,7 @@ export default function PresupuestoPage() {
       }
 
       setTransacciones((actuales) => actuales.filter((t) => t.id !== id));
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error eliminando.");
     } finally {
@@ -208,13 +220,31 @@ export default function PresupuestoPage() {
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <p className="text-sm font-medium text-gold">Presupuesto</p>
-        <h1 className="font-serif text-3xl font-semibold text-text">Transacciones del hogar</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Gastos, ingresos y transferencias compartidas entre los dos.
-        </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-gold">Presupuesto</p>
+          <h1 className="font-serif text-3xl font-semibold text-text">Plan del hogar</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Cuánto planearon gastar este mes y cuánto llevan gastado de verdad.
+          </p>
+        </div>
+
+        <label>
+          <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-muted">
+            Mes
+          </span>
+          <input
+            type="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="rounded-xl border border-line bg-surface-raised px-3 py-2.5 text-sm text-text outline-none"
+          />
+        </label>
       </div>
+
+      {config && config.hogarConfigurado ? (
+        <PlanDelMes month={month} refreshKey={refreshKey} />
+      ) : null}
 
       {error ? (
         <div className="mb-4 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust">

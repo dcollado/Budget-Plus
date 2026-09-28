@@ -39,6 +39,18 @@ export type Category = {
   name: string;
   kind: CategoryKind;
   archived: boolean;
+  // Gasto fijo/comprometido (alquiler, suscripciones): el presupuesto se
+  // hereda mes a mes en vez de arrancar en 0, y la UI lo marca aparte de
+  // lo discrecional.
+  fixed: boolean;
+};
+
+export type Budget = {
+  id: string;
+  householdId: string;
+  categoryId: string;
+  month: string; // YYYY-MM
+  plannedAmountCents: number;
 };
 
 export type Transaction = {

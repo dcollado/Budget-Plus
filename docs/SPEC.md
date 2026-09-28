@@ -60,9 +60,9 @@ Rules:
 - Keep the current URL. Custom subdomain later.
 
 ## Build order
-1. Schema, auth, household with two members.
-2. Accounts, categories, manual transactions.
-3. Budgets and Home ("left to spend").
+1. Schema, auth, household with two members. **Done.**
+2. Accounts, categories, manual transactions. **Done.** (`/presupuesto`, `app/api/hogar/transacciones`)
+3. Budgets and "left to spend". **Done.** (`app/api/hogar/presupuesto`, `PlanDelMes` component) — monthly planned amount per category, computed actual from transactions, `fixed` categories (rent, utilities) carry their planned amount forward from the last month it was set, shown as "heredado" until explicitly edited for that month.
 4. Recurring rules and upcoming bills.
 5. Bank import inbox.
 
