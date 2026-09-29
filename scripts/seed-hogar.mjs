@@ -18,17 +18,24 @@ import { google } from "googleapis";
 
 const HOGAR_NOMBRE = "Casa";
 
-// fixed = gasto comprometido/inamovible (alquiler, suscripciones): su
-// presupuesto se hereda de un mes al otro en vez de arrancar en 0.
+// fixed = comprometido/inamovible (renta, sueldo base): su presupuesto se
+// hereda de un mes al otro en vez de arrancar en 0. Ver docs/SPEC.md.
 const CATEGORIAS_DEFAULT = [
-  { name: "Alquiler", kind: "expense", fixed: true },
-  { name: "Servicios", kind: "expense", fixed: true },
+  { name: "Renta", kind: "expense", fixed: true },
+  { name: "Luz y Agua", kind: "expense", fixed: true },
+  { name: "Internet y Telefonía", kind: "expense", fixed: true },
+  { name: "Ahorros", kind: "expense", fixed: true },
+  { name: "Bancos", kind: "expense", fixed: true }, // cuotas de deuda + comisiones
+  { name: "Misceláneos", kind: "expense", fixed: false },
+  { name: "Cami", kind: "expense", fixed: false },
   { name: "Comida", kind: "expense", fixed: false },
   { name: "Transporte", kind: "expense", fixed: false },
   { name: "Restaurantes", kind: "expense", fixed: false },
   { name: "Salud", kind: "expense", fixed: false },
   { name: "Entretenimiento", kind: "expense", fixed: false },
-  { name: "Ingreso", kind: "income", fixed: false },
+  { name: "Ingreso Base David", kind: "income", fixed: true },
+  { name: "Ingreso Base Caro", kind: "income", fixed: true },
+  { name: "Ingreso Variable", kind: "income", fixed: false },
 ];
 
 const CUENTAS_DEFAULT = [

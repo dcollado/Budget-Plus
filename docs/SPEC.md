@@ -69,6 +69,26 @@ Rules:
 ## Migration
 None. Existing sheet data is old and will not be migrated. The new app starts clean. Keep the current app live on `main` until the new one is ready, then switch.
 
+## Categories (current, applied to the live sheet)
+Decided 2026-09-29. Utilities are split, not lumped into one category. Fixed
+categories carry their planned amount forward month to month (see Rules
+above); variable ones start at $0 each month until someone sets an amount.
+
+Expense — fixed: Renta, Luz y Agua, Internet y Telefonía, Ahorros, Bancos
+(loan/card payments + bank fees, combined on purpose).
+Expense — variable: Misceláneos, Cami (specific monthly items outside the
+usual budget, e.g. the daughter's expenses), Comida, Transporte,
+Restaurantes, Salud, Entretenimiento (kept from the original defaults for
+anything that doesn't fit the categories above).
+Income — fixed: Ingreso Base David, Ingreso Base Caro (base salary, one
+category per member since it carries forward independently).
+Income — variable: Ingreso Variable (side projects/one-off income, shared
+across both members — who earned it is tracked per-transaction via
+`ownerMemberId`, not by splitting the category).
+
+No new tabs or schema changes were needed for this — `Category.fixed` +
+per-month `Budget` already cover it.
+
 ## Open questions
 - Visibility between members (see default).
 - Caps vs envelope budgeting (see default).
