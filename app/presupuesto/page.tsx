@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FilaPresupuesto from "@/components/presupuesto/FilaPresupuesto";
-import AgregarVariable from "@/components/presupuesto/AgregarVariable";
+import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { formatearCentavos } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
@@ -143,7 +143,7 @@ export default function PresupuestoPage() {
               />
             ))}
 
-            <AgregarVariable kind="expense" month={month} onAgregado={agregarItem} />
+            <AgregarCategoria kind="expense" month={month} onAgregado={agregarItem} />
 
             <div className="bg-surface-raised/60 px-4 py-3">
               <div className="flex items-center justify-between text-sm">
@@ -199,7 +199,7 @@ export default function PresupuestoPage() {
               />
             ))}
 
-            <AgregarVariable kind="income" month={month} onAgregado={agregarItem} />
+            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} />
 
             <div className="bg-surface-raised/60 px-4 py-3">
               <div className="flex items-center justify-between text-sm">

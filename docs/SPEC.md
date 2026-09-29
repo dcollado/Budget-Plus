@@ -49,6 +49,20 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Fixed category management (2026-09-29)
+`/configuracion` now supports creating and deleting fixed categories, not
+just editing their amount:
+- **Create**: "Agregar gasto/ingreso fijo" (`AgregarCategoria` with
+  `fixed`), same component and API (`POST /api/hogar/categorias`) used by
+  Presupuesto's variable-category add, just with `fixed: true`.
+- **Delete**: a trash icon per row (`FilaPresupuesto onEliminar`) calls
+  `DELETE /api/hogar/categorias?id=`. This **archives**, not hard-deletes
+  (`archivarCategory` sets `archived=true`) — historical Budget/Transaction
+  rows that reference the category id are left alone, the category just
+  stops showing up. `/presupuesto`'s read-only fixed list doesn't get this
+  button (only Configuración does, by design — Presupuesto stays
+  view-only for fixed).
+
 ## Datastore environments
 Two separate Google Sheets, same schema:
 - **"Factura App Tests"** (`GOOGLE_SHEET_ID` in local `.env.local`) — local dev

@@ -86,5 +86,28 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     });
   }
 
-  return { items, totales, cargando, error, handleGuardado, agregarItem };
+  function eliminarItem(categoryId: string) {
+    const item = items.find((i) => i.category.id === categoryId);
+    if (!item) return;
+
+    setItems((actuales) => actuales.filter((i) => i.category.id !== categoryId));
+
+    setTotales((actuales) => {
+      if (!actuales) return actuales;
+
+      return item.category.kind === "income"
+        ? {
+            ...actuales,
+            plannedIncomeCents: actuales.plannedIncomeCents - item.plannedAmountCents,
+            actualIncomeCents: actuales.actualIncomeCents - item.actualCents,
+          }
+        : {
+            ...actuales,
+            plannedExpenseCents: actuales.plannedExpenseCents - item.plannedAmountCents,
+            actualExpenseCents: actuales.actualExpenseCents - item.actualCents,
+          };
+    });
+  }
+
+  return { items, totales, cargando, error, handleGuardado, agregarItem, eliminarItem };
 }

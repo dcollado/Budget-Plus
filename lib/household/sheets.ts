@@ -221,6 +221,45 @@ export async function crearCategory(
   return category;
 }
 
+// "Borrar" una categoría = archivarla (no se elimina la fila). Así los
+// Budgets y Transactions históricos que ya la referencian por id no
+// quedan huérfanos ni rompen nada — listCategories ya filtra
+// !archived, así que simplemente deja de aparecer en la UI.
+export async function archivarCategory(
+  id: string,
+  householdId: string
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: CATEGORIES_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${CATEGORIES_SHEET}!E${sheetRowNumber}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [["true"]] },
+  });
+
+  return true;
+}
+
 // ---------- Budgets ----------
 
 function buildBudget(row: string[]): Budget {

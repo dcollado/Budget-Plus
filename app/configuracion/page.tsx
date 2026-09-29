@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FilaPresupuesto from "@/components/presupuesto/FilaPresupuesto";
+import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
 
@@ -13,7 +14,8 @@ function mesActualISO(): string {
 export default function ConfiguracionPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const month = mesActualISO();
-  const { items, cargando, error, handleGuardado } = usePresupuestoMes(month);
+  const { items, cargando, error, handleGuardado, agregarItem, eliminarItem } =
+    usePresupuestoMes(month);
 
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
@@ -63,10 +65,6 @@ export default function ConfiguracionPage() {
 
             {cargando ? (
               <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
-            ) : gastosFijos.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-text-muted">
-                No hay gastos fijos configurados.
-              </p>
             ) : (
               gastosFijos.map((item) => (
                 <FilaPresupuesto
@@ -74,9 +72,12 @@ export default function ConfiguracionPage() {
                   item={item}
                   month={month}
                   onGuardado={handleGuardado}
+                  onEliminar={eliminarItem}
                 />
               ))
             )}
+
+            <AgregarCategoria kind="expense" month={month} onAgregado={agregarItem} fixed />
           </div>
 
           <div className={`${sectionCardClass} mt-4 p-0`}>
@@ -86,10 +87,6 @@ export default function ConfiguracionPage() {
 
             {cargando ? (
               <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
-            ) : ingresosFijos.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-text-muted">
-                No hay ingresos fijos configurados.
-              </p>
             ) : (
               ingresosFijos.map((item) => (
                 <FilaPresupuesto
@@ -97,10 +94,13 @@ export default function ConfiguracionPage() {
                   item={item}
                   month={month}
                   onGuardado={handleGuardado}
+                  onEliminar={eliminarItem}
                   mostrarProgreso={false}
                 />
               ))
             )}
+
+            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} fixed />
           </div>
         </>
       ) : null}

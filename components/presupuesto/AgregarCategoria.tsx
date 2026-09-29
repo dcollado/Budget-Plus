@@ -10,12 +10,18 @@ type Props = {
   kind: CategoryKind;
   month: string;
   onAgregado: (item: CategoriaDelMes) => void;
+  // false (default) = categoría variable, se agrega desde Presupuesto sin
+  // estar atada a una lista cerrada. true = fija, se da de alta acá desde
+  // Configuración y su monto se hereda mes a mes como las demás fijas.
+  fixed?: boolean;
 };
 
-// Crea una categoría variable nueva (no está en la lista cerrada de
-// fijas/variables predefinidas) y de una le pone el monto de este mes.
-// Ej: algo puntual que no encaja en Misceláneos ni en ninguna otra.
-export default function AgregarVariable({ kind, month, onAgregado }: Props) {
+export default function AgregarCategoria({
+  kind,
+  month,
+  onAgregado,
+  fixed = false,
+}: Props) {
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
@@ -35,7 +41,7 @@ export default function AgregarVariable({ kind, month, onAgregado }: Props) {
       const resCategoria = await fetch("/api/hogar/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nombre.trim(), kind }),
+        body: JSON.stringify({ name: nombre.trim(), kind, fixed }),
       });
 
       const dataCategoria = await resCategoria.json();
@@ -78,6 +84,14 @@ export default function AgregarVariable({ kind, month, onAgregado }: Props) {
     }
   }
 
+  const etiqueta = fixed
+    ? kind === "income"
+      ? "Agregar ingreso fijo"
+      : "Agregar gasto fijo"
+    : kind === "income"
+    ? "Agregar ingreso variable"
+    : "Agregar gasto variable";
+
   if (!abierto) {
     return (
       <button
@@ -86,7 +100,7 @@ export default function AgregarVariable({ kind, month, onAgregado }: Props) {
         className="flex w-full items-center gap-2 border-b border-line px-4 py-3 text-left text-sm text-text-muted transition last:border-0 hover:text-gold"
       >
         <Plus size={14} />
-        {kind === "income" ? "Agregar ingreso variable" : "Agregar gasto variable"}
+        {etiqueta}
       </button>
     );
   }
@@ -98,7 +112,7 @@ export default function AgregarVariable({ kind, month, onAgregado }: Props) {
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          placeholder="Nombre (ej. Regalo cumpleaños)"
+          placeholder={fixed ? "Nombre (ej. Gimnasio)" : "Nombre (ej. Regalo cumpleaños)"}
           className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5`}
           autoFocus
         />

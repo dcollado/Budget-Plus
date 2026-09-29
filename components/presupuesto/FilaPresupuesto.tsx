@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
@@ -17,6 +17,9 @@ type Props = {
   // ver el detalle de los fijos en Presupuesto sin poder tocarlos ahí
   // (eso es solo en Configuración).
   readOnly?: boolean;
+  // Si se pasa, muestra un botón para borrar (archivar) la categoría.
+  // Solo tiene sentido en Configuración — en Presupuesto no se ofrece.
+  onEliminar?: (categoryId: string) => void;
 };
 
 export default function FilaPresupuesto({
@@ -25,9 +28,11 @@ export default function FilaPresupuesto({
   onGuardado,
   mostrarProgreso = true,
   readOnly = false,
+  onEliminar,
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   const [guardando, setGuardando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -66,6 +71,35 @@ export default function FilaPresupuesto({
       setError(err instanceof Error ? err.message : "Error guardando.");
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function eliminar() {
+    const confirmado = window.confirm(
+      `¿Eliminar "${item.category.name}"? No se puede deshacer desde acá (el historial de meses anteriores se conserva, pero la categoría deja de estar disponible).`
+    );
+
+    if (!confirmado) return;
+
+    setEliminando(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `/api/hogar/categorias?id=${encodeURIComponent(item.category.id)}`,
+        { method: "DELETE" }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "No se pudo eliminar.");
+      }
+
+      onEliminar?.(item.category.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error eliminando.");
+      setEliminando(false);
     }
   }
 
@@ -118,6 +152,17 @@ export default function FilaPresupuesto({
               </button>
             </>
           )}
+          {onEliminar ? (
+            <button
+              type="button"
+              onClick={eliminar}
+              disabled={eliminando}
+              className="rounded-lg p-1.5 text-text-muted transition hover:bg-rust/10 hover:text-rust disabled:opacity-50"
+              aria-label={`Eliminar ${item.category.name}`}
+            >
+              <Trash2 size={15} />
+            </button>
+          ) : null}
         </div>
       </div>
 
