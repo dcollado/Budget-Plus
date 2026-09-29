@@ -12,28 +12,17 @@ import {
   useRouter,
 } from "next/navigation";
 
+// Pivot: por ahora la UI muestra solo /presupuesto. Los links de abajo
+// quedan comentados (no borrados) para cuando retomemos el resto.
 const navLinks = [
-  {
-    href: "/",
-    label: "Dashboard",
-  },
-  {
-    href: "/movimientos",
-    label: "Movimientos",
-  },
   {
     href: "/presupuesto",
     label: "Presupuesto",
   },
-  {
-    href: "/familia",
-    label: "Familia",
-  },
-  {
-    href: "/fijos",
-    label: "Ítems fijos",
-  },
-  
+  // { href: "/", label: "Dashboard" },
+  // { href: "/movimientos", label: "Movimientos" },
+  // { href: "/familia", label: "Familia" },
+  // { href: "/fijos", label: "Ítems fijos" },
 ];
 
 export function AppShell({
