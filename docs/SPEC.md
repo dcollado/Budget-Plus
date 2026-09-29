@@ -71,10 +71,12 @@ None. Existing sheet data is old and will not be migrated. The new app starts cl
 
 ## UI pivot (2026-09-29)
 `/presupuesto` was rebuilt to be compact and informational: summary totals,
-a read-only line for this month's fixed total (links to `/configuracion`),
 and editable lists for **variable** categories only ("Gastos extra este
 mes" / "Ingresos extra este mes"). Fixed categories (rent, utilities, base
-income) are no longer editable there.
+income, and — as of the same day — Comida/Transporte/Salud/Cami too) are
+no longer editable there. Each table ends with a totals footer (fijos +
+extra = total del mes) so the real monthly total is visible without
+leaving the page, plus a link to `/configuracion` to edit the fixed ones.
 
 New `/configuracion` page: set **fixed** expense and income amounts once
 (no month picker — always writes to the current month and relies on the
@@ -96,11 +98,12 @@ categories carry their planned amount forward month to month (see Rules
 above); variable ones start at $0 each month until someone sets an amount.
 
 Expense — fixed: Renta, Luz y Agua, Internet y Telefonía, Ahorros, Bancos
-(loan/card payments + bank fees, combined on purpose).
-Expense — variable: Misceláneos, Cami (specific monthly items outside the
-usual budget, e.g. the daughter's expenses), Comida, Transporte,
-Restaurantes, Salud, Entretenimiento (kept from the original defaults for
-anything that doesn't fit the categories above).
+(loan/card payments + bank fees, combined on purpose), Comida, Transporte,
+Salud, Cami (moved to fixed 2026-09-29 — these are committed monthly
+spend, not occasional).
+Expense — variable: Misceláneos, Restaurantes, Entretenimiento (kept from
+the original defaults for anything that doesn't fit the categories
+above).
 Income — fixed: Ingreso Base David, Ingreso Base Caro (base salary, one
 category per member since it carries forward independently).
 Income — variable: Ingreso Variable (side projects/one-off income, shared

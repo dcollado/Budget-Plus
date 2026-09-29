@@ -29,7 +29,10 @@ export default function PresupuestoPage() {
   const ingresosFijos = items.filter((i) => i.category.kind === "income" && i.category.fixed);
   const ingresosExtra = items.filter((i) => i.category.kind === "income" && !i.category.fixed);
 
-  const totalFijosCents = gastosFijos.reduce((sum, i) => sum + i.plannedAmountCents, 0);
+  const totalGastosFijosCents = gastosFijos.reduce((sum, i) => sum + i.plannedAmountCents, 0);
+  const totalGastosExtraCents = gastosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
+  const totalIngresosFijosCents = ingresosFijos.reduce((sum, i) => sum + i.plannedAmountCents, 0);
+  const totalIngresosExtraCents = ingresosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
   const restante = totales ? totales.plannedExpenseCents - totales.actualExpenseCents : 0;
 
   return (
@@ -106,24 +109,6 @@ export default function PresupuestoPage() {
             </div>
           ) : null}
 
-          {/* Fijos: solo referencia — se editan en Configuración, no acá. */}
-          <div className={`${sectionCardClass} mb-6 flex items-center justify-between`}>
-            <div>
-              <p className="text-sm text-text-muted">
-                Gastos fijos de este mes ({gastosFijos.length + ingresosFijos.length})
-              </p>
-              <p className="text-lg font-semibold text-text">
-                {formatearCentavos(totalFijosCents)}
-              </p>
-            </div>
-            <Link
-              href="/configuracion"
-              className="rounded-lg bg-surface-raised px-3 py-2 text-xs font-medium text-gold transition hover:brightness-110"
-            >
-              Editar en Configuración
-            </Link>
-          </div>
-
           <div className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
               Gastos extra este mes
@@ -145,15 +130,44 @@ export default function PresupuestoPage() {
                 />
               ))
             )}
+
+            {/* Los fijos no se editan acá (eso es en Configuración), pero
+               se suman igual para que el total del mes sea el real. */}
+            <div className="bg-surface-raised/60 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-muted">Gastos fijos</span>
+                <span className="text-text">{formatearCentavos(totalGastosFijosCents)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-sm">
+                <span className="text-text-muted">Gastos extra</span>
+                <span className="text-text">{formatearCentavos(totalGastosExtraCents)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+                <span className="text-sm font-semibold text-text">Total gastos del mes</span>
+                <span className="text-base font-semibold text-rust">
+                  {formatearCentavos(totalGastosFijosCents + totalGastosExtraCents)}
+                </span>
+              </div>
+              <Link
+                href="/configuracion"
+                className="mt-2 inline-block text-xs text-gold hover:underline"
+              >
+                Editar los fijos en Configuración →
+              </Link>
+            </div>
           </div>
 
-          {ingresosExtra.length > 0 ? (
-            <div className={`${sectionCardClass} mt-4 p-0`}>
-              <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-                Ingresos extra este mes
-              </h2>
+          <div className={`${sectionCardClass} mt-4 p-0`}>
+            <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
+              Ingresos extra este mes
+            </h2>
 
-              {ingresosExtra.map((item) => (
+            {ingresosExtra.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-text-muted">
+                No hay ingresos variables todavía.
+              </p>
+            ) : (
+              ingresosExtra.map((item) => (
                 <FilaPresupuesto
                   key={item.category.id}
                   item={item}
@@ -161,9 +175,26 @@ export default function PresupuestoPage() {
                   onGuardado={handleGuardado}
                   mostrarProgreso={false}
                 />
-              ))}
+              ))
+            )}
+
+            <div className="bg-surface-raised/60 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-muted">Ingresos fijos</span>
+                <span className="text-text">{formatearCentavos(totalIngresosFijosCents)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-sm">
+                <span className="text-text-muted">Ingresos extra</span>
+                <span className="text-text">{formatearCentavos(totalIngresosExtraCents)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+                <span className="text-sm font-semibold text-text">Total ingresos del mes</span>
+                <span className="text-base font-semibold text-sage">
+                  {formatearCentavos(totalIngresosFijosCents + totalIngresosExtraCents)}
+                </span>
+              </div>
             </div>
-          ) : null}
+          </div>
         </>
       ) : null}
     </main>
