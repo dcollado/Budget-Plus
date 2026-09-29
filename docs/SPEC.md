@@ -53,18 +53,26 @@ Rules:
 `/presupuesto`'s top tiles were wrong: "Ingresos" showed `actualIncomeCents`
 (from real Transactions) instead of `plannedIncomeCents`, so it always
 read $0 even with fixed income configured — Transactions aren't created
-by anything right now (see below). Fixed to show planned income. "Por
-gastar" was `plannedExpenseCents - actualExpenseCents` (two expense
-figures); changed to `plannedIncomeCents - actualExpenseCents` (income
-left after what's actually been spent), per David's request.
+by anything right now. Fixed to show planned income.
 
-"Gastado" still reads `actualExpenseCents`, always $0 — this is expected,
-not a bug: it can only come from real Transactions, and the entry UI for
-those was intentionally removed from Presupuesto in the earlier pivot
-(preserved at
-`components/presupuesto/_oculto/RegistroTransaccionesPage.tsx.txt`).
-Whether/how to bring back actual-spend tracking is still open — ask
-before reintroducing it.
+**Decided (final, not just a stopgap): there is no separate "actual
+spend" layer.** The planned budget (fixed categories from Configuración +
+whatever variable amounts, e.g. Misceláneos, get set in Presupuesto) *is*
+the month's spend — David explicitly does not want a real-transaction
+ledger; changes go through editing/adding a budget line, not logging a
+transaction. So:
+- **Gastado** = `plannedExpenseCents` (mirrors Planeado, not
+  `actualExpenseCents`/Transactions).
+- **Por gastar** = `plannedIncomeCents - plannedExpenseCents`.
+- Fixed expense rows in Presupuesto's read-only list render with
+  `mostrarProgreso={false}` — no more misleading "$0.00 / $X" and a
+  permanently-0% progress bar next to each one.
+
+The transaction ledger UI stays archived (not deleted) at
+`components/presupuesto/_oculto/RegistroTransaccionesPage.tsx.txt`, and
+`Transaction`/`actualCents` stay in the schema (harmless, just unused by
+this page) in case this decision changes later — don't remove them
+without asking first.
 
 ## Fixed category management (2026-09-29)
 `/configuracion` now supports creating and deleting fixed categories, not

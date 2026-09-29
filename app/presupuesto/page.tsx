@@ -35,12 +35,13 @@ export default function PresupuestoPage() {
   const totalGastosExtraCents = gastosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
   const totalIngresosFijosCents = ingresosFijos.reduce((sum, i) => sum + i.plannedAmountCents, 0);
   const totalIngresosExtraCents = ingresosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
-  // "Por gastar" = ingresos planeados - lo que ya se gastó de verdad.
-  // Ojo: "Gastado" viene de transacciones reales, que hoy no se cargan
-  // desde ninguna pantalla (sacamos ese formulario) — por eso da $0
-  // hasta que volvamos a habilitar el registro de gastos reales.
+  // No hay registro de gastos reales por transacción (se sacó esa
+  // pantalla): el presupuesto planeado (fijos + lo que se cargue como
+  // variable, ej. Misceláneos) ES el gasto del mes. "Gastado" refleja
+  // ese total planeado, no transacciones — y "Por gastar" sale de ahí.
+  const gastadoCents = totales ? totales.plannedExpenseCents : 0;
   const restante = totales
-    ? totales.plannedIncomeCents - totales.actualExpenseCents
+    ? totales.plannedIncomeCents - totales.plannedExpenseCents
     : 0;
 
   return (
@@ -95,7 +96,7 @@ export default function PresupuestoPage() {
               <div className={sectionCardClass}>
                 <p className="text-xs uppercase tracking-wide text-text-muted">Gastado</p>
                 <p className="mt-1 text-lg font-semibold text-rust">
-                  {formatearCentavos(totales.actualExpenseCents)}
+                  {formatearCentavos(gastadoCents)}
                 </p>
               </div>
               <div className={sectionCardClass}>
@@ -130,7 +131,14 @@ export default function PresupuestoPage() {
               <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
             ) : (
               gastosFijos.map((item) => (
-                <FilaPresupuesto key={item.category.id} item={item} month={month} onGuardado={handleGuardado} readOnly />
+                <FilaPresupuesto
+                  key={item.category.id}
+                  item={item}
+                  month={month}
+                  onGuardado={handleGuardado}
+                  readOnly
+                  mostrarProgreso={false}
+                />
               ))
             )}
           </div>
