@@ -49,6 +49,23 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Summary tiles fix (2026-09-29)
+`/presupuesto`'s top tiles were wrong: "Ingresos" showed `actualIncomeCents`
+(from real Transactions) instead of `plannedIncomeCents`, so it always
+read $0 even with fixed income configured — Transactions aren't created
+by anything right now (see below). Fixed to show planned income. "Por
+gastar" was `plannedExpenseCents - actualExpenseCents` (two expense
+figures); changed to `plannedIncomeCents - actualExpenseCents` (income
+left after what's actually been spent), per David's request.
+
+"Gastado" still reads `actualExpenseCents`, always $0 — this is expected,
+not a bug: it can only come from real Transactions, and the entry UI for
+those was intentionally removed from Presupuesto in the earlier pivot
+(preserved at
+`components/presupuesto/_oculto/RegistroTransaccionesPage.tsx.txt`).
+Whether/how to bring back actual-spend tracking is still open — ask
+before reintroducing it.
+
 ## Fixed category management (2026-09-29)
 `/configuracion` now supports creating and deleting fixed categories, not
 just editing their amount:

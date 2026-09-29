@@ -35,7 +35,13 @@ export default function PresupuestoPage() {
   const totalGastosExtraCents = gastosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
   const totalIngresosFijosCents = ingresosFijos.reduce((sum, i) => sum + i.plannedAmountCents, 0);
   const totalIngresosExtraCents = ingresosExtra.reduce((sum, i) => sum + i.plannedAmountCents, 0);
-  const restante = totales ? totales.plannedExpenseCents - totales.actualExpenseCents : 0;
+  // "Por gastar" = ingresos planeados - lo que ya se gastó de verdad.
+  // Ojo: "Gastado" viene de transacciones reales, que hoy no se cargan
+  // desde ninguna pantalla (sacamos ese formulario) — por eso da $0
+  // hasta que volvamos a habilitar el registro de gastos reales.
+  const restante = totales
+    ? totales.plannedIncomeCents - totales.actualExpenseCents
+    : 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
@@ -105,7 +111,7 @@ export default function PresupuestoPage() {
               <div className={sectionCardClass}>
                 <p className="text-xs uppercase tracking-wide text-text-muted">Ingresos</p>
                 <p className="mt-1 text-lg font-semibold text-sage">
-                  {formatearCentavos(totales.actualIncomeCents)}
+                  {formatearCentavos(totales.plannedIncomeCents)}
                 </p>
               </div>
             </div>
