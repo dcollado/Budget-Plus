@@ -69,6 +69,27 @@ Rules:
 ## Migration
 None. Existing sheet data is old and will not be migrated. The new app starts clean. Keep the current app live on `main` until the new one is ready, then switch.
 
+## UI pivot (2026-09-29)
+`/presupuesto` was rebuilt to be compact and informational: summary totals,
+a read-only line for this month's fixed total (links to `/configuracion`),
+and editable lists for **variable** categories only ("Gastos extra este
+mes" / "Ingresos extra este mes"). Fixed categories (rent, utilities, base
+income) are no longer editable there.
+
+New `/configuracion` page: set **fixed** expense and income amounts once
+(no month picker — always writes to the current month and relies on the
+existing carry-forward). This is where rent, utilities, base salaries live.
+
+The transaction ledger (accounts, "¿de quién es?", date/payee/note, the
+`Nueva transacción` form + table) was removed from `/presupuesto` — not
+deleted, preserved at
+`components/presupuesto/_oculto/RegistroTransaccionesPage.tsx.txt` (inert,
+`.txt` so it's excluded from the TS build) in case real transaction
+tracking comes back later. The `app/api/hogar/transacciones` API is
+untouched and still works.
+
+Nav now also shows "Configuración" alongside "Presupuesto".
+
 ## Categories (current, applied to the live sheet)
 Decided 2026-09-29. Utilities are split, not lumped into one category. Fixed
 categories carry their planned amount forward month to month (see Rules

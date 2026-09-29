@@ -19,6 +19,10 @@ const navLinks = [
     href: "/presupuesto",
     label: "Presupuesto",
   },
+  {
+    href: "/configuracion",
+    label: "Configuración",
+  },
   // { href: "/", label: "Dashboard" },
   // { href: "/movimientos", label: "Movimientos" },
   // { href: "/familia", label: "Familia" },
