@@ -70,13 +70,15 @@ Rules:
 None. Existing sheet data is old and will not be migrated. The new app starts clean. Keep the current app live on `main` until the new one is ready, then switch.
 
 ## UI pivot (2026-09-29)
-`/presupuesto` was rebuilt to be compact and informational: summary totals,
-and editable lists for **variable** categories only ("Gastos extra este
-mes" / "Ingresos extra este mes"). Fixed categories (rent, utilities, base
-income, and — as of the same day — Comida/Transporte/Salud/Cami too) are
-no longer editable there. Each table ends with a totals footer (fijos +
-extra = total del mes) so the real monthly total is visible without
-leaving the page, plus a link to `/configuracion` to edit the fixed ones.
+`/presupuesto` was rebuilt to be compact and informational: summary
+totals, then for both gastos and ingresos: a **fixed** section (full
+itemized detail, read-only — `FilaPresupuesto readOnly`, edited only from
+`/configuracion`) and a **variable** section (editable, same as before)
+ending in an "Agregar gasto/ingreso variable" control that creates a new
+category on the fly (`POST /api/hogar/categorias`, always `fixed: false`)
+and sets its amount for the month in one step — not limited to a closed
+list of variable categories. Each variable section ends with a totals
+footer (fijos + variables = total del mes).
 
 New `/configuracion` page: set **fixed** expense and income amounts once
 (no month picker — always writes to the current month and relies on the
@@ -98,12 +100,15 @@ categories carry their planned amount forward month to month (see Rules
 above); variable ones start at $0 each month until someone sets an amount.
 
 Expense — fixed: Renta, Luz y Agua, Internet y Telefonía, Ahorros, Bancos
-(loan/card payments + bank fees, combined on purpose), Comida, Transporte,
-Salud, Cami (moved to fixed 2026-09-29 — these are committed monthly
-spend, not occasional).
+(loan/card payments + bank fees — NOTE: overlaps with the new Préstamos
+and Tarjetas below, not yet reconciled, see Open questions), Comida,
+Transporte, Salud, Gastos día a día de Cami (renamed from "Cami"), Mascotas
+(2 cats), Ahorros de emergencia, Ahorros de Cami, Préstamos, Tarjetas,
+Auto. All added/moved to fixed 2026-09-29.
 Expense — variable: Misceláneos, Restaurantes, Entretenimiento (kept from
 the original defaults for anything that doesn't fit the categories
-above).
+above). New variable categories can also be created ad hoc from
+`/presupuesto` ("Agregar gasto/ingreso variable").
 Income — fixed: Ingreso Base David, Ingreso Base Caro (base salary, one
 category per member since it carries forward independently).
 Income — variable: Ingreso Variable (side projects/one-off income, shared
@@ -118,3 +123,7 @@ per-month `Budget` already cover it.
 - Caps vs envelope budgeting (see default).
 - Which banks and their export formats.
 - Chat capture channel (Telegram vs WhatsApp) when that phase starts.
+- "Bancos" (loan/card payments + fees, decided 2026-09) now overlaps with
+  the newer "Préstamos" and "Tarjetas" categories (2026-09-29). Left as-is,
+  not auto-merged — ask David/Caro how they want to split it before it
+  causes double-counting.

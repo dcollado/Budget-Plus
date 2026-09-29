@@ -68,5 +68,23 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     });
   }
 
-  return { items, totales, cargando, error, handleGuardado };
+  function agregarItem(item: CategoriaDelMes) {
+    setItems((actuales) => [...actuales, item]);
+
+    setTotales((actuales) => {
+      if (!actuales) return actuales;
+
+      return item.category.kind === "income"
+        ? {
+            ...actuales,
+            plannedIncomeCents: actuales.plannedIncomeCents + item.plannedAmountCents,
+          }
+        : {
+            ...actuales,
+            plannedExpenseCents: actuales.plannedExpenseCents + item.plannedAmountCents,
+          };
+    });
+  }
+
+  return { items, totales, cargando, error, handleGuardado, agregarItem };
 }

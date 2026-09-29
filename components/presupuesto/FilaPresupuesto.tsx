@@ -13,6 +13,10 @@ type Props = {
   // Oculta la barra de progreso y el "gastado" — útil en Configuración,
   // donde lo que importa es fijar el monto, no ver avance del mes.
   mostrarProgreso?: boolean;
+  // Sin input ni botón Guardar — el monto se muestra como texto. Para
+  // ver el detalle de los fijos en Presupuesto sin poder tocarlos ahí
+  // (eso es solo en Configuración).
+  readOnly?: boolean;
 };
 
 export default function FilaPresupuesto({
@@ -20,6 +24,7 @@ export default function FilaPresupuesto({
   month,
   onGuardado,
   mostrarProgreso = true,
+  readOnly = false,
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   const [guardando, setGuardando] = useState(false);
@@ -88,23 +93,31 @@ export default function FilaPresupuesto({
               <span className="text-text-muted">/</span>
             </>
           ) : null}
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            className={`${fieldBaseClass} ${fieldNormalClass} w-24 py-1.5 text-right`}
-          />
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={!dirty || guardando}
-            className="rounded-lg bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {guardando ? "..." : "Guardar"}
-          </button>
+          {readOnly ? (
+            <span className="w-24 text-right text-sm font-medium text-text">
+              {formatearCentavos(planned)}
+            </span>
+          ) : (
+            <>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className={`${fieldBaseClass} ${fieldNormalClass} w-24 py-1.5 text-right`}
+              />
+              <button
+                type="button"
+                onClick={guardar}
+                disabled={!dirty || guardando}
+                className="rounded-lg bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {guardando ? "..." : "Guardar"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
