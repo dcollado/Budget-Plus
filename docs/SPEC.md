@@ -49,6 +49,21 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Datastore environments
+Two separate Google Sheets, same schema:
+- **"Factura App Tests"** (`GOOGLE_SHEET_ID` in local `.env.local`) — local dev
+  and testing. All local work (tabs, seed script, category changes) lands
+  here by default.
+- **"Facturas App PROD"** (`GOOGLE_SHEET_ID` in Vercel's env vars, Preview
+  + Production) — what the deployed app actually reads. Has real login
+  credentials for David/Caro (different password hashes than Test).
+
+They do **not** auto-sync. When a schema or data change (new tabs, new
+categories, renamed categories, etc.) is ready to ship, it has to be
+applied to PROD explicitly as its own step before/alongside deploying —
+not assumed to already be there just because it works locally. As of
+2026-09-29 both are in sync (21 categories, same household/member ids).
+
 ## Tech direction
 - **[CHANGED]** Stay on Google Sheets as the datastore for now, to move faster and skip the Postgres/Neon setup step. The new model (household, member, account, category, transaction — see Data model) lives in new sheet tabs (`Households`, `Members`, `Accounts`, `Categories`, `Transactions`), read/written through `lib/household/sheets.ts`, in the same style as the existing `lib/deudas-sheet.ts`. The old `Sheet1`/`Usuarios`/etc. tabs stay untouched until the old routes are removed.
   - Trade-off accepted: no real transactions, whole-sheet reads filtered in memory, eventual consistency on concurrent writes (same limits as the current app). Revisit Postgres later if this becomes a bottleneck — the schema in `lib/household/schema.ts` maps directly to the Drizzle tables previously drafted, so moving later is a lift-and-shift, not a redesign.
