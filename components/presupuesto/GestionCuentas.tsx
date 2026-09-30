@@ -110,20 +110,15 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
   }
 
   return (
-    <div className={`${sectionCardClass} mb-6 p-0`}>
-      <div className="border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-text">Mis cuentas</h2>
-        <p className="mt-0.5 text-xs text-text-muted">
-          A qué cuenta va cada uno de tus fijos. Las cuentas las ven los dos (ej. una
-          conjunta), pero cada uno asigna solo lo suyo.
-        </p>
-      </div>
-
+    <div className={`${sectionCardClass} p-0`}>
       <CuadroTransferencias cuadro={armarCuadro(items, cuentas, yo)} />
 
       <div className="border-t border-line px-4 py-3">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
           Cuentas
+        </p>
+        <p className="-mt-1 mb-2 text-xs text-text-muted">
+          Las ven los dos (ej. una conjunta), pero cada uno asigna solo lo suyo.
         </p>
 
         <ul className="flex flex-col gap-1">

@@ -69,7 +69,7 @@ export default function PresupuestoPage() {
           <div className={`${sectionCardClass} mb-8 p-0 lg:mx-auto lg:max-w-2xl`}>
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <h2 className="text-sm font-semibold text-text">Tus transferencias</h2>
-              <Link href="/configuracion" className="text-xs text-gold hover:underline">
+              <Link href="/configuracion?tab=cuentas" className="text-xs text-gold hover:underline">
                 Editar cuentas →
               </Link>
             </div>
