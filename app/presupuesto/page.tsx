@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import MesPanel from "@/components/presupuesto/MesPanel";
+import CuadroTransferencias from "@/components/presupuesto/CuadroTransferencias";
+import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
+import { armarCuadro } from "@/lib/household/transferencias";
 import { mesSiguiente } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
 
@@ -13,6 +17,10 @@ function mesActualISO(): string {
 export default function PresupuestoPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const [month, setMonth] = useState(mesActualISO);
+
+  // Una carga por mes. La del primero también alimenta "Tus transferencias".
+  const primerMes = usePresupuestoMes(month);
+  const segundoMes = usePresupuestoMes(mesSiguiente(month));
 
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
@@ -54,13 +62,34 @@ export default function PresupuestoPage() {
         </div>
       ) : null}
 
-      {/* Dos meses a la vez: el elegido y el siguiente. Lado a lado en
-          desktop, uno debajo del otro en mobile. */}
       {hogarConfigurado ? (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <MesPanel month={month} mostrarTransferencias />
-          <MesPanel month={mesSiguiente(month)} />
-        </div>
+        <>
+          {/* Lo primero que se mira el día de pago: cuánto pasar a cada
+              cuenta. Solo el cuadro de quien está logueado. */}
+          <div className={`${sectionCardClass} mb-8 p-0 lg:mx-auto lg:max-w-2xl`}>
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <h2 className="text-sm font-semibold text-text">Tus transferencias</h2>
+              <Link href="/configuracion" className="text-xs text-gold hover:underline">
+                Editar cuentas →
+              </Link>
+            </div>
+
+            {primerMes.cargando || !primerMes.yo ? (
+              <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
+            ) : (
+              <CuadroTransferencias
+                cuadro={armarCuadro(primerMes.items, primerMes.cuentas, primerMes.yo)}
+              />
+            )}
+          </div>
+
+          {/* Dos meses a la vez: el elegido y el siguiente. Lado a lado en
+              desktop, uno debajo del otro en mobile. */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <MesPanel month={month} datos={primerMes} />
+            <MesPanel month={mesSiguiente(month)} datos={segundoMes} />
+          </div>
+        </>
       ) : null}
     </main>
   );

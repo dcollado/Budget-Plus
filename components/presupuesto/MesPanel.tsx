@@ -1,21 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import FilaCompacta from "@/components/presupuesto/FilaCompacta";
 import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
-import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
+import type { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { ordenarPorFecha } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearMes } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
 import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
-import CuadroTransferencias from "@/components/presupuesto/CuadroTransferencias";
-import { armarCuadro } from "@/lib/household/transferencias";
 
 type Props = {
   month: string;
-  // Solo en el primer mes: el cuadro es igual todos los meses, no hace
-  // falta repetirlo en el segundo.
-  mostrarTransferencias?: boolean;
+  // Los datos los carga la página (usePresupuestoMes), así el primer mes
+  // se comparte con "Tus transferencias" sin pedirle dos veces a la hoja.
+  datos: ReturnType<typeof usePresupuestoMes>;
 };
 
 function Widget({
@@ -35,18 +32,8 @@ function Widget({
   );
 }
 
-export default function MesPanel({ month, mostrarTransferencias = false }: Props) {
-  const {
-    items,
-    members,
-    cuentas,
-    yo,
-    cargando,
-    error,
-    handleGuardado,
-    agregarItem,
-    eliminarItem,
-  } = usePresupuestoMes(month);
+export default function MesPanel({ month, datos }: Props) {
+  const { items, members, cargando, error, handleGuardado, agregarItem, eliminarItem } = datos;
 
   const suma = (lista: typeof items) =>
     lista.reduce((total, i) => total + i.plannedAmountCents, 0);
@@ -135,8 +122,8 @@ export default function MesPanel({ month, mostrarTransferencias = false }: Props
       </div>
 
       {/* Fijos: solo el total y el balance por persona. El detalle ítem por
-          ítem vive en Configuración; acá lo útil es el cuadro de
-          transferencias de quien está mirando. */}
+          ítem vive en Configuración, y el cuadro de transferencias va arriba
+          de todo en la página. */}
       <div className={`${sectionCardClass} mt-4 p-0`}>
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="text-sm font-semibold text-text">Gastos fijos</h3>
@@ -151,23 +138,6 @@ export default function MesPanel({ month, mostrarTransferencias = false }: Props
           </p>
         ) : null}
       </div>
-
-      {mostrarTransferencias && yo ? (
-        <div className={`${sectionCardClass} mt-4 p-0`}>
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <h3 className="text-sm font-semibold text-text">Tus transferencias</h3>
-            <Link href="/configuracion" className="text-xs text-gold hover:underline">
-              Editar cuentas →
-            </Link>
-          </div>
-
-          {cargando ? (
-            <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
-          ) : (
-            <CuadroTransferencias cuadro={armarCuadro(items, cuentas, yo)} />
-          )}
-        </div>
-      ) : null}
     </section>
   );
 }
