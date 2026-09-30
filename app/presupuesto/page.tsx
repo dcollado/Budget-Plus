@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import MesPanel from "@/components/presupuesto/MesPanel";
-import CuadroTransferencias from "@/components/presupuesto/CuadroTransferencias";
+import TarjetaTransferencias from "@/components/presupuesto/TarjetaTransferencias";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { armarCuadro } from "@/lib/household/transferencias";
 import { mesSiguiente } from "@/lib/household/formato";
@@ -66,22 +65,13 @@ export default function PresupuestoPage() {
         <>
           {/* Lo primero que se mira el día de pago: cuánto pasar a cada
               cuenta. Solo el cuadro de quien está logueado. */}
-          <div className={`${sectionCardClass} mb-8 p-0 lg:mx-auto lg:max-w-2xl`}>
-            <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <h2 className="text-sm font-semibold text-text">Tus transferencias</h2>
-              <Link href="/configuracion?tab=cuentas" className="text-xs text-gold hover:underline">
-                Editar cuentas →
-              </Link>
-            </div>
-
-            {primerMes.cargando || !primerMes.yo ? (
-              <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
-            ) : (
-              <CuadroTransferencias
-                cuadro={armarCuadro(primerMes.items, primerMes.cuentas, primerMes.yo)}
-              />
-            )}
-          </div>
+          <TarjetaTransferencias
+            cuadro={
+              primerMes.cargando || !primerMes.yo
+                ? null
+                : armarCuadro(primerMes.items, primerMes.cuentas, primerMes.yo)
+            }
+          />
 
           {/* Dos meses a la vez: el elegido y el siguiente. Lado a lado en
               desktop, uno debajo del otro en mobile. */}
