@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar } from "@/lib/household/contexto";
 import {
@@ -7,6 +7,12 @@ import {
   crearCategory,
 } from "@/lib/household/sheets";
 import type { CategoryKind } from "@/lib/household/schema";
+import {
+  borrarEventosDeCategoria,
+  mesActual,
+  sincronizarDosMeses,
+  sincronizarSinFallar,
+} from "@/lib/household/calendario";
 
 const KINDS: CategoryKind[] = ["expense", "income"];
 
@@ -121,6 +127,9 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    const householdId = contexto.householdId;
+    after(() => sincronizarSinFallar(() => borrarEventosDeCategoria(householdId, id)));
+
     return NextResponse.json({
       success: true,
       message: "Categoría eliminada correctamente.",
@@ -172,6 +181,11 @@ export async function PATCH(req: NextRequest) {
         { status: 404 }
       );
     }
+
+    const householdId = contexto.householdId;
+    after(() =>
+      sincronizarSinFallar(() => sincronizarDosMeses(householdId, mesActual()))
+    );
 
     return NextResponse.json({ success: true, data: { id, dueDay } });
   } catch (error) {

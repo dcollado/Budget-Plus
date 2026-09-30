@@ -5,7 +5,8 @@ import {
   verifySessionToken,
 } from "@/lib/auth-session";
 
-const PUBLIC_ROUTES = ["/login", "/api/login"];
+// /api/cron: lo llama Vercel sin sesión; la ruta verifica CRON_SECRET.
+const PUBLIC_ROUTES = ["/login", "/api/login", "/api/cron"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

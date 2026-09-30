@@ -49,6 +49,35 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Google Calendar payment reminders (2026-09-30)
+Every budget item with a payment date and amount > 0 (fixed and variable,
+expense and income) becomes an all-day event in the shared calendar
+**"Budget Plus - Pagos"**, owned by the shared account
+colladoguerra25@gmail.com and shared with the service account
+(`facturas-service@…`, "Make changes to events"). Code:
+`lib/household/calendario.ts`.
+- Event id is deterministic (hash of household + category + month), so a
+  payment always maps to one event; sync compares and only writes what
+  changed, and deletes events whose payment is gone. Only touches events
+  tagged `bpApp=budgetplus` (private extended property).
+- Triggers: after saving an amount/date (`POST /api/hogar/presupuesto`,
+  syncs that month + next), after changing a fixed day (`PATCH
+  /api/hogar/categorias`, current + next month), after archiving a
+  category (deletes all its events). Runs via `after()`, so saving never
+  waits on or fails because of Calendar.
+- Daily cron `GET /api/cron/calendario` (`vercel.json`, 12:00 UTC = 7am
+  Panamá) syncs current + next month for every household — this is what
+  makes inherited fixed payments show up in a new month. Auth: Vercel's
+  `Authorization: Bearer $CRON_SECRET`; `/api/cron` is public in the
+  proxy for that reason.
+- Notifications (same day + 3 days before) are **not** set by the app;
+  each person sets them as the calendar's default all-day notifications
+  on their phone. That's what works reliably on a shared calendar.
+- Env vars: `GOOGLE_CALENDAR_ID` (unset = sync is a no-op; keep it unset
+  locally so the Test sheet doesn't write to the real calendar) and
+  `CRON_SECRET`. Google Calendar API is enabled on project
+  factura-app-2992.
+
 ## Presupuesto redesign + payment dates (2026-09-30)
 Feedback from David and Caro. `/presupuesto` now:
 - Shows **two months at once**: the chosen month and the next one

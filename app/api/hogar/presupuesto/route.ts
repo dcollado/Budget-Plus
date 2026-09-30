@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar } from "@/lib/household/contexto";
 import {
@@ -8,6 +8,7 @@ import {
   upsertBudget,
 } from "@/lib/household/sheets";
 import { armarVistaMes } from "@/lib/household/presupuesto";
+import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
 
 function sinHogar() {
   return NextResponse.json(
@@ -147,6 +148,10 @@ export async function POST(req: NextRequest) {
       Math.round(amount * 100),
       dueDate
     );
+
+    // Una fija se hereda al mes siguiente, así que se sincronizan los dos.
+    const householdId = contexto.householdId;
+    after(() => sincronizarSinFallar(() => sincronizarDosMeses(householdId, month)));
 
     return NextResponse.json({ success: true, data: budget });
   } catch (error) {
