@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import FilaPresupuesto from "@/components/presupuesto/FilaPresupuesto";
 import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
+import GestionCuentas from "@/components/presupuesto/GestionCuentas";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
 
@@ -14,8 +15,19 @@ function mesActualISO(): string {
 export default function ConfiguracionPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const month = mesActualISO();
-  const { items, members, cargando, error, handleGuardado, agregarItem, eliminarItem } =
-    usePresupuestoMes(month);
+  const {
+    items,
+    members,
+    cuentas,
+    setCuentas,
+    yo,
+    cargando,
+    error,
+    handleGuardado,
+    agregarItem,
+    eliminarItem,
+    asignarCuenta,
+  } = usePresupuestoMes(month);
 
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
@@ -58,6 +70,16 @@ export default function ConfiguracionPage() {
 
       {hogarConfigurado ? (
         <>
+          {!cargando && yo ? (
+            <GestionCuentas
+              items={items}
+              cuentas={cuentas}
+              setCuentas={setCuentas}
+              yo={yo}
+              asignarCuenta={asignarCuenta}
+            />
+          ) : null}
+
           <div className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
               Gastos fijos

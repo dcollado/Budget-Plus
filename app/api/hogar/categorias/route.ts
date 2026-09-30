@@ -2,9 +2,10 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar } from "@/lib/household/contexto";
 import {
-  actualizarDiaPago,
+  actualizarCategoria,
   archivarCategory,
   crearCategory,
+  listCuentas,
   listMembers,
 } from "@/lib/household/sheets";
 import type { CategoryKind } from "@/lib/household/schema";
@@ -158,7 +159,8 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// Cambia el día del mes en que se paga una categoría fija.
+// Cambios parciales de una categoría fija: el día de pago (dueDay) y/o la
+// cuenta a la que va la plata (cuentaId). Solo se tocan los que vengan.
 export async function PATCH(req: NextRequest) {
   try {
     const usuarioId = getUsuarioId(req);
@@ -186,8 +188,30 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const dueDay = parseDueDay(body.dueDay);
-    const ok = await actualizarDiaPago(id, contexto.householdId, dueDay);
+    const cambios: { dueDay?: number | null; cuentaId?: string } = {};
+
+    if ("dueDay" in body) {
+      cambios.dueDay = parseDueDay(body.dueDay);
+    }
+
+    if ("cuentaId" in body) {
+      const cuentaId = String(body.cuentaId ?? "").trim();
+
+      if (cuentaId) {
+        const cuentas = await listCuentas(contexto.householdId);
+
+        if (!cuentas.some((c) => c.id === cuentaId)) {
+          return NextResponse.json(
+            { success: false, message: "Esa cuenta no existe." },
+            { status: 400 }
+          );
+        }
+      }
+
+      cambios.cuentaId = cuentaId;
+    }
+
+    const ok = await actualizarCategoria(id, contexto.householdId, cambios);
 
     if (!ok) {
       return NextResponse.json(
@@ -196,17 +220,20 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const householdId = contexto.householdId;
-    after(() =>
-      sincronizarSinFallar(() => sincronizarDosMeses(householdId, mesActual()))
-    );
+    // La cuenta no sale en el calendario; solo un cambio de día lo afecta.
+    if ("dueDay" in cambios) {
+      const householdId = contexto.householdId;
+      after(() =>
+        sincronizarSinFallar(() => sincronizarDosMeses(householdId, mesActual()))
+      );
+    }
 
-    return NextResponse.json({ success: true, data: { id, dueDay } });
+    return NextResponse.json({ success: true, data: { id, ...cambios } });
   } catch (error) {
-    console.error("Error actualizando día de pago:", error);
+    console.error("Error actualizando categoría:", error);
 
     return NextResponse.json(
-      { success: false, message: "No se pudo guardar el día de pago." },
+      { success: false, message: "No se pudo guardar el cambio." },
       { status: 500 }
     );
   }

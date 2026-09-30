@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { getSheetsClient } from "@/lib/google-sheets";
 import type {
   Account,
+  Cuenta,
   Budget,
   Category,
   Household,
@@ -23,7 +24,10 @@ export const ACCOUNTS_SHEET = "Accounts";
 export const ACCOUNTS_RANGE = `${ACCOUNTS_SHEET}!A:G`; // id, householdId, name, type, ownerMemberId, openingBalanceCents, archived
 
 export const CATEGORIES_SHEET = "Categories";
-export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:H`; // id, householdId, name, kind, archived, fixed, dueDay, ownerMemberId
+export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:I`; // id, householdId, name, kind, archived, fixed, dueDay, ownerMemberId, cuentaId
+
+export const CUENTAS_SHEET = "Cuentas";
+export const CUENTAS_RANGE = `${CUENTAS_SHEET}!A:D`; // id, householdId, name, archived
 
 export const BUDGETS_SHEET = "Budgets";
 export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:F`; // id, householdId, categoryId, month, plannedAmountCents, dueDate
@@ -200,6 +204,7 @@ function buildCategory(row: string[]): Category {
     fixed: boolFrom(row[5]),
     dueDay: dayFrom(row[6]),
     ownerMemberId: row[7] ?? "",
+    cuentaId: row[8] ?? "",
   };
 }
 
@@ -212,7 +217,7 @@ export async function listCategories(
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId"> & {
+  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId"> & {
     dueDay?: number | null;
     ownerMemberId?: string;
   }
@@ -221,6 +226,7 @@ export async function crearCategory(
     ...input,
     dueDay: input.dueDay ?? null,
     ownerMemberId: input.ownerMemberId ?? "",
+    cuentaId: "",
     id: randomUUID(),
     archived: false,
   };
@@ -234,6 +240,7 @@ export async function crearCategory(
     category.fixed ? "true" : "false",
     category.dueDay ?? "",
     category.ownerMemberId,
+    category.cuentaId,
   ]);
 
   return category;
@@ -278,10 +285,11 @@ export async function archivarCategory(
   return true;
 }
 
-export async function actualizarDiaPago(
+// Cambios parciales de una categoría: solo escribe los campos presentes.
+export async function actualizarCategoria(
   id: string,
   householdId: string,
-  dueDay: number | null
+  cambios: { dueDay?: number | null; cuentaId?: string }
 ): Promise<boolean> {
   const sheets = await getSheetsClient();
   const sheetId = getSheetId();
@@ -300,11 +308,88 @@ export async function actualizarDiaPago(
     return false;
   }
 
-  await sheets.spreadsheets.values.update({
+  const fila = dataIndex + 2;
+  const data = [];
+
+  if ("dueDay" in cambios) {
+    data.push({ range: `${CATEGORIES_SHEET}!G${fila}`, values: [[cambios.dueDay ?? ""]] });
+  }
+  if ("cuentaId" in cambios) {
+    data.push({ range: `${CATEGORIES_SHEET}!I${fila}`, values: [[cambios.cuentaId ?? ""]] });
+  }
+
+  if (data.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: { valueInputOption: "RAW", data },
+    });
+  }
+
+  return true;
+}
+
+// ---------- Cuentas ----------
+
+function buildCuenta(row: string[]): Cuenta {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    name: row[2] ?? "",
+    archived: boolFrom(row[3]),
+  };
+}
+
+export async function listCuentas(householdId: string): Promise<Cuenta[]> {
+  try {
+    return (await readRows(CUENTAS_RANGE))
+      .map(buildCuenta)
+      .filter((c) => c.householdId === householdId && !c.archived);
+  } catch (error) {
+    // Hoja "Cuentas" todavía no creada (ej. PROD antes de migrar): sin cuentas.
+    if (String(error).includes("Unable to parse range")) return [];
+    throw error;
+  }
+}
+
+export async function crearCuenta(householdId: string, name: string): Promise<Cuenta> {
+  const cuenta: Cuenta = { id: randomUUID(), householdId, name, archived: false };
+  await appendRow(CUENTAS_SHEET, [cuenta.id, cuenta.householdId, cuenta.name, "false"]);
+  return cuenta;
+}
+
+// Renombra o archiva. Devuelve false si la cuenta no es de este hogar.
+export async function actualizarCuenta(
+  id: string,
+  householdId: string,
+  cambios: { name?: string; archived?: boolean }
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CATEGORIES_SHEET}!G${dataIndex + 2}`,
-    valueInputOption: "RAW",
-    requestBody: { values: [[dueDay ?? ""]] },
+    range: CUENTAS_RANGE,
+  });
+
+  const dataRows = (response.data.values ?? []).slice(1);
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) return false;
+
+  const fila = dataIndex + 2;
+  const data = [];
+  if (cambios.name !== undefined) {
+    data.push({ range: `${CUENTAS_SHEET}!C${fila}`, values: [[cambios.name]] });
+  }
+  if (cambios.archived !== undefined) {
+    data.push({ range: `${CUENTAS_SHEET}!D${fila}`, values: [[cambios.archived ? "true" : "false"]] });
+  }
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: { valueInputOption: "RAW", data },
   });
 
   return true;

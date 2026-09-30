@@ -47,6 +47,18 @@ export type Category = {
   dueDay: number | null;
   // De quién es el gasto (member id). "" = conjunto.
   ownerMemberId: string;
+  // A qué cuenta va la plata de este fijo (Cuenta.id). "" = sin asignar.
+  cuentaId: string;
+};
+
+// Destino de la plata: "Cuenta Chippu" (conjunta), "Caro", "Emergencias"...
+// Es del hogar, no de una persona: cada uno asigna SUS fijos a las cuentas
+// que quiera, y una cuenta conjunta aparece en el cuadro de los dos.
+export type Cuenta = {
+  id: string;
+  householdId: string;
+  name: string;
+  archived: boolean;
 };
 
 export type Budget = {

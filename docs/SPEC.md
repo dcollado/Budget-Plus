@@ -49,6 +49,41 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Cuentas y transferencias (2026-09-30)
+How David and Caro actually run the month: each one pays part of the
+fixed expenses from their salary by transferring money to a few
+"cuentas" every payday (quincena). Caro sent her table (Cuenta Quincena,
+Cuenta Chippu, Ahorros Camila, Supermercado → David, Emergencias; total
+$1,300.04, salary $1,828.92, remanente $528.88). The app now builds that
+table.
+- New sheet **`Cuentas`** (id, householdId, name, archived) and
+  `Category.cuentaId` (column **I** of `Categories`). Cuentas belong to
+  the household, not a person (Chippu is joint); each person assigns
+  *their own* fixed expenses to cuentas. A joint cuenta shows up in both
+  people's tables with each one's share.
+- Salary per person = fixed **income** categories owned by that member
+  (`ownerMemberId` on "Ingreso Base David" / "Ingreso Base Caro").
+- `lib/household/transferencias.ts` → `armarCuadro`: a person's fixed
+  expenses grouped by cuenta (+ "Sin cuenta asignada"), total, salary,
+  remanente; quincenal = monthly / 2.
+- **Presupuesto**: fixed expenses are one line (household total + per
+  person balance). Below, **"Tus transferencias"**: the logged-in
+  person's table only (first month only). Each cuenta expands to its
+  items.
+- **Configuración** → "Mis cuentas": create/rename/delete cuentas and
+  pick the cuenta for each of your fixed expenses; the table updates live.
+- API: `/api/hogar/cuentas` (GET/POST/PATCH/DELETE = archive);
+  `PATCH /api/hogar/categorias` takes `dueDay` and/or `cuentaId`.
+- `listCuentas` returns [] if the `Cuentas` sheet doesn't exist yet, so
+  PROD keeps working before it's migrated.
+- Supermercado is **not** double-counted: David puts $300, Caro $100.
+
+Test sheet has Caro's 5 cuentas with her items assigned (grouping
+inferred from the amounts — matched her table exactly) and salaries
+copied from PROD. **PROD still needs:** the `Cuentas` sheet, header
+`cuentaId` in Categories!I1, owners on the two Ingreso Base categories,
+and (if confirmed) Caro's cuentas.
+
 ## Fixed expenses per person (2026-09-30)
 Categories got an owner: `Category.ownerMemberId`, new column **H** of
 `Categories` ("" = conjunto). Needed because David and Caro each have

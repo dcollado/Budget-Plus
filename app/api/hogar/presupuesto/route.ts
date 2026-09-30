@@ -4,6 +4,7 @@ import { getContextoHogar } from "@/lib/household/contexto";
 import {
   listBudgets,
   listCategories,
+  listCuentas,
   listMembers,
   listTransactions,
   upsertBudget,
@@ -47,11 +48,12 @@ export async function GET(req: NextRequest) {
     const monthParam = req.nextUrl.searchParams.get("month")?.trim();
     const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : mesActual();
 
-    const [categories, budgets, transactions, members] = await Promise.all([
+    const [categories, budgets, transactions, members, cuentas] = await Promise.all([
       listCategories(contexto.householdId),
       listBudgets(contexto.householdId),
       listTransactions(contexto.householdId),
       listMembers(contexto.householdId),
+      listCuentas(contexto.householdId),
     ]);
 
     const items = armarVistaMes(categories, budgets, transactions, month);
@@ -82,6 +84,9 @@ export async function GET(req: NextRequest) {
         items,
         totales,
         members: members.map((m) => ({ id: m.id, displayName: m.displayName })),
+        cuentas: cuentas.map((c) => ({ id: c.id, name: c.name })),
+        // Quién está mirando: el desglose de transferencias es solo suyo.
+        yo: contexto.member.id,
       },
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
 
 export type MiembroHogar = { id: string; displayName: string };
+export type CuentaHogar = { id: string; name: string };
 
 export type TotalesMes = {
   plannedIncomeCents: number;
@@ -17,6 +18,9 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
   const [totales, setTotales] = useState<TotalesMes | null>(null);
   const [members, setMembers] = useState<MiembroHogar[]>([]);
+  const [cuentas, setCuentas] = useState<CuentaHogar[]>([]);
+  // Member id de quien está logueado.
+  const [yo, setYo] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,6 +42,8 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
       setItems(data.data.items);
       setTotales(data.data.totales);
       setMembers(data.data.members ?? []);
+      setCuentas(data.data.cuentas ?? []);
+      setYo(data.data.yo ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
     } finally {
@@ -123,14 +129,28 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     });
   }
 
+  function asignarCuenta(categoryId: string, cuentaId: string) {
+    setItems((actuales) =>
+      actuales.map((item) =>
+        item.category.id === categoryId
+          ? { ...item, category: { ...item.category, cuentaId } }
+          : item
+      )
+    );
+  }
+
   return {
     items,
     totales,
     members,
+    cuentas,
+    setCuentas,
+    yo,
     cargando,
     error,
     handleGuardado,
     agregarItem,
     eliminarItem,
+    asignarCuenta,
   };
 }

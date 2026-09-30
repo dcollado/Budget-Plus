@@ -58,7 +58,7 @@ export default function PresupuestoPage() {
           desktop, uno debajo del otro en mobile. */}
       {hogarConfigurado ? (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <MesPanel month={month} />
+          <MesPanel month={month} mostrarTransferencias />
           <MesPanel month={mesSiguiente(month)} />
         </div>
       ) : null}
