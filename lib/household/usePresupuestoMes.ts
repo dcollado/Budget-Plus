@@ -46,11 +46,21 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, refreshKey]);
 
-  function handleGuardado(categoryId: string, plannedAmountCents: number) {
+  // fechaPago undefined = no cambió la fecha.
+  function handleGuardado(
+    categoryId: string,
+    plannedAmountCents: number,
+    fechaPago?: string
+  ) {
     setItems((actuales) =>
       actuales.map((item) =>
         item.category.id === categoryId
-          ? { ...item, plannedAmountCents, inherited: false }
+          ? {
+              ...item,
+              plannedAmountCents,
+              inherited: false,
+              fechaPago: fechaPago ?? item.fechaPago,
+            }
           : item
       )
     );

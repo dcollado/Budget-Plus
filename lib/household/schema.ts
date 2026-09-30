@@ -43,6 +43,8 @@ export type Category = {
   // hereda mes a mes en vez de arrancar en 0, y la UI lo marca aparte de
   // lo discrecional.
   fixed: boolean;
+  // Día del mes en que se paga (1-31), solo para fijas. null = sin fecha.
+  dueDay: number | null;
 };
 
 export type Budget = {
@@ -51,6 +53,9 @@ export type Budget = {
   categoryId: string;
   month: string; // YYYY-MM
   plannedAmountCents: number;
+  // Fecha exacta de pago (YYYY-MM-DD), para los ítems variables del mes.
+  // "" = sin fecha. Las fijas usan Category.dueDay en su lugar.
+  dueDate: string;
 };
 
 export type Transaction = {

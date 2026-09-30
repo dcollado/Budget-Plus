@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Lock, Trash2 } from "lucide-react";
-import type { CategoriaDelMes } from "@/lib/household/presupuesto";
+import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 
 type Props = {
   item: CategoriaDelMes;
   month: string;
-  onGuardado: (categoryId: string, plannedAmountCents: number) => void;
+  onGuardado: (categoryId: string, plannedAmountCents: number, fechaPago?: string) => void;
   // Oculta la barra de progreso y el "gastado" — útil en Configuración,
   // donde lo que importa es fijar el monto, no ver avance del mes.
   mostrarProgreso?: boolean;
@@ -20,6 +20,8 @@ type Props = {
   // Si se pasa, muestra un botón para borrar (archivar) la categoría.
   // Solo tiene sentido en Configuración — en Presupuesto no se ofrece.
   onEliminar?: (categoryId: string) => void;
+  // Muestra un campo "Día" (1-31) para el día de pago de una fija.
+  editarDia?: boolean;
 };
 
 export default function FilaPresupuesto({
@@ -29,8 +31,14 @@ export default function FilaPresupuesto({
   mostrarProgreso = true,
   readOnly = false,
   onEliminar,
+  editarDia = false,
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
+  // Día guardado (para saber si el campo cambió) y el que se está editando.
+  const [diaGuardado, setDiaGuardado] = useState(
+    item.category.dueDay ? String(item.category.dueDay) : ""
+  );
+  const [dia, setDia] = useState(diaGuardado);
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [error, setError] = useState("");
@@ -39,34 +47,65 @@ export default function FilaPresupuesto({
     setValor(String(item.plannedAmountCents / 100));
   }, [item.plannedAmountCents]);
 
-  const dirty = Number(valor || 0) * 100 !== item.plannedAmountCents;
+  const montoCambio = Number(valor || 0) * 100 !== item.plannedAmountCents;
+  const diaCambio = editarDia && dia !== diaGuardado;
+  const dirty = montoCambio || diaCambio;
   const planned = item.plannedAmountCents;
   const actual = item.actualCents;
   const pct = planned > 0 ? Math.min((actual / planned) * 100, 100) : actual > 0 ? 100 : 0;
   const sobregirado = planned > 0 && actual > planned;
 
   async function guardar() {
+    const diaNum = dia ? Number(dia) : null;
+
+    if (diaCambio && dia && !(Number.isInteger(diaNum) && diaNum! >= 1 && diaNum! <= 31)) {
+      setError("El día tiene que ser entre 1 y 31.");
+      return;
+    }
+
     setGuardando(true);
     setError("");
 
     try {
-      const res = await fetch("/api/hogar/presupuesto", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          categoryId: item.category.id,
-          month,
-          amount: valor || "0",
-        }),
-      });
+      if (montoCambio) {
+        const res = await fetch("/api/hogar/presupuesto", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoryId: item.category.id,
+            month,
+            amount: valor || "0",
+          }),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo guardar.");
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "No se pudo guardar.");
+        }
       }
 
-      onGuardado(item.category.id, Math.round(Number(valor || 0) * 100));
+      if (diaCambio) {
+        const res = await fetch("/api/hogar/categorias", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.category.id, dueDay: diaNum }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "No se pudo guardar el día.");
+        }
+
+        setDiaGuardado(dia);
+      }
+
+      onGuardado(
+        item.category.id,
+        Math.round(Number(valor || 0) * 100),
+        diaCambio ? fechaDelDia(month, diaNum) : undefined
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error guardando.");
     } finally {
@@ -136,15 +175,38 @@ export default function FilaPresupuesto({
             </span>
           ) : (
             <>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                className={`${fieldBaseClass} ${fieldNormalClass} w-24 py-1.5 text-right`}
-              />
+              <label className="flex items-center gap-1.5 text-xs text-text-muted">
+                Monto
+                <span className="w-24">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                    className={`${fieldBaseClass} ${fieldNormalClass} py-1.5 text-right`}
+                  />
+                </span>
+              </label>
+              {editarDia ? (
+                <label className="flex items-center gap-1.5 text-xs text-text-muted">
+                  Día
+                  <span className="w-16">
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      inputMode="numeric"
+                      value={dia}
+                      onChange={(e) => setDia(e.target.value)}
+                      placeholder="—"
+                      aria-label={`Día de pago de ${item.category.name}`}
+                      className={`${fieldBaseClass} ${fieldNormalClass} py-1.5 text-right`}
+                    />
+                  </span>
+                </label>
+              ) : null}
               <button
                 type="button"
                 onClick={guardar}

@@ -74,6 +74,7 @@ export default function ConfiguracionPage() {
                   onGuardado={handleGuardado}
                   onEliminar={eliminarItem}
                   mostrarProgreso={false}
+                  editarDia
                 />
               ))
             )}

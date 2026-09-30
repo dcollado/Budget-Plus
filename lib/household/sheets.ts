@@ -23,10 +23,10 @@ export const ACCOUNTS_SHEET = "Accounts";
 export const ACCOUNTS_RANGE = `${ACCOUNTS_SHEET}!A:G`; // id, householdId, name, type, ownerMemberId, openingBalanceCents, archived
 
 export const CATEGORIES_SHEET = "Categories";
-export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:F`; // id, householdId, name, kind, archived, fixed
+export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:G`; // id, householdId, name, kind, archived, fixed, dueDay
 
 export const BUDGETS_SHEET = "Budgets";
-export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:E`; // id, householdId, categoryId, month, plannedAmountCents
+export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:F`; // id, householdId, categoryId, month, plannedAmountCents, dueDate
 
 export const TRANSACTIONS_SHEET = "Transactions";
 export const TRANSACTIONS_RANGE = `${TRANSACTIONS_SHEET}!A:M`;
@@ -52,6 +52,11 @@ function boolFrom(value: string | undefined): boolean {
 function numFrom(value: string | undefined): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+function dayFrom(value: string | undefined): number | null {
+  const n = Number((value ?? "").trim());
+  return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
 }
 
 async function readRows(range: string): Promise<string[][]> {
@@ -193,6 +198,7 @@ function buildCategory(row: string[]): Category {
     kind: (row[3] as Category["kind"]) || "expense",
     archived: boolFrom(row[4]),
     fixed: boolFrom(row[5]),
+    dueDay: dayFrom(row[6]),
   };
 }
 
@@ -205,9 +211,14 @@ export async function listCategories(
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived">
+  input: Omit<Category, "id" | "archived" | "dueDay"> & { dueDay?: number | null }
 ): Promise<Category> {
-  const category: Category = { ...input, id: randomUUID(), archived: false };
+  const category: Category = {
+    ...input,
+    dueDay: input.dueDay ?? null,
+    id: randomUUID(),
+    archived: false,
+  };
 
   await appendRow(CATEGORIES_SHEET, [
     category.id,
@@ -216,6 +227,7 @@ export async function crearCategory(
     category.kind,
     "false",
     category.fixed ? "true" : "false",
+    category.dueDay ?? "",
   ]);
 
   return category;
@@ -260,6 +272,38 @@ export async function archivarCategory(
   return true;
 }
 
+export async function actualizarDiaPago(
+  id: string,
+  householdId: string,
+  dueDay: number | null
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: CATEGORIES_RANGE,
+  });
+
+  const dataRows = (response.data.values ?? []).slice(1);
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${CATEGORIES_SHEET}!G${dataIndex + 2}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[dueDay ?? ""]] },
+  });
+
+  return true;
+}
+
 // ---------- Budgets ----------
 
 function buildBudget(row: string[]): Budget {
@@ -269,6 +313,7 @@ function buildBudget(row: string[]): Budget {
     categoryId: row[2] ?? "",
     month: row[3] ?? "",
     plannedAmountCents: numFrom(row[4]),
+    dueDate: row[5] ?? "",
   };
 }
 
@@ -286,7 +331,9 @@ export async function upsertBudget(
   householdId: string,
   categoryId: string,
   month: string,
-  plannedAmountCents: number
+  plannedAmountCents: number,
+  // undefined = no tocar la fecha que ya tenga; "" = borrarla.
+  dueDate?: string
 ): Promise<Budget> {
   const sheets = await getSheetsClient();
   const sheetId = getSheetId();
@@ -313,6 +360,7 @@ export async function upsertBudget(
       categoryId,
       month,
       plannedAmountCents,
+      dueDate: dueDate ?? "",
     };
 
     await appendRow(BUDGETS_SHEET, [
@@ -321,6 +369,7 @@ export async function upsertBudget(
       budget.categoryId,
       budget.month,
       budget.plannedAmountCents,
+      budget.dueDate,
     ]);
 
     return budget;
@@ -328,15 +377,16 @@ export async function upsertBudget(
 
   const sheetRowNumber = dataIndex + 2;
   const id = dataRows[dataIndex][0] ?? "";
+  const fechaFinal = dueDate ?? (dataRows[dataIndex][5] ?? "");
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${BUDGETS_SHEET}!E${sheetRowNumber}`,
+    range: `${BUDGETS_SHEET}!E${sheetRowNumber}:F${sheetRowNumber}`,
     valueInputOption: "RAW",
-    requestBody: { values: [[plannedAmountCents]] },
+    requestBody: { values: [[plannedAmountCents, fechaFinal]] },
   });
 
-  return { id, householdId, categoryId, month, plannedAmountCents };
+  return { id, householdId, categoryId, month, plannedAmountCents, dueDate: fechaFinal };
 }
 
 // ---------- Transactions ----------

@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import type { CategoryKind } from "@/lib/household/schema";
-import type { CategoriaDelMes } from "@/lib/household/presupuesto";
+import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 
 type Props = {
   kind: CategoryKind;
   month: string;
   onAgregado: (item: CategoriaDelMes) => void;
-  // false (default) = categoría variable, se agrega desde Presupuesto sin
-  // estar atada a una lista cerrada. true = fija, se da de alta acá desde
-  // Configuración y su monto se hereda mes a mes como las demás fijas.
+  // false (default) = ítem variable de este mes, con fecha exacta.
+  // true = categoría fija (Configuración), con día del mes que se hereda.
   fixed?: boolean;
+  // "fila" = botón a lo ancho de una lista; "boton" = pill compacto, para
+  // ponerlo suelto (ej. los accesos rápidos de Presupuesto).
+  variant?: "fila" | "boton";
 };
 
 export default function AgregarCategoria({
@@ -21,16 +23,47 @@ export default function AgregarCategoria({
   month,
   onAgregado,
   fixed = false,
+  variant = "fila",
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [dia, setDia] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+
+  const [anio, mes] = month.split("-").map(Number);
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+
+  function cerrar() {
+    setAbierto(false);
+    setNombre("");
+    setMonto("");
+    setFecha("");
+    setDia("");
+    setError("");
+  }
 
   async function agregar() {
     if (!nombre.trim()) {
       setError("Ponele un nombre.");
+      return;
+    }
+
+    const plannedAmountCents = Math.round(Number(monto || 0) * 100);
+
+    // Un variable sin monto no aparece en la lista (solo se listan los que
+    // tienen algo ese mes), así que no tiene sentido crearlo vacío.
+    if (!fixed && plannedAmountCents <= 0) {
+      setError("Poné un monto mayor a 0.");
+      return;
+    }
+
+    const dueDay = fixed && dia ? Number(dia) : null;
+
+    if (fixed && dia && !(Number.isInteger(dueDay) && dueDay! >= 1 && dueDay! <= 31)) {
+      setError("El día tiene que ser entre 1 y 31.");
       return;
     }
 
@@ -41,7 +74,7 @@ export default function AgregarCategoria({
       const resCategoria = await fetch("/api/hogar/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nombre.trim(), kind, fixed }),
+        body: JSON.stringify({ name: nombre.trim(), kind, fixed, dueDay }),
       });
 
       const dataCategoria = await resCategoria.json();
@@ -51,13 +84,17 @@ export default function AgregarCategoria({
       }
 
       const category = dataCategoria.data;
-      const plannedAmountCents = Math.round(Number(monto || 0) * 100);
 
       if (plannedAmountCents > 0) {
         const resMonto = await fetch("/api/hogar/presupuesto", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ categoryId: category.id, month, amount: monto }),
+          body: JSON.stringify({
+            categoryId: category.id,
+            month,
+            amount: monto,
+            ...(fixed ? {} : { dueDate: fecha }),
+          }),
         });
 
         const dataMonto = await resMonto.json();
@@ -72,11 +109,10 @@ export default function AgregarCategoria({
         plannedAmountCents,
         inherited: false,
         actualCents: 0,
+        fechaPago: fixed ? fechaDelDia(month, dueDay) : fecha,
       });
 
-      setNombre("");
-      setMonto("");
-      setAbierto(false);
+      cerrar();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error agregando.");
     } finally {
@@ -89,11 +125,22 @@ export default function AgregarCategoria({
       ? "Agregar ingreso fijo"
       : "Agregar gasto fijo"
     : kind === "income"
-    ? "Agregar ingreso variable"
-    : "Agregar gasto variable";
+    ? "Ingreso variable"
+    : "Gasto variable";
 
   if (!abierto) {
-    return (
+    return variant === "boton" ? (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className={`flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl border border-line px-2 py-2 text-sm font-medium transition hover:border-gold/50 ${
+          kind === "income" ? "text-sage" : "text-rust"
+        }`}
+      >
+        <Plus size={14} />
+        {etiqueta}
+      </button>
+    ) : (
       <button
         type="button"
         onClick={() => setAbierto(true)}
@@ -106,44 +153,77 @@ export default function AgregarCategoria({
   }
 
   return (
-    <div className="border-b border-line px-4 py-3 last:border-0">
-      <div className="flex flex-wrap items-center gap-2">
+    <div
+      className={
+        variant === "boton"
+          ? "w-full rounded-xl border border-line bg-surface-raised/40 p-3"
+          : "border-b border-line px-4 py-3 last:border-0"
+      }
+    >
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+        {etiqueta}
+      </p>
+      <div className="flex flex-col gap-2">
         <input
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           placeholder={fixed ? "Nombre (ej. Gimnasio)" : "Nombre (ej. Regalo cumpleaños)"}
-          className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5`}
+          className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           autoFocus
         />
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          inputMode="decimal"
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          placeholder="0.00"
-          className={`${fieldBaseClass} ${fieldNormalClass} w-24 py-1.5 text-right`}
-        />
-        <button
-          type="button"
-          onClick={agregar}
-          disabled={guardando}
-          className="rounded-lg bg-gold px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {guardando ? "..." : "Agregar"}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setAbierto(false);
-            setError("");
-          }}
-          className="text-xs text-text-muted hover:text-text"
-        >
-          Cancelar
-        </button>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            inputMode="decimal"
+            value={monto}
+            onChange={(e) => setMonto(e.target.value)}
+            placeholder="Monto"
+            className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5 text-right`}
+          />
+          {fixed ? (
+            <input
+              type="number"
+              min="1"
+              max="31"
+              inputMode="numeric"
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+              placeholder="Día"
+              aria-label="Día del mes en que se paga"
+              className={`${fieldBaseClass} ${fieldNormalClass} w-20 py-1.5 text-right`}
+            />
+          ) : (
+            <input
+              type="date"
+              value={fecha}
+              min={`${month}-01`}
+              max={`${month}-${String(ultimoDia).padStart(2, "0")}`}
+              onChange={(e) => setFecha(e.target.value)}
+              aria-label="Fecha de pago"
+              className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5`}
+            />
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={cerrar}
+            className="text-xs text-text-muted hover:text-text"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={agregar}
+            disabled={guardando}
+            className="rounded-lg bg-gold px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {guardando ? "..." : "Agregar"}
+          </button>
+        </div>
       </div>
 
       {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}

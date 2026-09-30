@@ -9,7 +9,29 @@ export type CategoriaDelMes = {
   // de estar inherited.
   inherited: boolean;
   actualCents: number;
+  // Fecha de pago efectiva en este mes (YYYY-MM-DD), "" si no tiene.
+  // Fijas: Category.dueDay aplicado al mes (acotado al último día).
+  // Variables: la fecha guardada en el Budget de este mes.
+  fechaPago: string;
 };
+
+export function fechaDelDia(month: string, dueDay: number | null): string {
+  if (!dueDay) return "";
+  const [anio, mes] = month.split("-").map(Number);
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+  const dia = Math.min(dueDay, ultimoDia);
+  return `${month}-${String(dia).padStart(2, "0")}`;
+}
+
+// Orden por fecha de pago; los que no tienen fecha van al final.
+export function ordenarPorFecha(items: CategoriaDelMes[]): CategoriaDelMes[] {
+  return [...items].sort((a, b) => {
+    if (!a.fechaPago && !b.fechaPago) return a.category.name.localeCompare(b.category.name);
+    if (!a.fechaPago) return 1;
+    if (!b.fechaPago) return -1;
+    return a.fechaPago.localeCompare(b.fechaPago);
+  });
+}
 
 // Arma la vista de un mes: para cada categoría activa, cuánto se planeó
 // (o se heredó, si es fixed y no hay Budget explícito para este mes) y
@@ -48,6 +70,9 @@ export function armarVistaMes(
         plannedAmountCents: budgetDeEsteMes.plannedAmountCents,
         inherited: false,
         actualCents,
+        fechaPago: category.fixed
+          ? fechaDelDia(month, category.dueDay)
+          : budgetDeEsteMes.dueDate,
       };
     }
 
@@ -62,6 +87,7 @@ export function armarVistaMes(
           plannedAmountCents: anterior.plannedAmountCents,
           inherited: true,
           actualCents,
+          fechaPago: fechaDelDia(month, category.dueDay),
         };
       }
     }
@@ -71,6 +97,7 @@ export function armarVistaMes(
       plannedAmountCents: 0,
       inherited: false,
       actualCents,
+      fechaPago: category.fixed ? fechaDelDia(month, category.dueDay) : "",
     };
   });
 }

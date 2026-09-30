@@ -108,6 +108,9 @@ export async function POST(req: NextRequest) {
     const categoryId = String(body.categoryId ?? "").trim();
     const month = String(body.month ?? "").trim();
     const amount = Number(body.amount);
+    // undefined = no tocar la fecha existente; "" = sin fecha.
+    const dueDate =
+      body.dueDate === undefined ? undefined : String(body.dueDate ?? "").trim();
 
     if (!categoryId) {
       return NextResponse.json(
@@ -130,11 +133,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (dueDate && !(/^\d{4}-\d{2}-\d{2}$/.test(dueDate) && dueDate.startsWith(month))) {
+      return NextResponse.json(
+        { success: false, message: "La fecha tiene que ser del mismo mes." },
+        { status: 400 }
+      );
+    }
+
     const budget = await upsertBudget(
       contexto.householdId,
       categoryId,
       month,
-      Math.round(amount * 100)
+      Math.round(amount * 100),
+      dueDate
     );
 
     return NextResponse.json({ success: true, data: budget });

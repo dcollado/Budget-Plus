@@ -49,6 +49,36 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Presupuesto redesign + payment dates (2026-09-30)
+Feedback from David and Caro. `/presupuesto` now:
+- Shows **two months at once**: the chosen month and the next one
+  (`MesPanel` x2; side by side on desktop, stacked on mobile).
+- Per month: 4 widgets — Ingresos (fixed + variable income), Gastos fijos,
+  Gastos variables, Por gastar (= ingresos − fijos − variables). The old
+  Planeado/Gastado tiles and the in-list totals footer are gone.
+- **Variables del mes** first: one list of variable expenses *and*
+  variable incomes, sorted by payment date, with "+ Gasto variable" /
+  "+ Ingreso variable" buttons. Only items with an amount that month are
+  listed — Restaurantes/Entretenimiento/Misceláneos (at $0) no longer
+  show; they were not archived.
+- **Gastos fijos** second, compact one-line rows (date · name · amount),
+  read-only, sorted by payment date. No separate Ingresos fijos section
+  (covered by the Ingresos widget).
+
+**Payment dates** (Caro wants to sort by when things get paid):
+- Fixed categories: `Category.dueDay` (1–31), new column **G** of
+  `Categories`. Set once in Configuración ("Día" field) and applied to
+  every month (clamped to the month's last day). `PATCH
+  /api/hogar/categorias` updates it.
+- Variable items: `Budget.dueDate` (YYYY-MM-DD), new column **F** of
+  `Budgets`, set when adding/editing the item. The API rejects dates
+  outside the budget's month.
+
+**PROD sheet:** both new columns are appended at the end, so the code works
+against the PROD sheet without changes (missing cells read as "no date").
+Headers `dueDay` (Categories!G1) and `dueDate` (Budgets!F1) were added to
+the Test sheet only; add them to PROD when promoting (cosmetic).
+
 ## Summary tiles fix (2026-09-29)
 `/presupuesto`'s top tiles were wrong: "Ingresos" showed `actualIncomeCents`
 (from real Transactions) instead of `plannedIncomeCents`, so it always
