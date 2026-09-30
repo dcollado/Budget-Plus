@@ -4,6 +4,7 @@ import { getContextoHogar } from "@/lib/household/contexto";
 import {
   listBudgets,
   listCategories,
+  listMembers,
   listTransactions,
   upsertBudget,
 } from "@/lib/household/sheets";
@@ -46,10 +47,11 @@ export async function GET(req: NextRequest) {
     const monthParam = req.nextUrl.searchParams.get("month")?.trim();
     const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : mesActual();
 
-    const [categories, budgets, transactions] = await Promise.all([
+    const [categories, budgets, transactions, members] = await Promise.all([
       listCategories(contexto.householdId),
       listBudgets(contexto.householdId),
       listTransactions(contexto.householdId),
+      listMembers(contexto.householdId),
     ]);
 
     const items = armarVistaMes(categories, budgets, transactions, month);
@@ -75,7 +77,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { month, items, totales },
+      data: {
+        month,
+        items,
+        totales,
+        members: members.map((m) => ({ id: m.id, displayName: m.displayName })),
+      },
     });
   } catch (error) {
     console.error("Error obteniendo presupuesto:", error);

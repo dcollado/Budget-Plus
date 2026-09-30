@@ -45,6 +45,8 @@ export type Category = {
   fixed: boolean;
   // Día del mes en que se paga (1-31), solo para fijas. null = sin fecha.
   dueDay: number | null;
+  // De quién es el gasto (member id). "" = conjunto.
+  ownerMemberId: string;
 };
 
 export type Budget = {

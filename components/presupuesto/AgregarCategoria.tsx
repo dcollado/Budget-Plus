@@ -5,6 +5,8 @@ import { Plus } from "lucide-react";
 import type { CategoryKind } from "@/lib/household/schema";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
+import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
   kind: CategoryKind;
@@ -16,6 +18,8 @@ type Props = {
   // "fila" = botón a lo ancho de una lista; "boton" = pill compacto, para
   // ponerlo suelto (ej. los accesos rápidos de Presupuesto).
   variant?: "fila" | "boton";
+  // Si se pasa (Configuración), muestra un selector de dueño del gasto.
+  members?: MiembroHogar[];
 };
 
 export default function AgregarCategoria({
@@ -24,12 +28,14 @@ export default function AgregarCategoria({
   onAgregado,
   fixed = false,
   variant = "fila",
+  members,
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
   const [fecha, setFecha] = useState("");
   const [dia, setDia] = useState("");
+  const [dueno, setDueno] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,6 +48,7 @@ export default function AgregarCategoria({
     setMonto("");
     setFecha("");
     setDia("");
+    setDueno("");
     setError("");
   }
 
@@ -74,7 +81,13 @@ export default function AgregarCategoria({
       const resCategoria = await fetch("/api/hogar/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nombre.trim(), kind, fixed, dueDay }),
+        body: JSON.stringify({
+          name: nombre.trim(),
+          kind,
+          fixed,
+          dueDay,
+          ownerMemberId: dueno,
+        }),
       });
 
       const dataCategoria = await resCategoria.json();
@@ -207,6 +220,21 @@ export default function AgregarCategoria({
             />
           )}
         </div>
+        {members && members.length > 0 ? (
+          <select
+            value={dueno}
+            onChange={(e) => setDueno(e.target.value)}
+            aria-label="De quién es"
+            className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
+          >
+            <option value="">Conjunto</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                {nombreMiembro(members, m.id)}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"

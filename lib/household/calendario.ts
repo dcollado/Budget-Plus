@@ -136,21 +136,35 @@ async function guardarEvento(calendar: Calendar, calendarId: string, evento: Eve
   }
 }
 
-// Deja el calendario de un mes igual a lo que hay en el presupuesto:
-// crea/actualiza los pagos con fecha y monto, y borra los que ya no están.
-// Solo toca eventos que creó esta app (marcados con bpApp).
-export async function sincronizarMes(householdId: string, month: string) {
-  const calendarId = getCalendarId();
-  if (!calendarId) return;
+type DatosHogar = {
+  categories: Awaited<ReturnType<typeof listCategories>>;
+  budgets: Awaited<ReturnType<typeof listBudgets>>;
+  transactions: Awaited<ReturnType<typeof listTransactions>>;
+};
 
-  const calendar = getCalendarClient();
-
-  const [categories, budgets, transactions, existentes] = await Promise.all([
+// Lecturas de la hoja que necesita una sincronización. Se hacen una sola
+// vez aunque se sincronicen varios meses: Google Sheets limita a 60
+// lecturas por minuto, y cada guardado ya dispara una sincronización.
+async function leerDatosHogar(householdId: string): Promise<DatosHogar> {
+  const [categories, budgets, transactions] = await Promise.all([
     listCategories(householdId),
     listBudgets(householdId),
     listTransactions(householdId),
-    listarEventosDelMes(calendar, calendarId, householdId, month),
   ]);
+  return { categories, budgets, transactions };
+}
+
+// Deja el calendario de un mes igual a lo que hay en el presupuesto:
+// crea/actualiza los pagos con fecha y monto, y borra los que ya no están.
+// Solo toca eventos que creó esta app (marcados con bpApp).
+async function sincronizarMes(
+  calendar: Calendar,
+  calendarId: string,
+  householdId: string,
+  month: string,
+  { categories, budgets, transactions }: DatosHogar
+) {
+  const existentes = await listarEventosDelMes(calendar, calendarId, householdId, month);
 
   const deseados = armarVistaMes(categories, budgets, transactions, month)
     .filter((i) => i.fechaPago && i.plannedAmountCents > 0)
@@ -195,8 +209,14 @@ export async function sincronizarMes(householdId: string, month: string) {
 // El mes dado y el siguiente — lo que muestra Presupuesto, y lo mínimo
 // para que un cambio en una fija (que se hereda) llegue al mes que viene.
 export async function sincronizarDosMeses(householdId: string, month: string) {
-  await sincronizarMes(householdId, month);
-  await sincronizarMes(householdId, mesSiguiente(month));
+  const calendarId = getCalendarId();
+  if (!calendarId) return;
+
+  const calendar = getCalendarClient();
+  const datos = await leerDatosHogar(householdId);
+
+  await sincronizarMes(calendar, calendarId, householdId, month, datos);
+  await sincronizarMes(calendar, calendarId, householdId, mesSiguiente(month), datos);
 }
 
 // Al borrar (archivar) una categoría, saca todos sus eventos, de cualquier mes.

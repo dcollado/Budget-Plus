@@ -49,6 +49,25 @@ Rules:
 3. Chat capture: **deferred** (not in scope for the first version). Idea kept for later: text or receipt photo to a bot, LLM extraction, allow-listed numbers only.
 4. DGI QR scan is kept as an additional manual entry method (existing parser).
 
+## Fixed expenses per person (2026-09-30)
+Categories got an owner: `Category.ownerMemberId`, new column **H** of
+`Categories` ("" = conjunto). Needed because David and Caro each have
+their own fixed list and names repeat (e.g. both have "Nana"). Shown as
+a small D / C tag on each row; Presupuesto's fixed section also shows a
+per-person subtotal. Owner is picked when adding a fixed expense in
+Configuración.
+
+The fixed-expense list was replaced with David and Caro's real one (15
+David = $2,607.02, 19 Caro = $1,300.04, total $3,907.06; Caro's "Gatas"
+left out on purpose, it had no amount). The 15 previous placeholder fixed
+expenses were archived, not deleted. **Applied to the Test sheet only** —
+still to be applied to PROD when promoting.
+
+Google Sheets allows 60 reads/min; each save costs a few reads and, in
+production, the calendar sync after it costs 3 more (it reads the sheet
+once for both months). Normal use is well under the limit; bulk loads
+need to be paced.
+
 ## Google Calendar payment reminders (2026-09-30)
 Every budget item with a payment date and amount > 0 (fixed and variable,
 expense and income) becomes an all-day event in the shared calendar

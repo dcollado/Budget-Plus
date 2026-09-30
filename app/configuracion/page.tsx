@@ -14,7 +14,7 @@ function mesActualISO(): string {
 export default function ConfiguracionPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const month = mesActualISO();
-  const { items, cargando, error, handleGuardado, agregarItem, eliminarItem } =
+  const { items, members, cargando, error, handleGuardado, agregarItem, eliminarItem } =
     usePresupuestoMes(month);
 
   useEffect(() => {
@@ -75,11 +75,18 @@ export default function ConfiguracionPage() {
                   onEliminar={eliminarItem}
                   mostrarProgreso={false}
                   editarDia
+                  members={members}
                 />
               ))
             )}
 
-            <AgregarCategoria kind="expense" month={month} onAgregado={agregarItem} fixed />
+            <AgregarCategoria
+              kind="expense"
+              month={month}
+              onAgregado={agregarItem}
+              fixed
+              members={members}
+            />
           </div>
 
           <div className={`${sectionCardClass} mt-4 p-0`}>

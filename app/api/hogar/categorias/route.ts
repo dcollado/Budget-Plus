@@ -5,6 +5,7 @@ import {
   actualizarDiaPago,
   archivarCategory,
   crearCategory,
+  listMembers,
 } from "@/lib/household/sheets";
 import type { CategoryKind } from "@/lib/household/schema";
 import {
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
     const kind = String(body.kind ?? "expense");
     const fixed = Boolean(body.fixed);
     const dueDay = parseDueDay(body.dueDay);
+    const ownerMemberId = String(body.ownerMemberId ?? "").trim();
 
     if (!name) {
       return NextResponse.json(
@@ -73,12 +75,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (ownerMemberId) {
+      const members = await listMembers(contexto.householdId);
+
+      if (!members.some((m) => m.id === ownerMemberId)) {
+        return NextResponse.json(
+          { success: false, message: "Ese miembro no es de este hogar." },
+          { status: 400 }
+        );
+      }
+    }
+
     const category = await crearCategory({
       householdId: contexto.householdId,
       name,
       kind: kind as CategoryKind,
       fixed,
       dueDay,
+      ownerMemberId,
     });
 
     return NextResponse.json({ success: true, data: category });

@@ -7,6 +7,7 @@ import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { ordenarPorFecha } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearMes } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
+import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
   month: string;
@@ -30,7 +31,7 @@ function Widget({
 }
 
 export default function MesPanel({ month }: Props) {
-  const { items, cargando, error, handleGuardado, agregarItem, eliminarItem } =
+  const { items, members, cargando, error, handleGuardado, agregarItem, eliminarItem } =
     usePresupuestoMes(month);
 
   const suma = (lista: typeof items) =>
@@ -54,6 +55,18 @@ export default function MesPanel({ month }: Props) {
   const totalFijos = suma(gastosFijos);
   const totalVariables = suma(gastosVariables);
   const porGastar = ingresos - totalFijos - totalVariables;
+
+  // Subtotal de fijos por persona (y "Conjunto" si hay alguno sin dueño).
+  const fijosPorDueno = [
+    ...members.map((m) => ({
+      nombre: nombreMiembro(members, m.id),
+      total: suma(gastosFijos.filter((i) => i.category.ownerMemberId === m.id)),
+    })),
+    {
+      nombre: "Conjunto",
+      total: suma(gastosFijos.filter((i) => !i.category.ownerMemberId)),
+    },
+  ].filter((d) => d.total > 0);
 
   return (
     <section className="min-w-0">
@@ -115,11 +128,17 @@ export default function MesPanel({ month }: Props) {
           </Link>
         </div>
 
+        {fijosPorDueno.length > 0 ? (
+          <p className="border-b border-line px-4 py-2 text-xs text-text-muted">
+            {fijosPorDueno.map((d) => `${d.nombre} ${formatearCentavos(d.total)}`).join(" · ")}
+          </p>
+        ) : null}
+
         {cargando ? (
           <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
         ) : (
           gastosFijos.map((item) => (
-            <FilaCompacta key={item.category.id} item={item} month={month} />
+            <FilaCompacta key={item.category.id} item={item} month={month} members={members} />
           ))
         )}
       </div>

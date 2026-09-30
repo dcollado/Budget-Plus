@@ -5,6 +5,8 @@ import { Lock, Trash2 } from "lucide-react";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
+import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
   item: CategoriaDelMes;
@@ -22,6 +24,7 @@ type Props = {
   onEliminar?: (categoryId: string) => void;
   // Muestra un campo "Día" (1-31) para el día de pago de una fija.
   editarDia?: boolean;
+  members?: MiembroHogar[];
 };
 
 export default function FilaPresupuesto({
@@ -32,6 +35,7 @@ export default function FilaPresupuesto({
   readOnly = false,
   onEliminar,
   editarDia = false,
+  members = [],
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   // Día guardado (para saber si el campo cambió) y el que se está editando.
@@ -149,6 +153,7 @@ export default function FilaPresupuesto({
           <span className="break-words text-sm font-medium text-text">
             {item.category.name}
           </span>
+          <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
           {item.category.fixed ? (
             <span
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-soft text-gold"

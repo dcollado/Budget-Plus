@@ -23,7 +23,7 @@ export const ACCOUNTS_SHEET = "Accounts";
 export const ACCOUNTS_RANGE = `${ACCOUNTS_SHEET}!A:G`; // id, householdId, name, type, ownerMemberId, openingBalanceCents, archived
 
 export const CATEGORIES_SHEET = "Categories";
-export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:G`; // id, householdId, name, kind, archived, fixed, dueDay
+export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:H`; // id, householdId, name, kind, archived, fixed, dueDay, ownerMemberId
 
 export const BUDGETS_SHEET = "Budgets";
 export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:F`; // id, householdId, categoryId, month, plannedAmountCents, dueDate
@@ -199,6 +199,7 @@ function buildCategory(row: string[]): Category {
     archived: boolFrom(row[4]),
     fixed: boolFrom(row[5]),
     dueDay: dayFrom(row[6]),
+    ownerMemberId: row[7] ?? "",
   };
 }
 
@@ -211,11 +212,15 @@ export async function listCategories(
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay"> & { dueDay?: number | null }
+  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId"> & {
+    dueDay?: number | null;
+    ownerMemberId?: string;
+  }
 ): Promise<Category> {
   const category: Category = {
     ...input,
     dueDay: input.dueDay ?? null,
+    ownerMemberId: input.ownerMemberId ?? "",
     id: randomUUID(),
     archived: false,
   };
@@ -228,6 +233,7 @@ export async function crearCategory(
     "false",
     category.fixed ? "true" : "false",
     category.dueDay ?? "",
+    category.ownerMemberId,
   ]);
 
   return category;

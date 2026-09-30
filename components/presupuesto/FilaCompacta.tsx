@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearFechaCorta } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
+import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
   item: CategoriaDelMes;
@@ -12,11 +14,18 @@ type Props = {
   // Sin onGuardado = solo lectura (los fijos, que se editan en Configuración).
   onGuardado?: (categoryId: string, plannedAmountCents: number, fechaPago?: string) => void;
   onEliminar?: (categoryId: string) => void;
+  members?: MiembroHogar[];
 };
 
 // Una sola línea: fecha · nombre · monto. Pensada para listas largas en
 // mobile — el nombre se trunca en vez de empujar el monto a otra línea.
-export default function FilaCompacta({ item, month, onGuardado, onEliminar }: Props) {
+export default function FilaCompacta({
+  item,
+  month,
+  onGuardado,
+  onEliminar,
+  members = [],
+}: Props) {
   const [editando, setEditando] = useState(false);
   const [monto, setMonto] = useState(String(item.plannedAmountCents / 100));
   const [fecha, setFecha] = useState(item.fechaPago);
@@ -95,9 +104,7 @@ export default function FilaCompacta({ item, month, onGuardado, onEliminar }: Pr
 
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate text-sm text-text">{item.category.name}</span>
-          {item.category.fixed ? (
-            <Lock size={11} className="shrink-0 text-gold" aria-label="Fijo" />
-          ) : null}
+          <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
         </span>
 
         <span className="flex items-center gap-1">

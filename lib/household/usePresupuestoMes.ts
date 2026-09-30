@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
 
+export type MiembroHogar = { id: string; displayName: string };
+
 export type TotalesMes = {
   plannedIncomeCents: number;
   actualIncomeCents: number;
@@ -14,6 +16,7 @@ export type TotalesMes = {
 export function usePresupuestoMes(month: string, refreshKey = 0) {
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
   const [totales, setTotales] = useState<TotalesMes | null>(null);
+  const [members, setMembers] = useState<MiembroHogar[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,6 +37,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
 
       setItems(data.data.items);
       setTotales(data.data.totales);
+      setMembers(data.data.members ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
     } finally {
@@ -119,5 +123,14 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     });
   }
 
-  return { items, totales, cargando, error, handleGuardado, agregarItem, eliminarItem };
+  return {
+    items,
+    totales,
+    members,
+    cargando,
+    error,
+    handleGuardado,
+    agregarItem,
+    eliminarItem,
+  };
 }
