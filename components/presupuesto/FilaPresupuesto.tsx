@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock, Trash2 } from "lucide-react";
+import { Check, Lock, Trash2 } from "lucide-react";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
@@ -25,6 +25,9 @@ type Props = {
   // Muestra un campo "Día" (1-31) para el día de pago de una fija.
   editarDia?: boolean;
   members?: MiembroHogar[];
+  // Una sola línea: nombre · monto · día · guardar · borrar. Para las
+  // listas largas de Configuración (los rótulos van en el encabezado).
+  compacta?: boolean;
 };
 
 export default function FilaPresupuesto({
@@ -36,6 +39,7 @@ export default function FilaPresupuesto({
   onEliminar,
   editarDia = false,
   members = [],
+  compacta = false,
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   // Día guardado (para saber si el campo cambió) y el que se está editando.
@@ -51,7 +55,7 @@ export default function FilaPresupuesto({
     setValor(String(item.plannedAmountCents / 100));
   }, [item.plannedAmountCents]);
 
-  const montoCambio = Number(valor || 0) * 100 !== item.plannedAmountCents;
+  const montoCambio = Math.round(Number(valor || 0) * 100) !== item.plannedAmountCents;
   const diaCambio = editarDia && dia !== diaGuardado;
   const dirty = montoCambio || diaCambio;
   const planned = item.plannedAmountCents;
@@ -144,6 +148,64 @@ export default function FilaPresupuesto({
       setError(err instanceof Error ? err.message : "Error eliminando.");
       setEliminando(false);
     }
+  }
+
+  if (compacta) {
+    return (
+      <div className="border-b border-line px-3 py-1.5 last:border-0">
+        <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem] items-center gap-1.5">
+          <span className="break-words text-sm text-text">{item.category.name}</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            inputMode="decimal"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            aria-label={`Monto de ${item.category.name}`}
+            className={`${fieldBaseClass} ${fieldNormalClass} px-2! py-1! text-right text-sm`}
+          />
+          {editarDia ? (
+            <input
+              type="number"
+              min="1"
+              max="31"
+              inputMode="numeric"
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+              placeholder="—"
+              aria-label={`Día de pago de ${item.category.name}`}
+              className={`${fieldBaseClass} ${fieldNormalClass} px-1! py-1! text-center text-sm`}
+            />
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            onClick={guardar}
+            disabled={!dirty || guardando}
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold text-ink transition disabled:invisible"
+            aria-label={`Guardar ${item.category.name}`}
+          >
+            {guardando ? "…" : <Check size={14} />}
+          </button>
+          {onEliminar ? (
+            <button
+              type="button"
+              onClick={eliminar}
+              disabled={eliminando}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-rust/10 hover:text-rust disabled:opacity-50"
+              aria-label={`Eliminar ${item.category.name}`}
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : (
+            <span />
+          )}
+        </div>
+        {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}
+      </div>
+    );
   }
 
   return (

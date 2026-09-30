@@ -7,6 +7,8 @@ import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import GestionCuentas from "@/components/presupuesto/GestionCuentas";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
+import { formatearCentavos } from "@/lib/household/formato";
+import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 
 function mesActualISO(): string {
   const hoy = new Date();
@@ -68,8 +70,27 @@ function Configuracion() {
   const gastosFijos = items.filter((i) => i.category.kind === "expense" && i.category.fixed);
   const ingresosFijos = items.filter((i) => i.category.kind === "income" && i.category.fixed);
 
+  const suma = (lista: typeof items) => lista.reduce((t, i) => t + i.plannedAmountCents, 0);
+
+  // Un grupo por persona (yo primero) y "Conjunto" para los sin dueño.
+  const gruposFijos = [
+    ...[...members].sort((a, b) => (a.id === yo ? -1 : b.id === yo ? 1 : 0)).map((m) => m.id),
+    "",
+  ]
+    .map((id) => ({
+      id,
+      nombre: id ? nombreMiembro(members, id) : "los dos",
+      color: colorMiembro(members, id),
+      items: gastosFijos.filter((i) =>
+        id ? i.category.ownerMemberId === id : !members.some((m) => m.id === i.category.ownerMemberId)
+      ),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+    <main
+      className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? "max-w-5xl" : "max-w-3xl"}`}
+    >
       <div className="mb-5">
         <p className="text-sm font-medium text-gold">Configuración</p>
         <h1 className="font-serif text-3xl font-semibold text-text">
@@ -139,40 +160,10 @@ function Configuracion() {
 
       {hogarConfigurado && tab === "fijos" ? (
         <>
-          <div className={`${sectionCardClass} p-0`}>
-            <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Gastos fijos
-            </h2>
-
-            {cargando ? (
-              <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
-            ) : (
-              gastosFijos.map((item) => (
-                <FilaPresupuesto
-                  key={item.category.id}
-                  item={item}
-                  month={month}
-                  onGuardado={handleGuardado}
-                  onEliminar={eliminarItem}
-                  mostrarProgreso={false}
-                  editarDia
-                  members={members}
-                />
-              ))
-            )}
-
-            <AgregarCategoria
-              kind="expense"
-              month={month}
-              onAgregado={agregarItem}
-              fixed
-              members={members}
-            />
-          </div>
-
-          <div className={`${sectionCardClass} mt-4 p-0`}>
-            <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
+          <div className={`${sectionCardClass} p-0!`}>
+            <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold text-text">
               Ingresos fijos
+              <span className="text-sage">{formatearCentavos(suma(ingresosFijos))}</span>
             </h2>
 
             {cargando ? (
@@ -186,11 +177,60 @@ function Configuracion() {
                   onGuardado={handleGuardado}
                   onEliminar={eliminarItem}
                   mostrarProgreso={false}
+                  compacta
                 />
               ))
             )}
 
             <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} fixed />
+          </div>
+
+          {/* Gastos fijos agrupados por persona, cada grupo con su color
+              (David azul, Caro rojo). Lado a lado en pantallas anchas. */}
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {cargando ? (
+              <p className="py-6 text-center text-sm text-text-muted">Cargando...</p>
+            ) : (
+              gruposFijos.map((grupo) => (
+                <div
+                  key={grupo.id || "conjunto"}
+                  className={`${sectionCardClass} border-t-4 p-0! ${grupo.color.borde}`}
+                >
+                  <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold">
+                    <span className={grupo.color.texto}>Fijos de {grupo.nombre}</span>
+                    <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
+                  </h2>
+                  <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted">
+                    <span />
+                    <span className="text-right">Monto</span>
+                    <span className="text-center">Día</span>
+                  </div>
+                  {grupo.items.map((item) => (
+                    <FilaPresupuesto
+                      key={item.category.id}
+                      item={item}
+                      month={month}
+                      onGuardado={handleGuardado}
+                      onEliminar={eliminarItem}
+                      mostrarProgreso={false}
+                      editarDia
+                      members={members}
+                      compacta
+                    />
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className={`${sectionCardClass} mt-4 p-0`}>
+            <AgregarCategoria
+              kind="expense"
+              month={month}
+              onAgregado={agregarItem}
+              fixed
+              members={members}
+            />
           </div>
         </>
       ) : null}
