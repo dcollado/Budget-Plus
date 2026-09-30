@@ -73,6 +73,7 @@ export default function ConfiguracionPage() {
                   month={month}
                   onGuardado={handleGuardado}
                   onEliminar={eliminarItem}
+                  mostrarProgreso={false}
                 />
               ))
             )}
