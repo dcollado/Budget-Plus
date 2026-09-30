@@ -105,12 +105,18 @@ export default function FilaPresupuesto({
 
   return (
     <div className="border-b border-line px-4 py-3 last:border-0">
-      <div className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-1.5">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-text">{item.category.name}</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="break-words text-sm font-medium text-text">
+            {item.category.name}
+          </span>
           {item.category.fixed ? (
-            <span className="flex items-center gap-1 rounded-full bg-gold-soft px-2 py-0.5 text-xs text-gold">
-              <Lock size={11} /> Fijo
+            <span
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-soft text-gold"
+              title="Fijo"
+              aria-label="Fijo"
+            >
+              <Lock size={11} />
             </span>
           ) : null}
           {item.inherited ? (
@@ -118,14 +124,11 @@ export default function FilaPresupuesto({
           ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 justify-self-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {mostrarProgreso ? (
-            <>
-              <span className="w-20 text-right text-sm text-text-muted">
-                {formatearCentavos(actual)}
-              </span>
-              <span className="text-text-muted">/</span>
-            </>
+            <span className="whitespace-nowrap text-sm text-text-muted">
+              {formatearCentavos(actual)} /
+            </span>
           ) : null}
           {readOnly ? (
             <span className="w-24 text-right text-sm font-medium text-text">
