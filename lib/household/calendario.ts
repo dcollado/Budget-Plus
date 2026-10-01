@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { google, type calendar_v3 } from "googleapis";
 import { armarVistaMes, type CategoriaDelMes } from "./presupuesto";
-import { listBudgets, listCategories, listTransactions } from "./sheets";
+import { listBudgets, listCategories, listTransactions } from "./datos";
 import { formatearCentavos, formatearMes, mesSiguiente } from "./formato";
 
 // Sincroniza los pagos del presupuesto a un Google Calendar compartido

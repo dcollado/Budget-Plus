@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listHouseholds } from "@/lib/household/sheets";
+import { listHouseholds } from "@/lib/household/datos";
 import { mesActual, sincronizarDosMeses } from "@/lib/household/calendario";
 
 // Corre una vez por día (vercel.json) y sincroniza el mes actual y el

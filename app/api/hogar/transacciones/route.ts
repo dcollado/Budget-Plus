@@ -5,7 +5,7 @@ import {
   crearTransaction,
   eliminarTransaction,
   listTransactions,
-} from "@/lib/household/sheets";
+} from "@/lib/household/datos";
 import type {
   TransactionSource,
   TransactionType,

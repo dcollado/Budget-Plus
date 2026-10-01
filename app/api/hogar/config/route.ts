@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar, getCuentasYCategorias } from "@/lib/household/contexto";
-import { listMembers } from "@/lib/household/sheets";
+import { listMembers } from "@/lib/household/datos";
 
 // Da todo lo que necesita la pantalla de transacciones para armar sus
 // selects: cuentas, categorías y miembros del hogar. Una sola llamada en

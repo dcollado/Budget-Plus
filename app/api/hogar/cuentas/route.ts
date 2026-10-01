@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar } from "@/lib/household/contexto";
-import { actualizarCuenta, crearCuenta, listCuentas } from "@/lib/household/sheets";
+import { actualizarCuenta, crearCuenta, listCuentas } from "@/lib/household/datos";
 
 // Cuentas destino de las transferencias ("Cuenta Chippu", "Caro"...). Son
 // del hogar: cualquiera de los dos las ve y les puede asignar sus fijos.

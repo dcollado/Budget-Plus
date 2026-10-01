@@ -7,7 +7,7 @@ import {
   crearCategory,
   listCuentas,
   listMembers,
-} from "@/lib/household/sheets";
+} from "@/lib/household/datos";
 import type { CategoryKind } from "@/lib/household/schema";
 import {
   borrarEventosDeCategoria,

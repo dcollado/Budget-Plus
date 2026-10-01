@@ -1,4 +1,15 @@
 import { getSheetsClient } from "@/lib/google-sheets";
+import { getSql, usaPostgres } from "@/lib/db";
+
+// Con DATA_BACKEND=postgres los usuarios salen de la tabla usuarios.
+type FilaUsuario = { id: string; nombre: string; usuario: string; password_hash: string; activo: boolean };
+const aUsuario = (r: FilaUsuario): Usuario => ({
+  id: r.id,
+  nombre: r.nombre,
+  usuario: r.usuario,
+  passwordHash: r.password_hash,
+  activo: r.activo,
+});
 
 export type Usuario = {
   id: string;
@@ -24,6 +35,12 @@ function buildUsuario(row: string[]): Usuario {
 export async function buscarUsuarioPorNombreDeUsuario(
   usuario: string
 ): Promise<Usuario | null> {
+  if (usaPostgres()) {
+    const [fila] = await getSql()<FilaUsuario[]>`
+      select * from usuarios where lower(usuario) = lower(${usuario.trim()})`;
+    return fila ? aUsuario(fila) : null;
+  }
+
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId) {
@@ -48,6 +65,10 @@ export async function buscarUsuarioPorNombreDeUsuario(
 }
 
 export async function listarUsuarios(): Promise<Usuario[]> {
+  if (usaPostgres()) {
+    return (await getSql()<FilaUsuario[]>`select * from usuarios`).map(aUsuario);
+  }
+
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId) {

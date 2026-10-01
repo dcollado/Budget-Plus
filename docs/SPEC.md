@@ -294,3 +294,11 @@ per-month `Budget` already cover it.
   the newer "Préstamos" and "Tarjetas" categories (2026-09-29). Left as-is,
   not auto-merged — ask David/Caro how they want to split it before it
   causes double-counting.
+
+## Base de datos: Supabase (Postgres)
+
+- Esquema en `supabase/migrations/`. Mismo modelo que las hojas; ids de texto, montos en centavos, "" de la hoja = NULL.
+- `lib/household/datos.ts` es el único punto de acceso a los datos. Según `DATA_BACKEND` usa `backend-postgres.ts` (`postgres`) o `backend-sheets.ts` (cualquier otro valor / sin definir = hoja). Las dos tienen las mismas funciones; el tipo lo exige.
+- Login (`lib/usuarios-sheet.ts`) sigue la misma variable.
+- `DATABASE_URL` = Transaction pooler de Supabase (puerto 6543, `prepare: false`).
+- Copiar la hoja a la base: `node --env-file=.env.local scripts/migrar-a-supabase.mjs` (solo lee la hoja; vacía y rellena la base en una transacción; compara conteos y sumas).
