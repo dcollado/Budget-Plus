@@ -63,16 +63,54 @@ function dayFrom(value: string | undefined): number | null {
   return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
 }
 
-async function readRows(range: string): Promise<string[][]> {
-  const sheets = await getSheetsClient();
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: getSheetId(),
-    range,
-  });
+// Google Sheets permite 60 lecturas por minuto. Cada pantalla pide varias
+// hojas (y Presupuesto dos meses a la vez), así que navegar rápido se
+// comía la cuota. Las lecturas se guardan unos segundos en memoria y las
+// que están en vuelo se comparten; cualquier escritura vacía el caché.
+const CACHE_MS = 20_000;
+const cacheLecturas = new Map<string, { hasta: number; filas: Promise<string[][]> }>();
 
-  const rows = response.data.values ?? [];
-  // La primera fila es el encabezado.
-  return rows.slice(1) as string[][];
+function invalidarLecturas() {
+  cacheLecturas.clear();
+}
+
+function esCuotaExcedida(error: unknown): boolean {
+  const e = error as { code?: number; status?: number; response?: { status?: number } };
+  return e?.code === 429 || e?.status === 429 || e?.response?.status === 429;
+}
+
+async function leerDeLaHoja(range: string): Promise<string[][]> {
+  const sheets = await getSheetsClient();
+
+  // Si igual se pasa de la cuota, espera a que se libere (se renueva por
+  // minuto) en vez de mostrar un error.
+  for (let intento = 0; ; intento++) {
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: getSheetId(),
+        range,
+      });
+      // La primera fila es el encabezado.
+      return ((response.data.values ?? []) as string[][]).slice(1);
+    } catch (error) {
+      if (!esCuotaExcedida(error) || intento >= 3) throw error;
+      await new Promise((r) => setTimeout(r, 5_000 * (intento + 1)));
+    }
+  }
+}
+
+async function readRows(range: string): Promise<string[][]> {
+  const ahora = Date.now();
+  const enCache = cacheLecturas.get(range);
+  if (enCache && enCache.hasta > ahora) return enCache.filas;
+
+  const filas = leerDeLaHoja(range);
+  cacheLecturas.set(range, { hasta: ahora + CACHE_MS, filas });
+  // Un error no se queda en caché.
+  filas.catch(() => {
+    if (cacheLecturas.get(range)?.filas === filas) cacheLecturas.delete(range);
+  });
+  return filas;
 }
 
 async function appendRow(sheet: string, row: (string | number)[]) {
@@ -83,6 +121,7 @@ async function appendRow(sheet: string, row: (string | number)[]) {
     valueInputOption: "RAW",
     requestBody: { values: [row] },
   });
+  invalidarLecturas();
 }
 
 // ---------- Households ----------
@@ -281,6 +320,7 @@ export async function archivarCategory(
     valueInputOption: "RAW",
     requestBody: { values: [["true"]] },
   });
+  invalidarLecturas();
 
   return true;
 }
@@ -323,6 +363,7 @@ export async function actualizarCategoria(
       spreadsheetId: sheetId,
       requestBody: { valueInputOption: "RAW", data },
     });
+    invalidarLecturas();
   }
 
   return true;
@@ -391,6 +432,7 @@ export async function actualizarCuenta(
     spreadsheetId: sheetId,
     requestBody: { valueInputOption: "RAW", data },
   });
+  invalidarLecturas();
 
   return true;
 }
@@ -476,6 +518,7 @@ export async function upsertBudget(
     valueInputOption: "RAW",
     requestBody: { values: [[plannedAmountCents, fechaFinal]] },
   });
+  invalidarLecturas();
 
   return { id, householdId, categoryId, month, plannedAmountCents, dueDate: fechaFinal };
 }
@@ -601,6 +644,7 @@ export async function eliminarTransaction(
       ],
     },
   });
+  invalidarLecturas();
 
   return true;
 }

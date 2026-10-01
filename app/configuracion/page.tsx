@@ -63,8 +63,9 @@ function Configuracion() {
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
       .then((res) => res.json())
-      .then((data) => setHogarConfigurado(Boolean(data?.data?.hogarConfigurado)))
-      .catch(() => setHogarConfigurado(false));
+      // Si falla (ej. cuota de Sheets) no es "sin hogar": se deja en null.
+      .then((data) => data?.success && setHogarConfigurado(Boolean(data.data?.hogarConfigurado)))
+      .catch(() => {});
   }, []);
 
   const gastosFijos = items.filter((i) => i.category.kind === "expense" && i.category.fixed);
