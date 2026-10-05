@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import type { CategoryKind } from "@/lib/household/schema";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
-import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
@@ -20,6 +20,8 @@ type Props = {
   variant?: "fila" | "boton";
   // Si se pasa (Configuración), muestra un selector de dueño del gasto.
   members?: MiembroHogar[];
+  // Gasto variable: selector de a qué cuenta va (solo informativo).
+  cuentas?: CuentaHogar[];
 };
 
 export default function AgregarCategoria({
@@ -29,6 +31,7 @@ export default function AgregarCategoria({
   fixed = false,
   variant = "fila",
   members,
+  cuentas,
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -36,6 +39,7 @@ export default function AgregarCategoria({
   const [fecha, setFecha] = useState("");
   const [dia, setDia] = useState("");
   const [dueno, setDueno] = useState("");
+  const [cuentaId, setCuentaId] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,6 +53,7 @@ export default function AgregarCategoria({
     setFecha("");
     setDia("");
     setDueno("");
+    setCuentaId("");
     setError("");
   }
 
@@ -96,7 +101,20 @@ export default function AgregarCategoria({
         throw new Error(dataCategoria.message || "No se pudo crear la categoría.");
       }
 
-      const category = dataCategoria.data;
+      let category = dataCategoria.data;
+
+      if (cuentaId) {
+        const resCuenta = await fetch("/api/hogar/categorias", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: category.id, cuentaId }),
+        });
+        const dataCuenta = await resCuenta.json();
+        if (!resCuenta.ok || !dataCuenta.success) {
+          throw new Error(dataCuenta.message || "No se pudo guardar la cuenta.");
+        }
+        category = { ...category, cuentaId };
+      }
 
       if (plannedAmountCents > 0) {
         const resMonto = await fetch("/api/hogar/presupuesto", {
@@ -220,6 +238,21 @@ export default function AgregarCategoria({
             />
           )}
         </div>
+        {!fixed && kind === "expense" && cuentas && cuentas.length > 0 ? (
+          <select
+            value={cuentaId}
+            onChange={(e) => setCuentaId(e.target.value)}
+            aria-label="A qué cuenta va"
+            className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
+          >
+            <option value="">¿A qué cuenta va? (opcional)</option>
+            {cuentas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        ) : null}
         {members && members.length > 0 ? (
           <select
             value={dueno}

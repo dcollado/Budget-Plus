@@ -33,7 +33,17 @@ function Widget({
 }
 
 export default function MesPanel({ month, datos }: Props) {
-  const { items, members, cargando, error, handleGuardado, agregarItem, eliminarItem } = datos;
+  const {
+    items,
+    members,
+    cuentas,
+    cargando,
+    error,
+    handleGuardado,
+    agregarItem,
+    eliminarItem,
+    asignarCuenta,
+  } = datos;
 
   const suma = (lista: typeof items) =>
     lista.reduce((total, i) => total + i.plannedAmountCents, 0);
@@ -111,12 +121,20 @@ export default function MesPanel({ month, datos }: Props) {
               month={month}
               onGuardado={handleGuardado}
               onEliminar={eliminarItem}
+              cuentas={cuentas}
+              onCuenta={asignarCuenta}
             />
           ))
         )}
 
         <div className="flex flex-wrap gap-2 border-t border-line p-3">
-          <AgregarCategoria kind="expense" month={month} onAgregado={agregarItem} variant="boton" />
+          <AgregarCategoria
+            kind="expense"
+            month={month}
+            onAgregado={agregarItem}
+            variant="boton"
+            cuentas={cuentas}
+          />
           <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} variant="boton" />
         </div>
       </div>

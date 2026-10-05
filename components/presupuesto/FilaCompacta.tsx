@@ -5,7 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearFechaCorta } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
-import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
@@ -15,6 +15,10 @@ type Props = {
   onGuardado?: (categoryId: string, plannedAmountCents: number, fechaPago?: string) => void;
   onEliminar?: (categoryId: string) => void;
   members?: MiembroHogar[];
+  // Gastos variables: a qué cuenta va esa plata extra. Solo se muestra;
+  // no suma al cuadro de transferencias (ese es solo de fijos).
+  cuentas?: CuentaHogar[];
+  onCuenta?: (categoryId: string, cuentaId: string) => void;
 };
 
 // Una sola línea: fecha · nombre · monto. Pensada para listas largas en
@@ -25,20 +29,26 @@ export default function FilaCompacta({
   onGuardado,
   onEliminar,
   members = [],
+  cuentas = [],
+  onCuenta,
 }: Props) {
   const [editando, setEditando] = useState(false);
   const [monto, setMonto] = useState(String(item.plannedAmountCents / 100));
   const [fecha, setFecha] = useState(item.fechaPago);
+  const [cuentaId, setCuentaId] = useState(item.category.cuentaId);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
   const esIngreso = item.category.kind === "income";
   const [anio, mes] = month.split("-").map(Number);
   const ultimoDia = new Date(anio, mes, 0).getDate();
+  const conCuenta = !esIngreso && Boolean(onCuenta);
+  const nombreCuenta = cuentas.find((c) => c.id === item.category.cuentaId)?.name;
 
   function abrir() {
     setMonto(String(item.plannedAmountCents / 100));
     setFecha(item.fechaPago);
+    setCuentaId(item.category.cuentaId);
     setError("");
     setEditando(true);
   }
@@ -63,6 +73,19 @@ export default function FilaCompacta({
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "No se pudo guardar.");
+      }
+
+      if (conCuenta && cuentaId !== item.category.cuentaId) {
+        const resCuenta = await fetch("/api/hogar/categorias", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.category.id, cuentaId }),
+        });
+        const dataCuenta = await resCuenta.json();
+        if (!resCuenta.ok || !dataCuenta.success) {
+          throw new Error(dataCuenta.message || "No se pudo guardar la cuenta.");
+        }
+        onCuenta?.(item.category.id, cuentaId);
       }
 
       onGuardado?.(item.category.id, Math.round(Number(monto || 0) * 100), fecha);
@@ -102,9 +125,14 @@ export default function FilaCompacta({
           {item.fechaPago ? formatearFechaCorta(item.fechaPago) : "—"}
         </span>
 
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-sm text-text">{item.category.name}</span>
-          <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
+        <span className="min-w-0">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-sm text-text">{item.category.name}</span>
+            <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
+          </span>
+          {conCuenta && nombreCuenta ? (
+            <span className="block truncate text-[11px] text-text-muted">→ {nombreCuenta}</span>
+          ) : null}
         </span>
 
         <span className="flex items-center gap-1">
@@ -159,6 +187,21 @@ export default function FilaCompacta({
             aria-label="Fecha de pago"
             className={`${fieldBaseClass} ${fieldNormalClass} w-36 flex-1 py-1.5`}
           />
+          {conCuenta ? (
+            <select
+              value={cuentas.some((c) => c.id === cuentaId) ? cuentaId : ""}
+              onChange={(e) => setCuentaId(e.target.value)}
+              aria-label="A qué cuenta va"
+              className={`${fieldBaseClass} ${fieldNormalClass} w-full py-1.5 text-sm`}
+            >
+              <option value="">Sin cuenta</option>
+              {cuentas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button
             type="button"
             onClick={guardar}
