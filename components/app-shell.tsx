@@ -37,8 +37,12 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
 
-  const isLoginPage =
-    pathname === "/login";
+  const isLoginPage = [
+    "/login",
+    "/invitacion",
+    "/olvide",
+    "/restablecer",
+  ].includes(pathname);
 
   const [menuOpen, setMenuOpen] =
     useState(false);
@@ -49,20 +53,29 @@ export function AppShell({
   const [esSuperadmin, setEsSuperadmin] =
     useState(false);
 
+  const [esAdminHogar, setEsAdminHogar] =
+    useState(false);
+
   useEffect(() => {
     if (isLoginPage) return;
 
     fetch("/api/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((json) =>
-        setEsSuperadmin(json?.data?.esSuperadmin === true)
-      )
-      .catch(() => setEsSuperadmin(false));
+      .then((json) => {
+        setEsSuperadmin(json?.data?.esSuperadmin === true);
+        setEsAdminHogar(json?.data?.rol === "admin");
+      })
+      .catch(() => {
+        setEsSuperadmin(false);
+        setEsAdminHogar(false);
+      });
   }, [isLoginPage]);
 
-  const links = esSuperadmin
-    ? [...navLinks, { href: "/admin", label: "Hogares" }]
-    : navLinks;
+  const links = [
+    ...navLinks,
+    ...(esAdminHogar ? [{ href: "/miembros", label: "Miembros" }] : []),
+    ...(esSuperadmin ? [{ href: "/admin", label: "Hogares" }] : []),
+  ];
 
   if (isLoginPage) {
     return <>{children}</>;

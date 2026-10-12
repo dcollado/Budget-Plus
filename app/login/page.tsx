@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ReceiptText } from "lucide-react";
 
@@ -221,6 +222,15 @@ export default function LoginPage() {
               >
                 {loading ? "Iniciando sesión..." : "Iniciar sesión"}
               </button>
+
+              <p className="text-center text-sm">
+                <Link
+                  href="/olvide"
+                  className="text-text-muted underline hover:text-text"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </p>
             </form>
           </div>
 

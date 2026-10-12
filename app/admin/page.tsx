@@ -10,7 +10,7 @@ import {
 } from "@/lib/ui";
 import type { HogarResumen } from "@/lib/admin/hogares";
 
-type Creado = { usuario: string; passwordTemporal: string; hogar: string };
+type Creado = { hogar: string; email: string; enlaceDev?: string };
 
 export default function AdminPage() {
   const [hogares, setHogares] = useState<HogarResumen[] | null>(null);
@@ -19,7 +19,6 @@ export default function AdminPage() {
   const [creado, setCreado] = useState<Creado | null>(null);
 
   const [nombreHogar, setNombreHogar] = useState("");
-  const [adminNombre, setAdminNombre] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
 
   const cargar = useCallback(async () => {
@@ -52,19 +51,22 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/hogares", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreHogar, adminNombre, adminEmail }),
+        body: JSON.stringify({ nombreHogar, adminEmail }),
       });
       const json = (await res.json()) as {
-        data?: { usuario: string; passwordTemporal: string };
+        data?: { enlaceDev?: string };
         message?: string;
       };
       if (!res.ok || !json.data) {
         setError(json.message ?? "No se pudo crear el hogar.");
         return;
       }
-      setCreado({ ...json.data, hogar: nombreHogar.trim() });
+      setCreado({
+        hogar: nombreHogar.trim(),
+        email: adminEmail.trim(),
+        enlaceDev: json.data.enlaceDev,
+      });
       setNombreHogar("");
-      setAdminNombre("");
       setAdminEmail("");
       await cargar();
     } finally {
@@ -81,18 +83,17 @@ export default function AdminPage() {
       {creado ? (
         <div className={`${sectionCardClass} border-gold`}>
           <p className="text-sm font-medium text-text">
-            Hogar «{creado.hogar}» creado. Entrégale estos datos al administrador:
-          </p>
-          <p className="mt-2 text-sm text-text">
-            Usuario: <span className="font-mono">{creado.usuario}</span>
-          </p>
-          <p className="text-sm text-text">
-            Contraseña temporal:{" "}
-            <span className="font-mono">{creado.passwordTemporal}</span>
+            Hogar «{creado.hogar}» creado. Enviamos la invitación a{" "}
+            <span className="font-mono">{creado.email}</span>.
           </p>
           <p className={helperTextClass}>
-            Se muestra una sola vez y no queda guardada en claro.
+            La persona define su nombre y contraseña desde el enlace (vence en 7 días).
           </p>
+          {creado.enlaceDev ? (
+            <p className="mt-2 break-all text-xs text-text-muted">
+              Solo desarrollo: <span className="font-mono">{creado.enlaceDev}</span>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -108,35 +109,23 @@ export default function AdminPage() {
             required
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={labelClass} htmlFor="adminNombre">Administrador</label>
-            <input
-              id="adminNombre"
-              value={adminNombre}
-              onChange={(e) => setAdminNombre(e.target.value)}
-              className={`${fieldBaseClass} ${fieldNormalClass}`}
-              required
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="adminEmail">Correo del administrador</label>
-            <input
-              id="adminEmail"
-              type="email"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              className={`${fieldBaseClass} ${fieldNormalClass}`}
-              required
-            />
-          </div>
+        <div>
+          <label className={labelClass} htmlFor="adminEmail">Correo del administrador</label>
+          <input
+            id="adminEmail"
+            type="email"
+            value={adminEmail}
+            onChange={(e) => setAdminEmail(e.target.value)}
+            className={`${fieldBaseClass} ${fieldNormalClass}`}
+            required
+          />
         </div>
         <button
           type="submit"
           disabled={guardando}
           className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
         >
-          {guardando ? "Creando..." : "Crear hogar"}
+          {guardando ? "Enviando invitación..." : "Crear hogar e invitar"}
         </button>
       </form>
 

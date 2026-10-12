@@ -8,7 +8,17 @@ import {
 import type { SessionPayload } from "@/lib/auth-session";
 
 // /api/cron: lo llama Vercel sin sesión; la ruta verifica CRON_SECRET.
-const PUBLIC_ROUTES = ["/login", "/api/login", "/api/cron"];
+// Invitación y recuperación de contraseña: el token del enlace es el secreto.
+const PUBLIC_ROUTES = [
+  "/login",
+  "/api/login",
+  "/api/cron",
+  "/invitacion",
+  "/api/invitacion",
+  "/olvide",
+  "/restablecer",
+  "/api/password",
+];
 
 // Módulos que leen la hoja de Google (un solo hogar). Solo los hogares con
 // usa_modulos_legacy pueden llamarlos; el resto usa /api/hogar/*.

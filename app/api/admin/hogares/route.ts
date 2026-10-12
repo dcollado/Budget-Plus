@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requerirSuperadmin } from "@/lib/auth/acceso";
-import { crearHogarConAdmin, ErrorAdmin, listarHogares } from "@/lib/admin/hogares";
+import { crearHogarConAdmin, listarHogares } from "@/lib/admin/hogares";
+import { ErrorCuenta } from "@/lib/auth/cuentas";
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,20 +25,29 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json()) as {
       nombreHogar?: unknown;
-      adminNombre?: unknown;
       adminEmail?: unknown;
     };
     const texto = (v: unknown) => (typeof v === "string" ? v : "");
 
     const data = await crearHogarConAdmin({
       nombreHogar: texto(body.nombreHogar),
-      adminNombre: texto(body.adminNombre),
       adminEmail: texto(body.adminEmail),
+      invitedBy: r.acceso.usuarioId,
     });
 
-    return NextResponse.json({ success: true, data }, { status: 201 });
+    // El enlace solo se devuelve fuera de producción, para probar sin correo.
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          householdId: data.householdId,
+          enlaceDev: process.env.NODE_ENV === "production" ? undefined : data.enlace,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    if (error instanceof ErrorAdmin) {
+    if (error instanceof ErrorCuenta) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
     console.error("Error creando hogar:", error);

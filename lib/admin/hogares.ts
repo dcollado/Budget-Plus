@@ -1,6 +1,5 @@
-import { randomBytes, randomUUID } from "node:crypto";
 import { getSql } from "@/lib/db";
-import { hashPassword } from "@/lib/password-hash";
+import { crearInvitacion, ErrorCuenta, normalizarEmail } from "@/lib/auth/cuentas";
 
 // Categorías de arranque de un hogar nuevo (genéricas: las de un hogar
 // real tienen nombres propios). El admin las ajusta desde Configuración.
@@ -58,48 +57,25 @@ export async function listarHogares(): Promise<HogarResumen[]> {
   }));
 }
 
-export class ErrorAdmin extends Error {}
-
 export async function crearHogarConAdmin(input: {
   nombreHogar: string;
-  adminNombre: string;
   adminEmail: string;
-}): Promise<{ householdId: string; usuario: string; passwordTemporal: string }> {
-  const email = input.adminEmail.trim().toLowerCase();
+  invitedBy: string;
+}): Promise<{ householdId: string; enlace: string }> {
+  const nombre = input.nombreHogar.trim();
+  if (!nombre) throw new ErrorCuenta("Falta el nombre del hogar.");
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ErrorAdmin("El correo no es válido.");
-  }
-  if (!input.nombreHogar.trim() || !input.adminNombre.trim()) {
-    throw new ErrorAdmin("Falta el nombre del hogar o del administrador.");
-  }
-
+  // Validar antes de crear nada: si el correo ya tiene cuenta, no queda un
+  // hogar vacío.
+  const email = normalizarEmail(input.adminEmail);
   const sql = getSql();
-
   const [existe] = await sql`
     select 1 from usuarios where lower(email) = ${email} or lower(usuario) = ${email}`;
-  if (existe) {
-    throw new ErrorAdmin("Ese correo ya tiene una cuenta.");
-  }
-
-  // Provisional hasta que existan las invitaciones por correo: se entrega
-  // una vez al super-admin para que se la pase al administrador.
-  const passwordTemporal = randomBytes(9).toString("base64url");
-  const passwordHash = await hashPassword(passwordTemporal);
-  const userId = randomUUID();
+  if (existe) throw new ErrorCuenta("Ese correo ya tiene una cuenta.");
 
   const householdId = await sql.begin(async (tx) => {
     const [h] = await tx<{ id: string }[]>`
-      insert into households (name) values (${input.nombreHogar.trim()}) returning id`;
-
-    // El login busca por "usuario": usamos el correo.
-    await tx`
-      insert into usuarios (id, nombre, usuario, password_hash, activo, email)
-      values (${userId}, ${input.adminNombre.trim()}, ${email}, ${passwordHash}, true, ${email})`;
-
-    await tx`
-      insert into members (household_id, user_id, display_name, role)
-      values (${h.id}, ${userId}, ${input.adminNombre.trim()}, 'admin')`;
+      insert into households (name) values (${nombre}) returning id`;
 
     for (const c of CATEGORIAS_BASE) {
       await tx`
@@ -115,5 +91,13 @@ export async function crearHogarConAdmin(input: {
     return h.id;
   });
 
-  return { householdId, usuario: email, passwordTemporal };
+  // La persona define su nombre y contraseña al aceptar la invitación.
+  const { enlace } = await crearInvitacion({
+    householdId,
+    email,
+    role: "admin",
+    invitedBy: input.invitedBy,
+  });
+
+  return { householdId, enlace };
 }
