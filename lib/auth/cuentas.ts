@@ -129,6 +129,26 @@ export async function listarInvitacionesPendientes(
   }));
 }
 
+// Genera un token nuevo (el anterior deja de servir) y vuelve a enviar el correo.
+export async function reenviarInvitacion(input: {
+  householdId: string;
+  invitacionId: string;
+  invitedBy: string;
+}): Promise<{ enlace: string }> {
+  const [inv] = await getSql()<{ email: string; role: "admin" | "member" }[]>`
+    select email, role from invitaciones
+    where id = ${input.invitacionId} and household_id = ${input.householdId} and used_at is null`;
+
+  if (!inv) throw new ErrorCuenta("La invitación ya no existe.");
+
+  return crearInvitacion({
+    householdId: input.householdId,
+    email: inv.email,
+    role: inv.role,
+    invitedBy: input.invitedBy,
+  });
+}
+
 export async function cancelarInvitacion(householdId: string, id: string): Promise<void> {
   await getSql()`
     delete from invitaciones where id = ${id} and household_id = ${householdId} and used_at is null`;
@@ -246,4 +266,18 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
       update password_resets set used_at = now()
       where user_id = ${reset.user_id} and used_at is null`;
   });
+}
+
+// Para el super-admin: manda el enlace de nueva contraseña a un miembro.
+export async function enviarResetAMiembro(householdId: string, userId: string): Promise<void> {
+  const [fila] = await getSql()<{ email: string | null; activo: boolean }[]>`
+    select u.email, u.activo
+    from members m join usuarios u on u.id = m.user_id
+    where m.household_id = ${householdId} and m.user_id = ${userId}`;
+
+  if (!fila) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+  if (!fila.email) throw new ErrorCuenta("Esa persona no tiene correo registrado.");
+  if (!fila.activo) throw new ErrorCuenta("La cuenta está desactivada: reactívala primero.");
+
+  await solicitarReset(fila.email);
 }

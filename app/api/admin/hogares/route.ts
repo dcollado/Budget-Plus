@@ -8,7 +8,10 @@ export async function GET(req: NextRequest) {
     const r = await requerirSuperadmin(req);
     if (!r.ok) return r.response;
 
-    return NextResponse.json({ success: true, data: await listarHogares() });
+    return NextResponse.json({
+      success: true,
+      data: { hogares: await listarHogares(), yo: r.acceso.usuarioId },
+    });
   } catch (error) {
     console.error("Error listando hogares:", error);
     return NextResponse.json(

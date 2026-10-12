@@ -73,8 +73,9 @@ export function AppShell({
 
   const links = [
     ...navLinks,
-    ...(esAdminHogar ? [{ href: "/miembros", label: "Miembros" }] : []),
-    ...(esSuperadmin ? [{ href: "/admin", label: "Hogares" }] : []),
+    // El super-admin gestiona todo (incluido su hogar) desde /admin.
+    ...(esAdminHogar && !esSuperadmin ? [{ href: "/miembros", label: "Miembros" }] : []),
+    ...(esSuperadmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   if (isLoginPage) {

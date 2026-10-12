@@ -28,6 +28,7 @@ export type HogarResumen = {
   name: string;
   usaModulosLegacy: boolean;
   miembros: { userId: string; nombre: string; email: string | null; role: string; activo: boolean }[];
+  invitaciones: { id: string; email: string; role: string; venceEn: string }[];
 };
 
 export async function listarHogares(): Promise<HogarResumen[]> {
@@ -41,6 +42,13 @@ export async function listarHogares(): Promise<HogarResumen[]> {
     from members m join usuarios u on u.id = m.user_id
     order by m.role, m.display_name`;
 
+  const invitaciones = await sql<
+    { id: string; household_id: string; email: string; role: string; expires_at: Date }[]
+  >`
+    select id, household_id, email, role, expires_at from invitaciones
+    where used_at is null and expires_at > now()
+    order by created_at desc`;
+
   return hogares.map((h) => ({
     id: h.id,
     name: h.name,
@@ -53,6 +61,14 @@ export async function listarHogares(): Promise<HogarResumen[]> {
         email: m.email,
         role: m.role,
         activo: m.activo,
+      })),
+    invitaciones: invitaciones
+      .filter((i) => i.household_id === h.id)
+      .map((i) => ({
+        id: i.id,
+        email: i.email,
+        role: i.role,
+        venceEn: i.expires_at.toISOString(),
       })),
   }));
 }
