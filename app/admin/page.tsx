@@ -295,7 +295,7 @@ function TarjetaHogar({
                         className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
                         title="Enviar enlace para que cambie su contraseña"
                       >
-                        <Mail size={14} /> Resetear contraseña
+                        <Mail size={14} /> Restablecer contraseña
                       </button>
                     ) : null}
                     {soyYo ? null : m.activo ? (
