@@ -8,6 +8,19 @@ import {
 // /api/cron: lo llama Vercel sin sesión; la ruta verifica CRON_SECRET.
 const PUBLIC_ROUTES = ["/login", "/api/login", "/api/cron"];
 
+// Módulos que leen la hoja de Google (un solo hogar). Solo los hogares con
+// usa_modulos_legacy pueden llamarlos; el resto usa /api/hogar/*.
+const LEGACY_API = [
+  "/api/facturas",
+  "/api/movimientos",
+  "/api/deudas",
+  "/api/items-fijos",
+  "/api/pagos-deuda",
+  "/api/compras-tarjeta",
+  "/api/reportes",
+  "/items-fijos",
+];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -38,6 +51,17 @@ export async function middleware(req: NextRequest) {
     loginUrl.searchParams.set("next", pathname);
 
     return NextResponse.redirect(loginUrl);
+  }
+
+  const esLegacy = LEGACY_API.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  if (esLegacy && session.legacy === false) {
+    return NextResponse.json(
+      { error: "Este módulo no está disponible para tu hogar." },
+      { status: 403 }
+    );
   }
 
   // Pasa la identidad ya verificada a las rutas vía headers, para que no

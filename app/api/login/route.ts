@@ -5,6 +5,7 @@ import {
 } from "@/lib/auth-session";
 import { buscarUsuarioPorNombreDeUsuario } from "@/lib/usuarios-sheet";
 import { verifyPassword } from "@/lib/password-hash";
+import { obtenerAcceso } from "@/lib/auth/acceso";
 
 export async function POST(request: Request) {
   try {
@@ -43,7 +44,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = await createSessionToken(usuario.id, usuario.usuario);
+    const acceso = await obtenerAcceso(usuario.id);
+    const token = await createSessionToken(
+      usuario.id,
+      usuario.usuario,
+      acceso?.usaModulosLegacy ?? false
+    );
     const response = NextResponse.json({ success: true });
 
     response.cookies.set(COOKIE_NAME, token, {
