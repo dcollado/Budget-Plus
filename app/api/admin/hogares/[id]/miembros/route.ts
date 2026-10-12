@@ -35,7 +35,7 @@ export async function DELETE(req: NextRequest, { params }: Contexto) {
   try {
     const r = await requerirSuperadmin(req);
     if (!r.ok) return r.response;
-    return await accionDelete(req, (await params).id);
+    return await accionDelete(req, (await params).id, r.acceso);
   } catch (error) {
     return manejarError(error, "No se pudo cancelar la invitación.");
   }

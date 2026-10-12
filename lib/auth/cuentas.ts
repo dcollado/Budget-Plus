@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { hashPassword } from "@/lib/password-hash";
 import { correoInvitacion, correoReset, urlApp } from "@/lib/mail";
 import { olvidarEstado } from "@/lib/auth/sesion-vigente";
+import { registrarEvento } from "@/lib/auth/eventos";
 
 // Error con mensaje seguro para mostrar al usuario.
 export class ErrorCuenta extends Error {}
@@ -64,6 +65,13 @@ export async function crearInvitacion(input: {
 
   const enlace = urlApp(`/invitacion?token=${token}`);
   await correoInvitacion({ to: email, hogar: hogar.name, enlace });
+  await registrarEvento({
+    accion: "invitar",
+    actorUserId: input.invitedBy,
+    householdId: input.householdId,
+    objetivo: email,
+    detalle: input.role === "admin" ? "como admin" : "como miembro",
+  });
   return { enlace };
 }
 
@@ -88,6 +96,8 @@ export async function aceptarInvitacion(input: {
   const password = validarPassword(input.password);
   const passwordHash = await hashPassword(password);
   const userId = randomUUID();
+  let hogarDeAlta = "";
+  let correoDeAlta = "";
 
   await getSql().begin(async (tx) => {
     // El UPDATE ... returning consume la invitación de forma atómica: dos
@@ -98,6 +108,8 @@ export async function aceptarInvitacion(input: {
       returning household_id, email, role`;
 
     if (!inv) throw new ErrorCuenta("La invitación no es válida o ya venció.");
+    hogarDeAlta = inv.household_id;
+    correoDeAlta = inv.email;
 
     const [existe] = await tx`
       select 1 from usuarios where lower(email) = ${inv.email} or lower(usuario) = ${inv.email}`;
@@ -121,6 +133,13 @@ export async function aceptarInvitacion(input: {
     await tx`
       insert into members (household_id, user_id, display_name, role, color)
       values (${inv.household_id}, ${userId}, ${nombre}, ${inv.role}, ${color})`;
+  });
+
+  await registrarEvento({
+    accion: "aceptar_invitacion",
+    actorUserId: userId,
+    householdId: hogarDeAlta,
+    objetivo: correoDeAlta,
   });
 }
 
@@ -153,17 +172,41 @@ export async function reenviarInvitacion(input: {
 
   if (!inv) throw new ErrorCuenta("La invitación ya no existe.");
 
-  return crearInvitacion({
+  const resultado = await crearInvitacion({
     householdId: input.householdId,
     email: inv.email,
     role: inv.role,
     invitedBy: input.invitedBy,
   });
+
+  await registrarEvento({
+    accion: "reenviar_invitacion",
+    actorUserId: input.invitedBy,
+    householdId: input.householdId,
+    objetivo: inv.email,
+  });
+
+  return resultado;
 }
 
-export async function cancelarInvitacion(householdId: string, id: string): Promise<void> {
-  await getSql()`
-    delete from invitaciones where id = ${id} and household_id = ${householdId} and used_at is null`;
+export async function cancelarInvitacion(
+  householdId: string,
+  id: string,
+  actorUserId?: string
+): Promise<void> {
+  const [inv] = await getSql()<{ email: string }[]>`
+    delete from invitaciones
+    where id = ${id} and household_id = ${householdId} and used_at is null
+    returning email`;
+
+  if (inv) {
+    await registrarEvento({
+      accion: "cancelar_invitacion",
+      actorUserId,
+      householdId,
+      objetivo: inv.email,
+    });
+  }
 }
 
 // ---------- Miembros ----------
@@ -224,6 +267,13 @@ export async function cambiarEstadoMiembro(input: {
 
   await sql`update usuarios set activo = ${input.activo} where id = ${input.userId}`;
   olvidarEstado(input.userId);
+
+  await registrarEvento({
+    accion: input.activo ? "reactivar_miembro" : "quitar_miembro",
+    actorUserId: input.actorUserId,
+    householdId: input.householdId,
+    objetivoUserId: input.userId,
+  });
 }
 
 // ---------- Recuperar contraseña ----------
@@ -292,12 +342,15 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
   });
 
   olvidarEstado(userId);
+
+  await registrarEvento({ accion: "contrasena_restablecida", actorUserId: userId });
 }
 
 // Edita nombre, correo y/o rol de un miembro. Solo cambia lo que viene.
 export async function editarMiembro(input: {
   householdId: string;
   userId: string;
+  actorUserId: string;
   actorEsSuperadmin: boolean;
   nombre?: string;
   email?: string;
@@ -361,13 +414,28 @@ export async function editarMiembro(input: {
       await tx`update members set role = ${input.role} where id = ${m.id}`;
     }
   });
+
+  const cambios = [
+    input.nombre !== undefined ? "nombre" : "",
+    input.email !== undefined ? "correo" : "",
+    input.role !== undefined ? `rol→${input.role}` : "",
+  ].filter(Boolean);
+
+  await registrarEvento({
+    accion: "editar_miembro",
+    actorUserId: input.actorUserId,
+    householdId: input.householdId,
+    objetivoUserId: input.userId,
+    detalle: cambios.join(", "),
+  });
 }
 
 // Para el super-admin: manda el enlace de nueva contraseña a un miembro.
 export async function enviarResetAMiembro(
   householdId: string,
   userId: string,
-  actorEsSuperadmin: boolean
+  actorEsSuperadmin: boolean,
+  actorUserId: string
 ): Promise<void> {
   const [fila] = await getSql()<
     { email: string | null; activo: boolean; es_superadmin: boolean }[]
@@ -384,4 +452,11 @@ export async function enviarResetAMiembro(
   if (!fila.activo) throw new ErrorCuenta("La cuenta está desactivada: reactívala primero.");
 
   await solicitarReset(fila.email);
+
+  await registrarEvento({
+    accion: "enviar_restablecer",
+    actorUserId,
+    householdId,
+    objetivo: fila.email,
+  });
 }

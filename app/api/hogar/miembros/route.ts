@@ -52,7 +52,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const r = await requerirAdminHogar(req);
     if (!r.ok) return r.response;
-    return await accionDelete(req, r.acceso.householdId!);
+    return await accionDelete(req, r.acceso.householdId!, r.acceso);
   } catch (error) {
     return manejarError(error, "No se pudo cancelar la invitación.");
   }

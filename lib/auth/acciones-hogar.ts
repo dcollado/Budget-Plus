@@ -63,7 +63,7 @@ export async function accionPost(
   }
 
   if (body.accion === "reset" && typeof body.userId === "string") {
-    await enviarResetAMiembro(householdId, body.userId, actor.esSuperadmin);
+    await enviarResetAMiembro(householdId, body.userId, actor.esSuperadmin, actor.usuarioId);
     return NextResponse.json({ success: true });
   }
 
@@ -98,6 +98,7 @@ export async function accionPatch(
     await editarMiembro({
       householdId,
       userId: body.userId,
+      actorUserId: actor.usuarioId,
       actorEsSuperadmin: actor.esSuperadmin,
       nombre: typeof body.nombre === "string" ? body.nombre : undefined,
       email: typeof body.email === "string" ? body.email : undefined,
@@ -109,11 +110,15 @@ export async function accionPatch(
 }
 
 // Cancelar una invitación pendiente: ?id=...
-export async function accionDelete(req: NextRequest, householdId: string): Promise<NextResponse> {
+export async function accionDelete(
+  req: NextRequest,
+  householdId: string,
+  actor: Acceso
+): Promise<NextResponse> {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) {
     return NextResponse.json({ success: false, message: "Falta la invitación." }, { status: 400 });
   }
-  await cancelarInvitacion(householdId, id);
+  await cancelarInvitacion(householdId, id, actor.usuarioId);
   return NextResponse.json({ success: true });
 }

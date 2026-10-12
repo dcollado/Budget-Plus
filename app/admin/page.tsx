@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
+import Actividad from "@/components/admin/Actividad";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -19,6 +20,8 @@ export default function AdminPage() {
   const [yo, setYo] = useState("");
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  // Sube cada vez que se recarga: la actividad abierta se actualiza sola.
+  const [version, setVersion] = useState(0);
 
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
   const [nombreHogar, setNombreHogar] = useState("");
@@ -42,6 +45,7 @@ export default function AdminPage() {
     }
     setHogares(json.data.hogares);
     setYo(json.data.yo);
+    setVersion((v) => v + 1);
   }, []);
 
   useEffect(() => {
@@ -213,6 +217,8 @@ export default function AdminPage() {
           />
         ))
       )}
+
+      <Actividad refrescar={version} />
     </main>
   );
 }

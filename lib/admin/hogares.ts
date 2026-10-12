@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { registrarEvento } from "@/lib/auth/eventos";
 import { crearInvitacion, ErrorCuenta, normalizarEmail } from "@/lib/auth/cuentas";
 
 // Categorías de arranque de un hogar nuevo (genéricas: las de un hogar
@@ -114,6 +115,14 @@ export async function crearHogarConAdmin(input: {
     }
 
     return h.id;
+  });
+
+  await registrarEvento({
+    accion: "crear_hogar",
+    actorUserId: input.invitedBy,
+    householdId,
+    objetivo: email,
+    detalle: nombre,
   });
 
   // La persona define su nombre y contraseña al aceptar la invitación.
