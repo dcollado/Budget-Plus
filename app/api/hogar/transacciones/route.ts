@@ -6,6 +6,7 @@ import {
   eliminarTransaction,
   listTransactions,
 } from "@/lib/household/datos";
+import { validarReferencias } from "@/lib/household/pertenencia";
 import type {
   TransactionSource,
   TransactionType,
@@ -130,11 +131,23 @@ export async function POST(req: NextRequest) {
       ? (fuenteRaw as TransactionSource)
       : "manual";
 
+    const categoryIdFinal = type === "transfer" ? "" : String(body.categoryId ?? "").trim();
+
+    const errorRef = await validarReferencias(contexto.householdId, {
+      categoryId: categoryIdFinal,
+      accountIds: [accountId, transferAccountId],
+      memberId: ownerMemberIdRaw,
+    });
+
+    if (errorRef) {
+      return NextResponse.json({ success: false, message: errorRef }, { status: 400 });
+    }
+
     const transaction = await crearTransaction({
       householdId: contexto.householdId,
       accountId,
       transferAccountId,
-      categoryId: type === "transfer" ? "" : String(body.categoryId ?? "").trim(),
+      categoryId: categoryIdFinal,
       type: type as TransactionType,
       amountCents: Math.round(amount * 100),
       date,

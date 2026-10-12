@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { google, type calendar_v3 } from "googleapis";
 import { armarVistaMes, type CategoriaDelMes } from "./presupuesto";
 import { listBudgets, listCategories, listTransactions } from "./datos";
+import { getSql, usaPostgres } from "@/lib/db";
 import { formatearCentavos, formatearMes, mesSiguiente } from "./formato";
 
 // Sincroniza los pagos del presupuesto a un Google Calendar compartido
@@ -20,6 +21,18 @@ const APP_TAG = "budgetplus";
 
 function getCalendarId(): string | null {
   return process.env.GOOGLE_CALENDAR_ID?.trim() || null;
+}
+
+// Con Postgres, solo los hogares con sincroniza_calendario escriben en el
+// calendario compartido (hoy, solo el original). Con la hoja no hay hogares
+// ajenos: siempre sincroniza.
+async function hogarSincroniza(householdId: string): Promise<boolean> {
+  if (!usaPostgres()) return true;
+
+  const [fila] = await getSql()<{ sincroniza_calendario: boolean }[]>`
+    select sincroniza_calendario from households where id = ${householdId}`;
+
+  return fila?.sincroniza_calendario === true;
 }
 
 function getCalendarClient(): Calendar {
@@ -211,6 +224,7 @@ async function sincronizarMes(
 export async function sincronizarDosMeses(householdId: string, month: string) {
   const calendarId = getCalendarId();
   if (!calendarId) return;
+  if (!(await hogarSincroniza(householdId))) return;
 
   const calendar = getCalendarClient();
   const datos = await leerDatosHogar(householdId);
@@ -223,6 +237,7 @@ export async function sincronizarDosMeses(householdId: string, month: string) {
 export async function borrarEventosDeCategoria(householdId: string, categoryId: string) {
   const calendarId = getCalendarId();
   if (!calendarId) return;
+  if (!(await hogarSincroniza(householdId))) return;
 
   const calendar = getCalendarClient();
   const res = await calendar.events.list({

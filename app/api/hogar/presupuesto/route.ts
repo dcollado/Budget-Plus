@@ -11,6 +11,7 @@ import {
 } from "@/lib/household/datos";
 import { armarVistaMes } from "@/lib/household/presupuesto";
 import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
+import { validarReferencias } from "@/lib/household/pertenencia";
 
 function sinHogar() {
   return NextResponse.json(
@@ -151,6 +152,12 @@ export async function POST(req: NextRequest) {
         { success: false, message: "La fecha tiene que ser del mismo mes." },
         { status: 400 }
       );
+    }
+
+    const errorRef = await validarReferencias(contexto.householdId, { categoryId });
+
+    if (errorRef) {
+      return NextResponse.json({ success: false, message: errorRef }, { status: 400 });
     }
 
     const budget = await upsertBudget(
