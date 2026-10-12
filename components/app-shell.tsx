@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LogOut,
   Menu,
@@ -46,6 +46,24 @@ export function AppShell({
   const [loggingOut, setLoggingOut] =
     useState(false);
 
+  const [esSuperadmin, setEsSuperadmin] =
+    useState(false);
+
+  useEffect(() => {
+    if (isLoginPage) return;
+
+    fetch("/api/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) =>
+        setEsSuperadmin(json?.data?.esSuperadmin === true)
+      )
+      .catch(() => setEsSuperadmin(false));
+  }, [isLoginPage]);
+
+  const links = esSuperadmin
+    ? [...navLinks, { href: "/admin", label: "Hogares" }]
+    : navLinks;
+
   if (isLoginPage) {
     return <>{children}</>;
   }
@@ -88,7 +106,7 @@ export function AppShell({
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => {
+            {links.map((link) => {
               const activo =
                 linkActivo(link.href);
 
@@ -145,7 +163,7 @@ export function AppShell({
         {menuOpen ? (
           <nav className="border-t border-line bg-surface px-4 py-3 md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col">
-              {navLinks.map((link) => {
+              {links.map((link) => {
                 const activo =
                   linkActivo(link.href);
 
