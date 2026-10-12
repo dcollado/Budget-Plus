@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
   COOKIE_NAME,
+  createSessionToken,
   verifySessionToken,
 } from "@/lib/auth-session";
+import type { SessionPayload } from "@/lib/auth-session";
 
 // /api/cron: lo llama Vercel sin sesión; la ruta verifica CRON_SECRET.
 const PUBLIC_ROUTES = ["/login", "/api/login", "/api/cron"];
@@ -21,15 +23,46 @@ const LEGACY_API = [
   "/items-fijos",
 ];
 
+// Solo con `next dev` (NODE_ENV=development, nunca en un build de producción)
+// y si .env.local define DEV_AUTO_LOGIN_ID y DEV_AUTO_LOGIN_USER: entra solo
+// como ese usuario, sin pasar por /login.
+function usuarioDevAuto(): { id: string; usuario: string } | null {
+  if (process.env.NODE_ENV !== "development") return null;
+
+  const id = process.env.DEV_AUTO_LOGIN_ID;
+  const usuario = process.env.DEV_AUTO_LOGIN_USER;
+
+  return id && usuario ? { id, usuario } : null;
+}
+
 export async function middleware(req: NextRequest) {
+  const real = await verifySessionToken(req.cookies.get(COOKIE_NAME)?.value);
+  const dev = real ? null : usuarioDevAuto();
+
+  if (!dev) {
+    return manejar(req, real);
+  }
+
+  const token = await createSessionToken(dev.id, dev.usuario, true);
+  const sesion = await verifySessionToken(token);
+  const response = await manejar(req, sesion);
+
+  response.cookies.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 8 * 60 * 60,
+  });
+
+  return response;
+}
+
+async function manejar(req: NextRequest, session: SessionPayload | null) {
   const { pathname } = req.nextUrl;
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
-
-  const token = req.cookies.get(COOKIE_NAME)?.value;
-  const session = await verifySessionToken(token);
 
   if (pathname === "/login" && session) {
     return NextResponse.redirect(new URL("/", req.url));
