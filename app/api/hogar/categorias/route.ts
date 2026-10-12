@@ -29,7 +29,7 @@ function sinHogar() {
     {
       success: false,
       message:
-        "Tu usuario todavía no tiene un hogar configurado. Corré el script de seed.",
+        "Tu cuenta todavía no tiene un hogar. Pídele a quien administra tu hogar que te invite.",
     },
     { status: 409 }
   );

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import MesPanel from "@/components/presupuesto/MesPanel";
+import SinHogar from "@/components/presupuesto/SinHogar";
+import PrimerosPasos from "@/components/presupuesto/PrimerosPasos";
 import TarjetaTransferencias from "@/components/presupuesto/TarjetaTransferencias";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { armarCuadro } from "@/lib/household/transferencias";
 import { mesSiguiente } from "@/lib/household/formato";
-import { sectionCardClass } from "@/lib/ui";
 
 function mesActualISO(): string {
   const hoy = new Date();
@@ -50,16 +51,12 @@ export default function PresupuestoPage() {
         </label>
       </div>
 
-      {hogarConfigurado === false ? (
-        <div className={sectionCardClass}>
-          <p className="text-sm text-text">
-            Tu usuario todavía no tiene un hogar configurado. Corré el script de seed desde tu
-            computadora:
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded-xl bg-ink px-4 py-3 text-xs text-text-muted">
-            node --env-file=.env.local scripts/seed-hogar.mjs &quot;usuario1&quot; &quot;usuario2&quot;
-          </pre>
-        </div>
+      {hogarConfigurado === false ? <SinHogar /> : null}
+
+      {hogarConfigurado &&
+      !primerMes.cargando &&
+      primerMes.items.every((i) => i.plannedAmountCents === 0) ? (
+        <PrimerosPasos />
       ) : null}
 
       {hogarConfigurado ? (

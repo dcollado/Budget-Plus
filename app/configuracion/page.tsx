@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FilaPresupuesto from "@/components/presupuesto/FilaPresupuesto";
+import SinHogar from "@/components/presupuesto/SinHogar";
 import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import GestionCuentas from "@/components/presupuesto/GestionCuentas";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
@@ -133,17 +134,7 @@ function Configuracion() {
         </div>
       ) : null}
 
-      {hogarConfigurado === false ? (
-        <div className={sectionCardClass}>
-          <p className="text-sm text-text">
-            Tu usuario todavía no tiene un hogar configurado. Corré el script de seed desde tu
-            computadora:
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded-xl bg-ink px-4 py-3 text-xs text-text-muted">
-            node --env-file=.env.local scripts/seed-hogar.mjs &quot;usuario1&quot; &quot;usuario2&quot;
-          </pre>
-        </div>
-      ) : null}
+      {hogarConfigurado === false ? <SinHogar /> : null}
 
       {hogarConfigurado && tab === "cuentas" ? (
         cargando || !yo ? (
