@@ -6,6 +6,7 @@ import {
 import { buscarUsuarioPorNombreDeUsuario } from "@/lib/usuarios-sheet";
 import { passwordNecesitaRehash, verifyPassword, hashPassword } from "@/lib/password-hash";
 import { getSql, usaPostgres } from "@/lib/db";
+import { obtenerAcceso } from "@/lib/auth/acceso";
 import {
   limpiarFallos,
   loginBloqueado,
@@ -72,6 +73,15 @@ export async function POST(request: Request) {
     if (usaPostgres() && passwordNecesitaRehash(usuario.passwordHash)) {
       const nuevoHash = await hashPassword(password);
       await getSql()`update usuarios set password_hash = ${nuevoHash} where id = ${usuario.id}`;
+    }
+
+    const acceso = await obtenerAcceso(usuario.id);
+
+    if (acceso?.hogarArchivado) {
+      return NextResponse.json(
+        { error: "Tu hogar está archivado. Contacta al administrador de Budget Plus." },
+        { status: 403 }
+      );
     }
 
     const token = await createSessionToken(

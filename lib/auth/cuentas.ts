@@ -48,9 +48,10 @@ export async function crearInvitacion(input: {
     throw new ErrorCuenta("Ese correo ya tiene una cuenta.");
   }
 
-  const [hogar] = await sql<{ name: string }[]>`
-    select name from households where id = ${input.householdId}`;
+  const [hogar] = await sql<{ name: string; archivado_en: Date | null }[]>`
+    select name, archivado_en from households where id = ${input.householdId}`;
   if (!hogar) throw new ErrorCuenta("El hogar no existe.");
+  if (hogar.archivado_en) throw new ErrorCuenta("El hogar está archivado.");
 
   // Una sola invitación vigente por correo y hogar: reemplaza la anterior.
   await sql`
@@ -82,7 +83,8 @@ export async function leerInvitacion(token: string): Promise<InvitacionPublica |
   const [fila] = await getSql()<{ email: string; hogar: string }[]>`
     select i.email, h.name as hogar
     from invitaciones i join households h on h.id = i.household_id
-    where i.token_hash = ${hashToken(token)} and i.used_at is null and i.expires_at > now()`;
+    where i.token_hash = ${hashToken(token)} and i.used_at is null and i.expires_at > now()
+      and h.archivado_en is null`;
   return fila ?? null;
 }
 
@@ -103,9 +105,10 @@ export async function aceptarInvitacion(input: {
     // El UPDATE ... returning consume la invitación de forma atómica: dos
     // clics a la vez no pueden crear dos cuentas.
     const [inv] = await tx<{ household_id: string; email: string; role: string }[]>`
-      update invitaciones set used_at = now()
-      where token_hash = ${hashToken(input.token)} and used_at is null and expires_at > now()
-      returning household_id, email, role`;
+      update invitaciones i set used_at = now()
+      where i.token_hash = ${hashToken(input.token)} and i.used_at is null and i.expires_at > now()
+        and exists (select 1 from households h where h.id = i.household_id and h.archivado_en is null)
+      returning i.household_id, i.email, i.role`;
 
     if (!inv) throw new ErrorCuenta("La invitación no es válida o ya venció.");
     hogarDeAlta = inv.household_id;

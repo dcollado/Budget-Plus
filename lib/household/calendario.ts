@@ -29,10 +29,10 @@ function getCalendarId(): string | null {
 async function hogarSincroniza(householdId: string): Promise<boolean> {
   if (!usaPostgres()) return true;
 
-  const [fila] = await getSql()<{ sincroniza_calendario: boolean }[]>`
-    select sincroniza_calendario from households where id = ${householdId}`;
+  const [fila] = await getSql()<{ sincroniza_calendario: boolean; archivado_en: Date | null }[]>`
+    select sincroniza_calendario, archivado_en from households where id = ${householdId}`;
 
-  return fila?.sincroniza_calendario === true;
+  return fila?.sincroniza_calendario === true && fila.archivado_en === null;
 }
 
 function getCalendarClient(): Calendar {

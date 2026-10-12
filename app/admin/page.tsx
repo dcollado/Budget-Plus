@@ -207,6 +207,39 @@ export default function AdminPage() {
                 activo ? `${etiqueta} reactivado.` : `${etiqueta} ya no tiene acceso.`
               )
             }
+            onArchivar={() => {
+              if (
+                window.confirm(
+                  `¿Archivar «${h.name}»? Nadie del hogar podrá entrar. Los datos se conservan y puedes restaurarlo.`
+                )
+              ) {
+                void ejecutar(
+                  `/api/admin/hogares/${h.id}`,
+                  { method: "PATCH", body: JSON.stringify({ accion: "archivar" }) },
+                  `Hogar «${h.name}» archivado.`
+                );
+              }
+            }}
+            onRestaurar={() =>
+              void ejecutar(
+                `/api/admin/hogares/${h.id}`,
+                { method: "PATCH", body: JSON.stringify({ accion: "restaurar" }) },
+                `Hogar «${h.name}» restaurado.`
+              )
+            }
+            onEliminar={() => {
+              const escrito = window.prompt(
+                `Esto borra TODO el hogar «${h.name}» y las cuentas de sus miembros, sin vuelta atrás.
+
+Escribe el nombre exacto del hogar para confirmar:`
+              );
+              if (escrito === null) return;
+              void ejecutar(
+                `/api/admin/hogares/${h.id}?confirmar=${encodeURIComponent(escrito)}`,
+                { method: "DELETE" },
+                `Hogar «${h.name}» eliminado.`
+              );
+            }}
             onCancelar={(invitacionId, email) =>
               ejecutar(
                 `/api/admin/hogares/${h.id}/miembros?id=${encodeURIComponent(invitacionId)}`,

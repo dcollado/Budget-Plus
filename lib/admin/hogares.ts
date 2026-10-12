@@ -27,6 +27,10 @@ const CUENTAS_BASE = [
 export type HogarResumen = {
   id: string;
   name: string;
+  // ISO si está archivado (nadie entra, los datos se conservan).
+  archivadoEn: string | null;
+  // Tiene al super-admin adentro: no se puede archivar ni eliminar.
+  tieneSuperadmin: boolean;
   miembros: { userId: string; nombre: string; email: string | null; role: string; activo: boolean }[];
   invitaciones: { id: string; email: string; role: string; venceEn: string }[];
 };
@@ -39,10 +43,17 @@ export async function listarHogares(
   opciones: { verSuperadmin: boolean } = { verSuperadmin: true }
 ): Promise<HogarResumen[]> {
   const sql = getSql();
-  const hogares = await sql<{ id: string; name: string }[]>`
-    select id, name from households
-    ${soloHogarId ? sql`where id = ${soloHogarId}` : sql``}
-    order by name`;
+  const hogares = await sql<
+    { id: string; name: string; archivado_en: Date | null; tiene_superadmin: boolean }[]
+  >`
+    select h.id, h.name, h.archivado_en,
+           exists (
+             select 1 from members m join usuarios u on u.id = m.user_id
+             where m.household_id = h.id and u.es_superadmin
+           ) as tiene_superadmin
+    from households h
+    ${soloHogarId ? sql`where h.id = ${soloHogarId}` : sql``}
+    order by h.archivado_en nulls first, h.name`;
   const miembros = await sql<
     { household_id: string; user_id: string; display_name: string; email: string | null; role: string; activo: boolean }[]
   >`
@@ -61,6 +72,8 @@ export async function listarHogares(
   return hogares.map((h) => ({
     id: h.id,
     name: h.name,
+    archivadoEn: h.archivado_en ? h.archivado_en.toISOString() : null,
+    tieneSuperadmin: h.tiene_superadmin,
     miembros: miembros
       .filter((m) => m.household_id === h.id)
       .map((m) => ({
@@ -132,4 +145,72 @@ export async function crearHogarConAdmin(input: {
   });
 
   return { householdId, enlace };
+}
+
+async function hogarParaCambio(householdId: string) {
+  const [h] = await getSql()<
+    { name: string; archivado_en: Date | null; tiene_superadmin: boolean }[]
+  >`
+    select h.name, h.archivado_en,
+           exists (
+             select 1 from members m join usuarios u on u.id = m.user_id
+             where m.household_id = h.id and u.es_superadmin
+           ) as tiene_superadmin
+    from households h where h.id = ${householdId}`;
+
+  if (!h) throw new ErrorCuenta("El hogar no existe.");
+  if (h.tiene_superadmin) {
+    throw new ErrorCuenta("Este hogar tiene al super-admin: no se puede archivar ni eliminar.");
+  }
+  return h;
+}
+
+// Archivar: nadie del hogar entra (las sesiones caen en segundos) y los
+// datos se conservan. Es reversible.
+export async function archivarHogar(householdId: string, actorUserId: string): Promise<void> {
+  const h = await hogarParaCambio(householdId);
+  if (h.archivado_en) throw new ErrorCuenta("El hogar ya está archivado.");
+
+  await getSql()`update households set archivado_en = now() where id = ${householdId}`;
+  await registrarEvento({ accion: "archivar_hogar", actorUserId, householdId, detalle: h.name });
+}
+
+export async function restaurarHogar(householdId: string, actorUserId: string): Promise<void> {
+  const h = await hogarParaCambio(householdId);
+  if (!h.archivado_en) throw new ErrorCuenta("El hogar no está archivado.");
+
+  await getSql()`update households set archivado_en = null where id = ${householdId}`;
+  await registrarEvento({ accion: "restaurar_hogar", actorUserId, householdId, detalle: h.name });
+}
+
+// Borrado definitivo: solo de un hogar ya archivado y escribiendo su nombre.
+// Se llevan sus datos y las cuentas de sus miembros.
+export async function eliminarHogar(
+  householdId: string,
+  confirmacion: string,
+  actorUserId: string
+): Promise<void> {
+  const h = await hogarParaCambio(householdId);
+
+  if (!h.archivado_en) {
+    throw new ErrorCuenta("Primero archiva el hogar; solo uno archivado se puede eliminar.");
+  }
+  if (confirmacion.trim() !== h.name) {
+    throw new ErrorCuenta("El nombre no coincide: no se eliminó nada.");
+  }
+
+  await getSql().begin(async (tx) => {
+    const miembros = await tx<{ user_id: string }[]>`
+      select user_id from members where household_id = ${householdId}`;
+
+    // Las tablas del hogar caen en cascada (categorías, cuentas, presupuesto,
+    // transacciones, invitaciones, miembros).
+    await tx`delete from households where id = ${householdId}`;
+
+    for (const m of miembros) {
+      await tx`delete from usuarios where id = ${m.user_id} and not es_superadmin`;
+    }
+  });
+
+  await registrarEvento({ accion: "eliminar_hogar", actorUserId, detalle: h.name });
 }

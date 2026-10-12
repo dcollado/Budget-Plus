@@ -12,6 +12,7 @@ export type Acceso = {
   householdId: string | null;
   memberId: string | null;
   rol: Rol | null;
+  hogarArchivado: boolean;
 };
 
 type FilaAcceso = {
@@ -19,6 +20,7 @@ type FilaAcceso = {
   household_id: string | null;
   member_id: string | null;
   role: Rol | null;
+  archivado_en: Date | null;
 };
 
 // Lee rol y hogar en cada request (no del token) para que quitar a alguien
@@ -32,6 +34,7 @@ export async function obtenerAcceso(usuarioId: string): Promise<Acceso | null> {
       householdId: null,
       memberId: null,
       rol: null,
+      hogarArchivado: false,
     };
   }
 
@@ -39,9 +42,11 @@ export async function obtenerAcceso(usuarioId: string): Promise<Acceso | null> {
     select u.es_superadmin,
            m.household_id,
            m.id as member_id,
-           m.role
+           m.role,
+           h.archivado_en
     from usuarios u
     left join members m on m.user_id = u.id
+    left join households h on h.id = m.household_id
     where u.id = ${usuarioId} and u.activo`;
 
   if (!fila) return null;
@@ -52,6 +57,7 @@ export async function obtenerAcceso(usuarioId: string): Promise<Acceso | null> {
     householdId: fila.household_id,
     memberId: fila.member_id,
     rol: fila.role,
+    hogarArchivado: fila.archivado_en !== null && !fila.es_superadmin,
   };
 }
 

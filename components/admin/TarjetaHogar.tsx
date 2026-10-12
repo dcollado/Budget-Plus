@@ -1,7 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ChevronDown, Mail, Pencil, RotateCcw, Send, UserMinus, X } from "lucide-react";
+import {
+  Archive,
+  ChevronDown,
+  Mail,
+  Pencil,
+  RotateCcw,
+  Send,
+  Trash2,
+  UserMinus,
+  X,
+} from "lucide-react";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -26,6 +36,9 @@ export function TarjetaHogar({
   onEstado,
   onEditar,
   onCancelar,
+  onArchivar,
+  onRestaurar,
+  onEliminar,
 }: {
   hogar: HogarResumen;
   yo: string;
@@ -39,6 +52,10 @@ export function TarjetaHogar({
     datos: { nombre: string; email: string; role: "admin" | "member" }
   ) => Promise<boolean>;
   onCancelar: (invitacionId: string, email: string) => void;
+  // Solo el super-admin las pasa (Admin); /miembros no las muestra.
+  onArchivar?: () => void;
+  onRestaurar?: () => void;
+  onEliminar?: () => void;
 }) {
   const [abierto, setAbierto] = useState(true);
   const [email, setEmail] = useState("");
@@ -76,7 +93,14 @@ export function TarjetaHogar({
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
       >
         <span>
-          <span className="block text-base font-semibold text-text">{hogar.name}</span>
+          <span className="block text-base font-semibold text-text">
+            {hogar.name}
+            {hogar.archivadoEn ? (
+              <span className="ml-2 rounded-md bg-surface-raised px-2 py-0.5 align-middle text-xs font-medium text-text-muted">
+                Archivado
+              </span>
+            ) : null}
+          </span>
           <span className="block text-xs text-text-muted">
             {activos} {activos === 1 ? "persona" : "personas"}
             {hogar.invitaciones.length > 0
@@ -272,6 +296,7 @@ export function TarjetaHogar({
             </div>
           ) : null}
 
+          {hogar.archivadoEn ? null : (
           <form onSubmit={invitar} className="flex flex-wrap items-end gap-3">
             <div className="min-w-[14rem] flex-1">
               <label className={labelClass} htmlFor={`inv-${hogar.id}`}>
@@ -307,6 +332,41 @@ export function TarjetaHogar({
               Invitar
             </button>
           </form>
+          )}
+
+          {!hogar.tieneSuperadmin && (onArchivar || onRestaurar || onEliminar) ? (
+            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+              {hogar.archivadoEn ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={ocupado}
+                    onClick={onRestaurar}
+                    className={`${botonAccion} text-sage hover:bg-sage/10`}
+                  >
+                    <RotateCcw size={14} /> Restaurar hogar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={ocupado}
+                    onClick={onEliminar}
+                    className={`${botonAccion} text-rust hover:bg-rust/10`}
+                  >
+                    <Trash2 size={14} /> Eliminar definitivamente
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled={ocupado}
+                  onClick={onArchivar}
+                  className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
+                >
+                  <Archive size={14} /> Archivar hogar
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
