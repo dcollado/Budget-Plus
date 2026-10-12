@@ -11,7 +11,6 @@ import {
   loginBloqueado,
   registrarFallo,
 } from "@/lib/auth/login-limite";
-import { obtenerAcceso } from "@/lib/auth/acceso";
 
 const MENSAJE_BLOQUEO =
   "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
@@ -75,11 +74,9 @@ export async function POST(request: Request) {
       await getSql()`update usuarios set password_hash = ${nuevoHash} where id = ${usuario.id}`;
     }
 
-    const acceso = await obtenerAcceso(usuario.id);
     const token = await createSessionToken(
       usuario.id,
       usuario.usuario,
-      acceso?.usaModulosLegacy ?? false,
       usuario.sesionVersion
     );
     const response = NextResponse.json({ success: true });

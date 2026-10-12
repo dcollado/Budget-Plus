@@ -27,7 +27,6 @@ const CUENTAS_BASE = [
 export type HogarResumen = {
   id: string;
   name: string;
-  usaModulosLegacy: boolean;
   miembros: { userId: string; nombre: string; email: string | null; role: string; activo: boolean }[];
   invitaciones: { id: string; email: string; role: string; venceEn: string }[];
 };
@@ -40,8 +39,8 @@ export async function listarHogares(
   opciones: { verSuperadmin: boolean } = { verSuperadmin: true }
 ): Promise<HogarResumen[]> {
   const sql = getSql();
-  const hogares = await sql<{ id: string; name: string; usa_modulos_legacy: boolean }[]>`
-    select id, name, usa_modulos_legacy from households
+  const hogares = await sql<{ id: string; name: string }[]>`
+    select id, name from households
     ${soloHogarId ? sql`where id = ${soloHogarId}` : sql``}
     order by name`;
   const miembros = await sql<
@@ -62,7 +61,6 @@ export async function listarHogares(
   return hogares.map((h) => ({
     id: h.id,
     name: h.name,
-    usaModulosLegacy: h.usa_modulos_legacy,
     miembros: miembros
       .filter((m) => m.household_id === h.id)
       .map((m) => ({

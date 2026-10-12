@@ -74,25 +74,3 @@ export async function buscarUsuarioPorNombreDeUsuario(
 
   return match ? buildUsuario(match) : null;
 }
-
-export async function listarUsuarios(): Promise<Usuario[]> {
-  if (usaPostgres()) {
-    return (await getSql()<FilaUsuario[]>`select * from usuarios`).map(aUsuario);
-  }
-
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-
-  if (!sheetId) {
-    throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
-  }
-
-  const sheets = await getSheetsClient();
-
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: USUARIOS_RANGE,
-  });
-
-  const rows = response.data.values ?? [];
-  return rows.slice(1).map((row) => buildUsuario(row));
-}

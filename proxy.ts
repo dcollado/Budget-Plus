@@ -21,18 +21,6 @@ const PUBLIC_ROUTES = [
   "/api/password",
 ];
 
-// Módulos que leen la hoja de Google (un solo hogar). Solo los hogares con
-// usa_modulos_legacy pueden llamarlos; el resto usa /api/hogar/*.
-const LEGACY_API = [
-  "/api/facturas",
-  "/api/movimientos",
-  "/api/deudas",
-  "/api/items-fijos",
-  "/api/pagos-deuda",
-  "/api/compras-tarjeta",
-  "/api/reportes",
-  "/items-fijos",
-];
 
 // Solo con `next dev` (NODE_ENV=development, nunca en un build de producción)
 // y si .env.local define DEV_AUTO_LOGIN_ID y DEV_AUTO_LOGIN_USER: entra solo
@@ -68,7 +56,6 @@ export async function proxy(req: NextRequest) {
   const token = await createSessionToken(
     dev.id,
     dev.usuario,
-    true,
     await versionDeSesion(dev.id)
   );
   const sesion = await verifySessionToken(token);
@@ -111,17 +98,6 @@ async function manejar(req: NextRequest, session: SessionPayload | null) {
     loginUrl.searchParams.set("next", pathname);
 
     return NextResponse.redirect(loginUrl);
-  }
-
-  const esLegacy = LEGACY_API.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  if (esLegacy && session.legacy === false) {
-    return NextResponse.json(
-      { error: "Este módulo no está disponible para tu hogar." },
-      { status: 403 }
-    );
   }
 
   // Pasa la identidad ya verificada a las rutas vía headers, para que no

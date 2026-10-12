@@ -53,10 +53,6 @@ async function getSigningKey(): Promise<CryptoKey> {
 export type SessionPayload = {
   usuarioId: string;
   username: string;
-  // El hogar usa los módulos legacy (hoja de Google). Tokens emitidos antes
-  // de multi-hogar no traen el campo: son del hogar original, así que
-  // ausente = true (caducan solos en 8 h).
-  legacy?: boolean;
   // Versión de sesión de la cuenta al iniciar. Ausente = 0.
   sv?: number;
   expiresAt: number;
@@ -65,13 +61,11 @@ export type SessionPayload = {
 export async function createSessionToken(
   usuarioId: string,
   username: string,
-  legacy: boolean,
   sv = 0
 ): Promise<string> {
   const payload: SessionPayload = {
     usuarioId,
     username,
-    legacy,
     sv,
     expiresAt: Date.now() + 8 * 60 * 60 * 1000,
   };
