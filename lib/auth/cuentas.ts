@@ -107,9 +107,20 @@ export async function aceptarInvitacion(input: {
       insert into usuarios (id, nombre, usuario, password_hash, activo, email)
       values (${userId}, ${nombre}, ${inv.email}, ${passwordHash}, true, ${inv.email})`;
 
+    const usados = await tx<{ color: number }[]>`
+      select color from members where household_id = ${inv.household_id} and color is not null`;
+    const set = new Set(usados.map((u) => u.color));
+    let color = usados.length % 6;
+    for (let i = 0; i < 6; i += 1) {
+      if (!set.has(i)) {
+        color = i;
+        break;
+      }
+    }
+
     await tx`
-      insert into members (household_id, user_id, display_name, role)
-      values (${inv.household_id}, ${userId}, ${nombre}, ${inv.role})`;
+      insert into members (household_id, user_id, display_name, role, color)
+      values (${inv.household_id}, ${userId}, ${nombre}, ${inv.role}, ${color})`;
   });
 }
 

@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
         month,
         items,
         totales,
-        members: members.map((m) => ({ id: m.id, displayName: m.displayName })),
+        members: members.map((m) => ({ id: m.id, displayName: m.displayName, color: m.color })),
         cuentas: cuentas.map((c) => ({ id: c.id, name: c.name })),
         // Quién está mirando: el desglose de transferencias es solo suyo.
         yo: contexto.member.id,

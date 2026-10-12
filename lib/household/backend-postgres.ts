@@ -32,13 +32,21 @@ export async function crearHousehold(name: string): Promise<Household> {
 
 // ---------- Members ----------
 
-type FilaMember = { id: string; household_id: string; user_id: string; display_name: string; role: string };
+type FilaMember = {
+  id: string;
+  household_id: string;
+  user_id: string;
+  display_name: string;
+  role: string;
+  color: number | null;
+};
 const aMember = (r: FilaMember): Member => ({
   id: r.id,
   householdId: r.household_id,
   userId: r.user_id,
   displayName: r.display_name,
   role: r.role,
+  color: r.color ?? undefined,
 });
 
 export async function listMembers(householdId: string): Promise<Member[]> {
@@ -51,6 +59,19 @@ export async function buscarMemberPorUserId(userId: string): Promise<Member | nu
   return fila ? aMember(fila) : null;
 }
 
+// Primer color de la paleta (0-5) que nadie del hogar usa; si ya están
+// todos, da la vuelta.
+export async function siguienteColor(householdId: string): Promise<number> {
+  const usados = await getSql()<{ color: number }[]>`
+    select color from members where household_id = ${householdId} and color is not null`;
+  const set = new Set(usados.map((u) => u.color));
+
+  for (let i = 0; i < 6; i += 1) {
+    if (!set.has(i)) return i;
+  }
+  return usados.length % 6;
+}
+
 export async function crearMember(
   householdId: string,
   userId: string,
@@ -59,7 +80,8 @@ export async function crearMember(
 ): Promise<Member> {
   const sql = getSql();
   const [fila] = await sql<FilaMember[]>`
-    insert into members ${sql({ household_id: householdId, user_id: userId, display_name: displayName, role })}
+    insert into members (household_id, user_id, display_name, role, color)
+    values (${householdId}, ${userId}, ${displayName}, ${role}, ${await siguienteColor(householdId)})
     returning *`;
   return aMember(fila);
 }

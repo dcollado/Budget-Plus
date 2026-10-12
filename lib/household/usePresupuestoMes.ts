@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
 
-export type MiembroHogar = { id: string; displayName: string };
+export type MiembroHogar = { id: string; displayName: string; color?: number };
 export type CuentaHogar = { id: string; name: string };
 
 export type TotalesMes = {

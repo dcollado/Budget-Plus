@@ -20,6 +20,9 @@ export type Member = {
   userId: string;
   displayName: string;
   role: string;
+  // Índice en la paleta de colores del hogar (ver EtiquetaDueno). Ausente
+  // con la hoja de Google: ahí se usa el color por inicial de siempre.
+  color?: number;
 };
 
 export type Account = {
