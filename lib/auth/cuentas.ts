@@ -268,6 +268,70 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
   });
 }
 
+// Edita nombre, correo y/o rol de un miembro. Solo cambia lo que viene.
+export async function editarMiembro(input: {
+  householdId: string;
+  userId: string;
+  nombre?: string;
+  email?: string;
+  role?: "admin" | "member";
+}): Promise<void> {
+  const sql = getSql();
+
+  await sql.begin(async (tx) => {
+    const [m] = await tx<
+      { id: string; role: string; email: string | null; usuario: string; activo: boolean }[]
+    >`
+      select m.id, m.role, u.email, u.usuario, u.activo
+      from members m join usuarios u on u.id = m.user_id
+      where m.household_id = ${input.householdId} and m.user_id = ${input.userId}
+      for update of m, u`;
+
+    if (!m) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+
+    if (input.nombre !== undefined) {
+      const nombre = input.nombre.trim();
+      if (!nombre) throw new ErrorCuenta("El nombre no puede estar vacío.");
+      await tx`update usuarios set nombre = ${nombre} where id = ${input.userId}`;
+      await tx`update members set display_name = ${nombre} where id = ${m.id}`;
+    }
+
+    if (input.email !== undefined) {
+      const email = normalizarEmail(input.email);
+      const anterior = (m.email ?? "").toLowerCase();
+
+      if (email !== anterior) {
+        const [otro] = await tx`
+          select 1 from usuarios
+          where id <> ${input.userId} and (lower(email) = ${email} or lower(usuario) = ${email})`;
+        if (otro) throw new ErrorCuenta("Ese correo ya lo usa otra cuenta.");
+
+        // Quien entra con su correo como usuario sigue entrando con el nuevo;
+        // los usuarios con nombre propio (ej. "david") no cambian.
+        if (m.usuario.toLowerCase() === anterior) {
+          await tx`update usuarios set email = ${email}, usuario = ${email} where id = ${input.userId}`;
+        } else {
+          await tx`update usuarios set email = ${email} where id = ${input.userId}`;
+        }
+      }
+    }
+
+    if (input.role !== undefined && input.role !== m.role) {
+      if (m.role === "admin" && m.activo) {
+        const [{ n }] = await tx<{ n: number }[]>`
+          select count(*)::int as n
+          from members mm join usuarios uu on uu.id = mm.user_id
+          where mm.household_id = ${input.householdId} and mm.role = 'admin'
+            and uu.activo and mm.user_id <> ${input.userId}`;
+        if (n === 0) {
+          throw new ErrorCuenta("El hogar debe tener al menos un administrador activo.");
+        }
+      }
+      await tx`update members set role = ${input.role} where id = ${m.id}`;
+    }
+  });
+}
+
 // Para el super-admin: manda el enlace de nueva contraseña a un miembro.
 export async function enviarResetAMiembro(householdId: string, userId: string): Promise<void> {
   const [fila] = await getSql()<{ email: string | null; activo: boolean }[]>`

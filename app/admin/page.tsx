@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ChevronDown, Mail, Plus, RotateCcw, Send, UserMinus, X } from "lucide-react";
+import { ChevronDown, Mail, Pencil, Plus, RotateCcw, Send, UserMinus, X } from "lucide-react";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -191,6 +191,13 @@ export default function AdminPage() {
                 `Enlace para cambiar contraseña enviado a ${email}.`
               )
             }
+            onEditar={(userId, datos) =>
+              ejecutar(
+                `/api/admin/hogares/${h.id}/miembros`,
+                { method: "PATCH", body: JSON.stringify({ userId, ...datos }) },
+                "Cambios guardados."
+              )
+            }
             onEstado={(userId, activo, etiqueta) =>
               ejecutar(
                 `/api/admin/hogares/${h.id}/miembros`,
@@ -220,6 +227,7 @@ function TarjetaHogar({
   onReenviar,
   onReset,
   onEstado,
+  onEditar,
   onCancelar,
 }: {
   hogar: HogarResumen;
@@ -229,11 +237,28 @@ function TarjetaHogar({
   onReenviar: (invitacionId: string, email: string) => void;
   onReset: (userId: string, email: string) => void;
   onEstado: (userId: string, activo: boolean, etiqueta: string) => void;
+  onEditar: (
+    userId: string,
+    datos: { nombre: string; email: string; role: "admin" | "member" }
+  ) => Promise<boolean>;
   onCancelar: (invitacionId: string, email: string) => void;
 }) {
   const [abierto, setAbierto] = useState(true);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
+
+  // Persona en edición y su borrador.
+  const [editando, setEditando] = useState<string | null>(null);
+  const [borrador, setBorrador] = useState({
+    nombre: "",
+    email: "",
+    role: "member" as "admin" | "member",
+  });
+
+  async function guardarEdicion(e: FormEvent, userId: string) {
+    e.preventDefault();
+    if (await onEditar(userId, borrador)) setEditando(null);
+  }
 
   async function invitar(e: FormEvent) {
     e.preventDefault();
@@ -274,6 +299,75 @@ function TarjetaHogar({
             {hogar.miembros.map((m) => {
               const etiqueta = m.nombre || m.email || "La persona";
               const soyYo = m.userId === yo;
+
+              if (editando === m.userId) {
+                return (
+                  <li key={m.userId} className="py-3">
+                    <form
+                      onSubmit={(e) => void guardarEdicion(e, m.userId)}
+                      className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+                    >
+                      <div>
+                        <label className={labelClass} htmlFor={`n-${m.userId}`}>Nombre</label>
+                        <input
+                          id={`n-${m.userId}`}
+                          value={borrador.nombre}
+                          onChange={(e) => setBorrador({ ...borrador, nombre: e.target.value })}
+                          className={`${fieldBaseClass} ${fieldNormalClass}`}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass} htmlFor={`e-${m.userId}`}>Correo</label>
+                        <input
+                          id={`e-${m.userId}`}
+                          type="email"
+                          value={borrador.email}
+                          onChange={(e) => setBorrador({ ...borrador, email: e.target.value })}
+                          className={`${fieldBaseClass} ${fieldNormalClass}`}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass} htmlFor={`r-${m.userId}`}>Rol</label>
+                        <select
+                          id={`r-${m.userId}`}
+                          value={borrador.role}
+                          onChange={(e) =>
+                            setBorrador({ ...borrador, role: e.target.value as "admin" | "member" })
+                          }
+                          className={`${fieldBaseClass} ${fieldNormalClass}`}
+                        >
+                          <option value="member">Miembro</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2 sm:col-span-3">
+                        <button
+                          type="submit"
+                          disabled={ocupado}
+                          className="rounded-xl bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditando(null)}
+                          className="rounded-xl px-4 py-2 text-sm text-text-muted transition hover:bg-surface-raised hover:text-text"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                    {m.email ? (
+                      <p className={helperTextClass}>
+                        Si cambias el correo, la persona entra con el nuevo.
+                      </p>
+                    ) : null}
+                  </li>
+                );
+              }
+
               return (
                 <li key={m.userId} className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <div className="min-w-0">
@@ -287,6 +381,21 @@ function TarjetaHogar({
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      disabled={ocupado}
+                      onClick={() => {
+                        setBorrador({
+                          nombre: m.nombre,
+                          email: m.email ?? "",
+                          role: m.role === "admin" ? "admin" : "member",
+                        });
+                        setEditando(m.userId);
+                      }}
+                      className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
+                    >
+                      <Pencil size={14} /> Editar
+                    </button>
                     {m.activo && m.email ? (
                       <button
                         type="button"

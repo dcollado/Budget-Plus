@@ -4,6 +4,7 @@ import {
   cambiarEstadoMiembro,
   cancelarInvitacion,
   crearInvitacion,
+  editarMiembro,
   enviarResetAMiembro,
   ErrorCuenta,
   reenviarInvitacion,
@@ -71,17 +72,34 @@ export async function POST(req: NextRequest, { params }: Contexto) {
   }
 }
 
-// Quitar (activo=false) o reactivar (activo=true).
+// Quitar/reactivar ({ userId, activo }) o editar ({ userId, nombre?, email?, role? }).
 export async function PATCH(req: NextRequest, { params }: Contexto) {
   try {
     const r = await requerirSuperadmin(req);
     if (!r.ok) return r.response;
 
     const { id: householdId } = await params;
-    const body = (await req.json()) as { userId?: unknown; activo?: unknown };
+    const body = (await req.json()) as {
+      userId?: unknown;
+      activo?: unknown;
+      nombre?: unknown;
+      email?: unknown;
+      role?: unknown;
+    };
 
-    if (typeof body.userId !== "string" || typeof body.activo !== "boolean") {
+    if (typeof body.userId !== "string") {
       return NextResponse.json({ success: false, message: "Datos inválidos." }, { status: 400 });
+    }
+
+    if (typeof body.activo !== "boolean") {
+      await editarMiembro({
+        householdId,
+        userId: body.userId,
+        nombre: typeof body.nombre === "string" ? body.nombre : undefined,
+        email: typeof body.email === "string" ? body.email : undefined,
+        role: body.role === "admin" || body.role === "member" ? body.role : undefined,
+      });
+      return NextResponse.json({ success: true });
     }
 
     await cambiarEstadoMiembro({
