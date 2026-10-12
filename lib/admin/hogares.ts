@@ -31,15 +31,24 @@ export type HogarResumen = {
   invitaciones: { id: string; email: string; role: string; venceEn: string }[];
 };
 
-export async function listarHogares(): Promise<HogarResumen[]> {
+// Sin argumento: todos los hogares (super-admin). Con id: solo ese.
+// El super-admin no aparece en la lista a menos que quien mira también lo sea:
+// los admins de hogar no deben ver ni tocar esa cuenta.
+export async function listarHogares(
+  soloHogarId?: string,
+  opciones: { verSuperadmin: boolean } = { verSuperadmin: true }
+): Promise<HogarResumen[]> {
   const sql = getSql();
   const hogares = await sql<{ id: string; name: string; usa_modulos_legacy: boolean }[]>`
-    select id, name, usa_modulos_legacy from households order by name`;
+    select id, name, usa_modulos_legacy from households
+    ${soloHogarId ? sql`where id = ${soloHogarId}` : sql``}
+    order by name`;
   const miembros = await sql<
     { household_id: string; user_id: string; display_name: string; email: string | null; role: string; activo: boolean }[]
   >`
     select m.household_id, m.user_id, m.display_name, u.email, m.role, u.activo
     from members m join usuarios u on u.id = m.user_id
+    where ${opciones.verSuperadmin ? sql`true` : sql`not u.es_superadmin`}
     order by m.role, m.display_name`;
 
   const invitaciones = await sql<

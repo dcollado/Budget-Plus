@@ -190,6 +190,7 @@ export async function cambiarEstadoMiembro(input: {
   householdId: string;
   userId: string;
   actorUserId: string;
+  actorEsSuperadmin: boolean;
   activo: boolean;
 }): Promise<void> {
   const sql = getSql();
@@ -202,6 +203,9 @@ export async function cambiarEstadoMiembro(input: {
     select m.role, u.es_superadmin from members m join usuarios u on u.id = m.user_id
     where m.household_id = ${input.householdId} and m.user_id = ${input.userId}`;
   if (!miembro) throw new ErrorCuenta("Esa persona no es de tu hogar.");
+  if (miembro.es_superadmin && !input.actorEsSuperadmin) {
+    throw new ErrorCuenta("No puedes modificar al super-admin.");
+  }
   if (miembro.es_superadmin && !input.activo) {
     throw new ErrorCuenta("No se puede quitar al super-admin.");
   }
@@ -272,6 +276,7 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
 export async function editarMiembro(input: {
   householdId: string;
   userId: string;
+  actorEsSuperadmin: boolean;
   nombre?: string;
   email?: string;
   role?: "admin" | "member";
@@ -280,14 +285,17 @@ export async function editarMiembro(input: {
 
   await sql.begin(async (tx) => {
     const [m] = await tx<
-      { id: string; role: string; email: string | null; usuario: string; activo: boolean }[]
+      { id: string; role: string; email: string | null; usuario: string; activo: boolean; es_superadmin: boolean }[]
     >`
-      select m.id, m.role, u.email, u.usuario, u.activo
+      select m.id, m.role, u.email, u.usuario, u.activo, u.es_superadmin
       from members m join usuarios u on u.id = m.user_id
       where m.household_id = ${input.householdId} and m.user_id = ${input.userId}
       for update of m, u`;
 
     if (!m) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+    if (m.es_superadmin && !input.actorEsSuperadmin) {
+      throw new ErrorCuenta("No puedes modificar al super-admin.");
+    }
 
     if (input.nombre !== undefined) {
       const nombre = input.nombre.trim();
@@ -322,7 +330,8 @@ export async function editarMiembro(input: {
           select count(*)::int as n
           from members mm join usuarios uu on uu.id = mm.user_id
           where mm.household_id = ${input.householdId} and mm.role = 'admin'
-            and uu.activo and mm.user_id <> ${input.userId}`;
+            and uu.activo and mm.user_id <> ${input.userId}
+            and (${input.actorEsSuperadmin} or not uu.es_superadmin)`;
         if (n === 0) {
           throw new ErrorCuenta("El hogar debe tener al menos un administrador activo.");
         }
@@ -333,13 +342,22 @@ export async function editarMiembro(input: {
 }
 
 // Para el super-admin: manda el enlace de nueva contraseña a un miembro.
-export async function enviarResetAMiembro(householdId: string, userId: string): Promise<void> {
-  const [fila] = await getSql()<{ email: string | null; activo: boolean }[]>`
-    select u.email, u.activo
+export async function enviarResetAMiembro(
+  householdId: string,
+  userId: string,
+  actorEsSuperadmin: boolean
+): Promise<void> {
+  const [fila] = await getSql()<
+    { email: string | null; activo: boolean; es_superadmin: boolean }[]
+  >`
+    select u.email, u.activo, u.es_superadmin
     from members m join usuarios u on u.id = m.user_id
     where m.household_id = ${householdId} and m.user_id = ${userId}`;
 
   if (!fila) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+  if (fila.es_superadmin && !actorEsSuperadmin) {
+    throw new ErrorCuenta("No puedes modificar al super-admin.");
+  }
   if (!fila.email) throw new ErrorCuenta("Esa persona no tiene correo registrado.");
   if (!fila.activo) throw new ErrorCuenta("La cuenta está desactivada: reactívala primero.");
 
