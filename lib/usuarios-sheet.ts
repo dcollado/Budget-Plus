@@ -2,13 +2,21 @@ import { getSheetsClient } from "@/lib/google-sheets";
 import { getSql, usaPostgres } from "@/lib/db";
 
 // Con DATA_BACKEND=postgres los usuarios salen de la tabla usuarios.
-type FilaUsuario = { id: string; nombre: string; usuario: string; password_hash: string; activo: boolean };
+type FilaUsuario = {
+  id: string;
+  nombre: string;
+  usuario: string;
+  password_hash: string;
+  activo: boolean;
+  sesion_version: number;
+};
 const aUsuario = (r: FilaUsuario): Usuario => ({
   id: r.id,
   nombre: r.nombre,
   usuario: r.usuario,
   passwordHash: r.password_hash,
   activo: r.activo,
+  sesionVersion: r.sesion_version,
 });
 
 export type Usuario = {
@@ -17,6 +25,8 @@ export type Usuario = {
   usuario: string;
   passwordHash: string;
   activo: boolean;
+  // Sube al cambiar la contraseña; invalida las sesiones anteriores.
+  sesionVersion: number;
 };
 
 const USUARIOS_SHEET = "Usuarios";
@@ -29,6 +39,7 @@ function buildUsuario(row: string[]): Usuario {
     usuario: row[2] ?? "",
     passwordHash: row[3] ?? "",
     activo: (row[4] ?? "").trim().toLowerCase() !== "false",
+    sesionVersion: 0,
   };
 }
 
