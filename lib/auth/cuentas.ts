@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { getSql } from "@/lib/db";
 import { hashPassword } from "@/lib/password-hash";
 import { correoInvitacion, correoReset, urlApp } from "@/lib/mail";
+import { olvidarEstado } from "@/lib/auth/sesion-vigente";
 
 // Error con mensaje seguro para mostrar al usuario.
 export class ErrorCuenta extends Error {}
@@ -211,6 +212,7 @@ export async function cambiarEstadoMiembro(input: {
   }
 
   await sql`update usuarios set activo = ${input.activo} where id = ${input.userId}`;
+  olvidarEstado(input.userId);
 }
 
 // ---------- Recuperar contraseña ----------
@@ -256,6 +258,8 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
   const password = validarPassword(passwordCrudo);
   const passwordHash = await hashPassword(password);
 
+  let userId = "";
+
   await getSql().begin(async (tx) => {
     const [reset] = await tx<{ user_id: string }[]>`
       update password_resets set used_at = now()
@@ -263,13 +267,20 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
       returning user_id`;
 
     if (!reset) throw new ErrorCuenta("El enlace no es válido o ya venció.");
+    userId = reset.user_id;
 
-    await tx`update usuarios set password_hash = ${passwordHash} where id = ${reset.user_id}`;
+    // sesion_version + 1: las sesiones abiertas con la contraseña anterior caen.
+    await tx`
+      update usuarios
+      set password_hash = ${passwordHash}, sesion_version = sesion_version + 1
+      where id = ${reset.user_id}`;
     // Cualquier otro enlace pendiente de esa persona queda sin efecto.
     await tx`
       update password_resets set used_at = now()
       where user_id = ${reset.user_id} and used_at is null`;
   });
+
+  olvidarEstado(userId);
 }
 
 // Edita nombre, correo y/o rol de un miembro. Solo cambia lo que viene.

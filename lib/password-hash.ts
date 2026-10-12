@@ -75,7 +75,7 @@ export async function hashPassword(password: string): Promise<string> {
 
   const hash = await derivePasswordHash(password, salt, ITERATIONS);
 
-  return `${PREFIJO}${ITERATIONS}${bytesToBase64Url(salt)}${bytesToBase64Url(hash)}`;
+  return `${PREFIJO}${ITERATIONS}$${bytesToBase64Url(salt)}$${bytesToBase64Url(hash)}`;
 }
 
 // true si el hash guardado usa el formato o las iteraciones viejas: al

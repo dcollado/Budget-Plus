@@ -6,6 +6,7 @@ import {
   verifySessionToken,
 } from "@/lib/auth-session";
 import type { SessionPayload } from "@/lib/auth-session";
+import { sesionVigente, versionDeSesion } from "@/lib/auth/sesion-vigente";
 
 // /api/cron: lo llama Vercel sin sesión; la ruta verifica CRON_SECRET.
 // Invitación y recuperación de contraseña: el token del enlace es el secreto.
@@ -45,15 +46,31 @@ function usuarioDevAuto(): { id: string; usuario: string } | null {
   return id && usuario ? { id, usuario } : null;
 }
 
-export async function middleware(req: NextRequest) {
-  const real = await verifySessionToken(req.cookies.get(COOKIE_NAME)?.value);
+export async function proxy(req: NextRequest) {
+  let real = await verifySessionToken(req.cookies.get(COOKIE_NAME)?.value);
+  let expulsada = false;
+
+  // Firma y fecha buenas no bastan: la cuenta pudo desactivarse, el hogar
+  // archivarse o cambiarse la contraseña (ver lib/auth/sesion-vigente.ts).
+  if (real && !(await sesionVigente(real.usuarioId, real.sv ?? 0))) {
+    real = null;
+    expulsada = true;
+  }
+
   const dev = real ? null : usuarioDevAuto();
 
   if (!dev) {
-    return manejar(req, real);
+    const respuesta = await manejar(req, real);
+    if (expulsada) respuesta.cookies.delete(COOKIE_NAME);
+    return respuesta;
   }
 
-  const token = await createSessionToken(dev.id, dev.usuario, true);
+  const token = await createSessionToken(
+    dev.id,
+    dev.usuario,
+    true,
+    await versionDeSesion(dev.id)
+  );
   const sesion = await verifySessionToken(token);
   const response = await manejar(req, sesion);
 
