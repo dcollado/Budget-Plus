@@ -45,7 +45,9 @@ export async function enviarCorreo(correo: Correo): Promise<void> {
 }
 
 export function urlApp(ruta: string): string {
-  const base = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+  const crudo = (process.env.APP_URL ?? "http://localhost:3000").trim().replace(/\/+$/, "");
+  // Si se configuró sin esquema ("budget.ejemplo.com"), se asume https.
+  const base = /^https?:\/\//i.test(crudo) ? crudo : `https://${crudo}`;
   return `${base}${ruta}`;
 }
 
