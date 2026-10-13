@@ -188,7 +188,11 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const cambios: { dueDay?: number | null; cuentaId?: string } = {};
+    const cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean } = {};
+
+    if ("ahorro" in body) {
+      cambios.ahorro = body.ahorro === true;
+    }
 
     if ("dueDay" in body) {
       cambios.dueDay = parseDueDay(body.dueDay);

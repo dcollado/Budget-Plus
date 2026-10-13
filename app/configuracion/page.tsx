@@ -59,6 +59,7 @@ function Configuracion() {
     agregarItem,
     eliminarItem,
     asignarCuenta,
+    marcarAhorro,
   } = usePresupuestoMes(month);
 
   useEffect(() => {
@@ -192,10 +193,11 @@ function Configuracion() {
                     <span className={grupo.color.texto}>Fijos de {grupo.nombre}</span>
                     <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
                   </h2>
-                  <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted">
+                  <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem_1.75rem]">
                     <span />
                     <span className="text-right">Monto</span>
                     <span className="text-center">Día</span>
+                    <span className="text-center" title="Cuenta como ahorro">Ahorro</span>
                   </div>
                   {grupo.items.map((item) => (
                     <FilaPresupuesto
@@ -208,6 +210,7 @@ function Configuracion() {
                       editarDia
                       members={members}
                       compacta
+                      onAhorro={marcarAhorro}
                     />
                   ))}
                 </div>

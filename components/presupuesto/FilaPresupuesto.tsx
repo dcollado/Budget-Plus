@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Lock, Trash2 } from "lucide-react";
+import { Check, Lock, PiggyBank, Trash2 } from "lucide-react";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
@@ -28,6 +28,9 @@ type Props = {
   // Una sola línea: nombre · monto · día · guardar · borrar. Para las
   // listas largas de Configuración (los rótulos van en el encabezado).
   compacta?: boolean;
+  // Si se pasa (solo fijos de gasto), muestra el botón "es ahorro" y avisa
+  // del cambio para actualizar el estado de la página.
+  onAhorro?: (categoryId: string, ahorro: boolean) => void;
 };
 
 export default function FilaPresupuesto({
@@ -40,6 +43,7 @@ export default function FilaPresupuesto({
   editarDia = false,
   members = [],
   compacta = false,
+  onAhorro,
 }: Props) {
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   // Día guardado (para saber si el campo cambió) y el que se está editando.
@@ -49,7 +53,35 @@ export default function FilaPresupuesto({
   const [dia, setDia] = useState(diaGuardado);
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const [guardandoAhorro, setGuardandoAhorro] = useState(false);
   const [error, setError] = useState("");
+
+  async function alternarAhorro() {
+    if (!onAhorro) return;
+
+    const nuevo = !item.category.ahorro;
+    setGuardandoAhorro(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/hogar/categorias", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.category.id, ahorro: nuevo }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "No se pudo guardar.");
+      }
+
+      onAhorro(item.category.id, nuevo);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar.");
+    } finally {
+      setGuardandoAhorro(false);
+    }
+  }
 
   useEffect(() => {
     setValor(String(item.plannedAmountCents / 100));
@@ -153,7 +185,13 @@ export default function FilaPresupuesto({
   if (compacta) {
     return (
       <div className="border-b border-line px-3 py-1.5 last:border-0">
-        <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem] items-center gap-1.5">
+        <div
+          className={
+            onAhorro
+              ? "grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem_1.75rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem_1.75rem]"
+              : "grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem]"
+          }
+        >
           <span className="break-words text-sm text-text">{item.category.name}</span>
           <input
             type="number"
@@ -180,6 +218,23 @@ export default function FilaPresupuesto({
           ) : (
             <span />
           )}
+          {onAhorro ? (
+            <button
+              type="button"
+              onClick={alternarAhorro}
+              disabled={guardandoAhorro}
+              aria-pressed={item.category.ahorro}
+              title={item.category.ahorro ? "Cuenta como ahorro" : "Marcar como ahorro"}
+              aria-label={`${item.category.ahorro ? "Quitar de" : "Marcar como"} ahorro: ${item.category.name}`}
+              className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-50 ${
+                item.category.ahorro
+                  ? "bg-sage/20 text-sage"
+                  : "text-text-muted hover:bg-surface-raised hover:text-text"
+              }`}
+            >
+              <PiggyBank size={14} />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={guardar}

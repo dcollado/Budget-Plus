@@ -25,6 +25,10 @@ const navLinks = [
     href: "/presupuesto",
     label: "Presupuesto",
   },
+  {
+    href: "/reporte",
+    label: "Reporte",
+  },
 ];
 
 // La página de perfil avisa con este evento cuando cambia el nombre, para

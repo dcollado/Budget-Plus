@@ -139,6 +139,16 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     );
   }
 
+  function marcarAhorro(categoryId: string, ahorro: boolean) {
+    setItems((actuales) =>
+      actuales.map((item) =>
+        item.category.id === categoryId
+          ? { ...item, category: { ...item.category, ahorro } }
+          : item
+      )
+    );
+  }
+
   return {
     items,
     totales,
@@ -152,5 +162,6 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     agregarItem,
     eliminarItem,
     asignarCuenta,
+    marcarAhorro,
   };
 }

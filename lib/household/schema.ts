@@ -52,6 +52,9 @@ export type Category = {
   ownerMemberId: string;
   // A qué cuenta va la plata de este fijo (Cuenta.id). "" = sin asignar.
   cuentaId: string;
+  // Es plata que se aparta (ahorros, emergencias): el reporte la suma aparte.
+  // Solo se guarda con Postgres; con la hoja siempre es false.
+  ahorro: boolean;
 };
 
 // Destino de la plata: "Cuenta Chippu" (conjunta), "Caro", "Emergencias"...

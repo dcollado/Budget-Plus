@@ -139,6 +139,7 @@ type FilaCategory = {
   due_day: number | null;
   owner_member_id: string | null;
   cuenta_id: string | null;
+  es_ahorro: boolean;
 };
 const aCategory = (r: FilaCategory): Category => ({
   id: r.id,
@@ -150,6 +151,7 @@ const aCategory = (r: FilaCategory): Category => ({
   dueDay: r.due_day,
   ownerMemberId: texto(r.owner_member_id),
   cuentaId: texto(r.cuenta_id),
+  ahorro: r.es_ahorro,
 });
 
 export async function listCategories(householdId: string): Promise<Category[]> {
@@ -159,7 +161,7 @@ export async function listCategories(householdId: string): Promise<Category[]> {
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId"> & {
+  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId" | "ahorro"> & {
     dueDay?: number | null;
     ownerMemberId?: string;
   }
@@ -188,12 +190,13 @@ export async function archivarCategory(id: string, householdId: string): Promise
 export async function actualizarCategoria(
   id: string,
   householdId: string,
-  cambios: { dueDay?: number | null; cuentaId?: string }
+  cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean }
 ): Promise<boolean> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
   if ("dueDay" in cambios) set.due_day = cambios.dueDay ?? null;
   if ("cuentaId" in cambios) set.cuenta_id = nulo(cambios.cuentaId);
+  if ("ahorro" in cambios) set.es_ahorro = Boolean(cambios.ahorro);
 
   const r = Object.keys(set).length
     ? await sql`update categories set ${sql(set)} where id = ${id} and household_id = ${householdId}`

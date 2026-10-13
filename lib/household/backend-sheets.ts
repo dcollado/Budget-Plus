@@ -244,6 +244,7 @@ function buildCategory(row: string[]): Category {
     dueDay: dayFrom(row[6]),
     ownerMemberId: row[7] ?? "",
     cuentaId: row[8] ?? "",
+    ahorro: false,
   };
 }
 
@@ -256,7 +257,7 @@ export async function listCategories(
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId"> & {
+  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId" | "ahorro"> & {
     dueDay?: number | null;
     ownerMemberId?: string;
   }
@@ -266,6 +267,7 @@ export async function crearCategory(
     dueDay: input.dueDay ?? null,
     ownerMemberId: input.ownerMemberId ?? "",
     cuentaId: "",
+    ahorro: false,
     id: randomUUID(),
     archived: false,
   };
@@ -329,7 +331,7 @@ export async function archivarCategory(
 export async function actualizarCategoria(
   id: string,
   householdId: string,
-  cambios: { dueDay?: number | null; cuentaId?: string }
+  cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean }
 ): Promise<boolean> {
   const sheets = await getSheetsClient();
   const sheetId = getSheetId();
