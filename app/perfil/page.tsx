@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { EVENTO_PERFIL } from "@/components/app-shell";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -22,6 +23,12 @@ const mayuscula = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t
 
 export default function PerfilPage() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [guardandoNombre, setGuardandoNombre] = useState(false);
+  const [mensajeNombre, setMensajeNombre] = useState<{
+    tipo: "ok" | "error";
+    texto: string;
+  } | null>(null);
   const [actual, setActual] = useState("");
   const [nueva, setNueva] = useState("");
   const [confirmar, setConfirmar] = useState("");
@@ -31,9 +38,44 @@ export default function PerfilPage() {
   useEffect(() => {
     fetch("/api/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((json) => json?.data && setPerfil(json.data as Perfil))
+      .then((json) => {
+        if (!json?.data) return;
+        setPerfil(json.data as Perfil);
+        setNombre(mayuscula((json.data as Perfil).nombre));
+      })
       .catch(() => {});
   }, []);
+
+  async function guardarNombre(e: FormEvent) {
+    e.preventDefault();
+    setMensajeNombre(null);
+    setGuardandoNombre(true);
+
+    try {
+      const res = await fetch("/api/perfil", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre }),
+      });
+      const json = (await res.json()) as { message?: string; data?: { nombre: string } };
+
+      if (!res.ok || !json.data) {
+        setMensajeNombre({ tipo: "error", texto: json.message ?? "No se pudo guardar el nombre." });
+        return;
+      }
+
+      const guardado = json.data.nombre;
+      setPerfil((p) => (p ? { ...p, nombre: guardado } : p));
+      setNombre(guardado);
+      setMensajeNombre({ tipo: "ok", texto: "Nombre guardado." });
+      // Que la cabecera lo refleje sin recargar.
+      window.dispatchEvent(new Event(EVENTO_PERFIL));
+    } catch {
+      setMensajeNombre({ tipo: "error", texto: "No se pudo conectar. Intenta de nuevo." });
+    } finally {
+      setGuardandoNombre(false);
+    }
+  }
 
   async function cambiar(e: FormEvent) {
     e.preventDefault();
@@ -82,7 +124,7 @@ export default function PerfilPage() {
     <main className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
       <div>
         <p className="text-sm font-medium text-gold">Mi cuenta</p>
-        <h1 className="font-display text-2xl font-semibold text-text">Perfil</h1>
+        <h1 className="font-display text-2xl font-semibold text-text">Perfil y seguridad</h1>
       </div>
 
       <section className={sectionCardClass}>
@@ -90,9 +132,6 @@ export default function PerfilPage() {
           <p className="text-sm text-text-muted">Cargando…</p>
         ) : (
           <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-3 text-sm">
-            <dt className="text-text-muted">Nombre</dt>
-            <dd className="font-medium text-text">{mayuscula(perfil.nombre)}</dd>
-
             <dt className="text-text-muted">Correo</dt>
             <dd className="break-all text-text">{perfil.email ?? "Sin correo registrado"}</dd>
 
@@ -107,6 +146,46 @@ export default function PerfilPage() {
           </dl>
         )}
       </section>
+
+      {perfil ? (
+        <form onSubmit={guardarNombre} className={`${sectionCardClass} space-y-4`}>
+          <h2 className="text-base font-semibold text-text">Tu nombre</h2>
+
+          {mensajeNombre ? (
+            <div
+              role="status"
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                mensajeNombre.tipo === "ok"
+                  ? "border-sage/30 bg-surface text-text"
+                  : "border-rust/30 bg-rust-soft text-rust"
+              }`}
+            >
+              {mensajeNombre.texto}
+            </div>
+          ) : null}
+
+          <div>
+            <label className={labelClass} htmlFor="nombre">Cómo apareces en el presupuesto</label>
+            <input
+              id="nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              maxLength={60}
+              className={`${fieldBaseClass} ${fieldNormalClass}`}
+              required
+              disabled={guardandoNombre}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={guardandoNombre || nombre.trim() === "" || nombre.trim() === mayuscula(perfil.nombre)}
+            className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
+          >
+            {guardandoNombre ? "Guardando..." : "Guardar nombre"}
+          </button>
+        </form>
+      ) : null}
 
       <form onSubmit={cambiar} className={`${sectionCardClass} space-y-4`}>
         <h2 className="text-base font-semibold text-text">Cambiar contraseña</h2>
