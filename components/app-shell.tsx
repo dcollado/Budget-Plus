@@ -9,6 +9,7 @@ import {
   User,
   UserCog,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,16 +18,12 @@ import {
   useRouter,
 } from "next/navigation";
 
-// Lo del trabajo diario del hogar. Lo de la cuenta (perfil, miembros, admin,
-// salir) vive en el menú de usuario.
+// Lo del uso diario. Lo que se carga una vez y casi no cambia (cuentas, gastos
+// fijos, miembros, perfil) vive en el menú de usuario.
 const navLinks = [
   {
     href: "/presupuesto",
     label: "Presupuesto",
-  },
-  {
-    href: "/configuracion",
-    label: "Configuración",
   },
 ];
 
@@ -111,15 +108,22 @@ export function AppShell({
   const esSuperadmin = perfil?.esSuperadmin === true;
   const esAdminHogar = perfil?.rol === "admin";
 
-  // Opciones de la cuenta. El super-admin gestiona todo (incluido su hogar)
-  // desde Admin, así que no necesita además "Miembros".
-  const cuentaLinks = [
-    { href: "/perfil", label: "Perfil y seguridad", Icono: UserCog },
+  // Datos del hogar (se alimentan y casi no cambian). El super-admin gestiona
+  // todo, su hogar incluido, desde Admin, así que no necesita "Miembros".
+  const hogarLinks = [
+    { href: "/configuracion", label: "Cuentas y gastos fijos", Icono: Wallet },
     ...(esAdminHogar && !esSuperadmin
       ? [{ href: "/miembros", label: "Miembros", Icono: Users }]
       : []),
+  ];
+
+  // Lo mío: perfil y, si aplica, administración de la plataforma.
+  const cuentaLinks = [
+    { href: "/perfil", label: "Perfil y seguridad", Icono: UserCog },
     ...(esSuperadmin ? [{ href: "/admin", label: "Admin", Icono: ShieldCheck }] : []),
   ];
+
+  const menuLinks = [...hogarLinks, ...cuentaLinks];
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -151,7 +155,7 @@ export function AppShell({
     );
   }
 
-  const enCuenta = cuentaLinks.some((l) => linkActivo(l.href));
+  const enCuenta = menuLinks.some((l) => linkActivo(l.href));
 
   return (
     <>
@@ -211,22 +215,27 @@ export function AppShell({
                   ) : null}
                 </div>
 
-                <div className="p-1.5">
-                  {cuentaLinks.map(({ href, label, Icono }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      role="menuitem"
-                      onClick={() => setUserMenuOpen(false)}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${claseLink(
-                        linkActivo(href)
-                      )}`}
-                    >
-                      <Icono size={16} className="shrink-0" />
-                      {label}
-                    </Link>
-                  ))}
-                </div>
+                {[hogarLinks, cuentaLinks].map((grupo, i) => (
+                  <div
+                    key={i}
+                    className={`p-1.5 ${i > 0 ? "border-t border-line" : ""}`}
+                  >
+                    {grupo.map(({ href, label, Icono }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        role="menuitem"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${claseLink(
+                          linkActivo(href)
+                        )}`}
+                      >
+                        <Icono size={16} className="shrink-0" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                ))}
 
                 <div className="border-t border-line p-1.5">
                   <button
@@ -292,7 +301,7 @@ export function AppShell({
                   <p className="truncate px-2 pb-1 text-xs text-text-muted">{perfil.email}</p>
                 ) : null}
 
-                {cuentaLinks.map(({ href, label, Icono }) => (
+                {menuLinks.map(({ href, label, Icono }) => (
                   <Link
                     key={href}
                     href={href}

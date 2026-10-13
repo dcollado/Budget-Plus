@@ -94,7 +94,7 @@ function Configuracion() {
       className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? "max-w-5xl" : "max-w-3xl"}`}
     >
       <div className="mb-5">
-        <p className="text-sm font-medium text-gold">Configuración</p>
+        <p className="text-sm font-medium text-gold">Cuentas y gastos fijos</p>
         <h1 className="font-serif text-3xl font-semibold text-text">
           {tab === "fijos" ? "Gastos e ingresos fijos" : "Mis cuentas"}
         </h1>
