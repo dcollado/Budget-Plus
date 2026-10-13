@@ -6,7 +6,6 @@ import type { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { ordenarPorFecha } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearMes } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
-import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 
 type Props = {
   month: string;
@@ -35,7 +34,6 @@ function Widget({
 export default function MesPanel({ month, datos }: Props) {
   const {
     items,
-    members,
     cuentas,
     cargando,
     error,
@@ -66,18 +64,6 @@ export default function MesPanel({ month, datos }: Props) {
   const totalFijos = suma(gastosFijos);
   const totalVariables = suma(gastosVariables);
   const porGastar = ingresos - totalFijos - totalVariables;
-
-  // Subtotal de fijos por persona (y "Conjunto" si hay alguno sin dueño).
-  const fijosPorDueno = [
-    ...members.map((m) => ({
-      nombre: nombreMiembro(members, m.id),
-      total: suma(gastosFijos.filter((i) => i.category.ownerMemberId === m.id)),
-    })),
-    {
-      nombre: "Conjunto",
-      total: suma(gastosFijos.filter((i) => !i.category.ownerMemberId)),
-    },
-  ].filter((d) => d.total > 0);
 
   return (
     <section className="min-w-0">
@@ -137,24 +123,6 @@ export default function MesPanel({ month, datos }: Props) {
           />
           <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} variant="boton" />
         </div>
-      </div>
-
-      {/* Fijos: solo el total y el balance por persona. El detalle ítem por
-          ítem vive en Configuración, y el cuadro de transferencias va arriba
-          de todo en la página. */}
-      <div className={`${sectionCardClass} mt-4 p-0`}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <h3 className="text-sm font-semibold text-text">Gastos fijos</h3>
-          <span className="text-sm font-semibold text-text">
-            {formatearCentavos(totalFijos)}
-          </span>
-        </div>
-
-        {fijosPorDueno.length > 0 ? (
-          <p className="border-t border-line px-4 py-2 text-xs text-text-muted">
-            {fijosPorDueno.map((d) => `${d.nombre} ${formatearCentavos(d.total)}`).join(" · ")}
-          </p>
-        ) : null}
       </div>
     </section>
   );

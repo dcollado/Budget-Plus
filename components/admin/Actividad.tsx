@@ -19,6 +19,7 @@ const ETIQUETAS: Record<string, string> = {
   editar_miembro: "Editó a",
   enviar_restablecer: "Envió restablecer contraseña a",
   contrasena_restablecida: "Restableció su contraseña",
+  contrasena_cambiada: "Cambió su contraseña",
 };
 
 // Registro de quién hizo qué. Solo lo ve el super-admin (Admin).

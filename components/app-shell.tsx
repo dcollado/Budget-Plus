@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   LogOut,
   Menu,
+  User,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -56,6 +57,10 @@ export function AppShell({
   const [esAdminHogar, setEsAdminHogar] =
     useState(false);
 
+  // Quién está conectado (se muestra en la cabecera y lleva al perfil).
+  const [nombre, setNombre] =
+    useState("");
+
   useEffect(() => {
     if (isLoginPage) return;
 
@@ -64,10 +69,12 @@ export function AppShell({
       .then((json) => {
         setEsSuperadmin(json?.data?.esSuperadmin === true);
         setEsAdminHogar(json?.data?.rol === "admin");
+        setNombre(json?.data?.nombre ?? "");
       })
       .catch(() => {
         setEsSuperadmin(false);
         setEsAdminHogar(false);
+        setNombre("");
       });
   }, [isLoginPage]);
 
@@ -140,6 +147,21 @@ export function AppShell({
             })}
           </nav>
 
+          {nombre ? (
+            <Link
+              href="/perfil"
+              title="Mi perfil"
+              className={`hidden max-w-[12rem] items-center gap-1.5 truncate rounded-lg px-3 py-2 text-sm transition md:flex ${
+                linkActivo("/perfil")
+                  ? "bg-surface-raised font-medium text-gold"
+                  : "text-text-muted hover:bg-surface-raised hover:text-text"
+              }`}
+            >
+              <User size={16} className="shrink-0" />
+              <span className="truncate capitalize">{nombre}</span>
+            </Link>
+          ) : null}
+
           <button
             type="button"
             onClick={handleLogout}
@@ -198,6 +220,21 @@ export function AppShell({
                   </Link>
                 );
               })}
+
+              {nombre ? (
+                <Link
+                  href="/perfil"
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex items-center gap-1.5 rounded-lg px-2 py-3 text-sm transition ${
+                    linkActivo("/perfil")
+                      ? "bg-surface-raised font-medium text-gold"
+                      : "text-text-muted hover:bg-surface-raised hover:text-text"
+                  }`}
+                >
+                  <User size={18} />
+                  <span className="capitalize">{nombre}</span>
+                </Link>
+              ) : null}
 
               <button
                 type="button"

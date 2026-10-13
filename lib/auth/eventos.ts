@@ -17,7 +17,8 @@ export type Accion =
   | "reactivar_miembro"
   | "editar_miembro"
   | "enviar_restablecer"
-  | "contrasena_restablecida";
+  | "contrasena_restablecida"
+  | "contrasena_cambiada";
 
 export async function registrarEvento(evento: {
   accion: Accion;
