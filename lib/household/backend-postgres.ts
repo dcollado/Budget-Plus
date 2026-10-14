@@ -3,6 +3,8 @@
 // traduce a NULL al escribir y de vuelta a "" al leer.
 
 import { getSql } from "@/lib/db";
+import { primerColorLibre } from "./colores";
+import { mesSiguiente } from "./formato";
 import type {
   Account,
   Budget,
@@ -12,6 +14,15 @@ import type {
   Member,
   Transaction,
 } from "./schema";
+
+// Columnas explícitas (no select *): no se arrastra lo que la app no usa y
+// una columna nueva no cambia lo que viaja por la red sin querer.
+const COLS_MEMBER = ["id", "household_id", "user_id", "display_name", "role", "color"];
+const COLS_ACCOUNT = ["id", "household_id", "name", "type", "owner_member_id", "opening_balance_cents", "archived"];
+const COLS_CATEGORY = ["id", "household_id", "name", "kind", "archived", "fixed", "due_day", "owner_member_id", "cuenta_id", "es_ahorro"];
+const COLS_CUENTA = ["id", "household_id", "name", "archived"];
+const COLS_BUDGET = ["id", "household_id", "category_id", "month", "planned_amount_cents", "due_date"];
+const COLS_TRANSACTION = ["id", "household_id", "account_id", "transfer_account_id", "category_id", "type", "amount_cents", "date", "payee", "note", "created_by_member_id", "owner_member_id", "source", "external_id", "created_at"];
 
 const nulo = (v: string | undefined | null) => (v ? v : null);
 const texto = (v: unknown) => (v == null ? "" : String(v));
@@ -50,26 +61,21 @@ const aMember = (r: FilaMember): Member => ({
 });
 
 export async function listMembers(householdId: string): Promise<Member[]> {
-  const filas = await getSql()<FilaMember[]>`select * from members where household_id = ${householdId}`;
+  const filas = await getSql()<FilaMember[]>`
+    select ${getSql()(COLS_MEMBER)} from members where household_id = ${householdId}`;
   return filas.map(aMember);
 }
 
 export async function buscarMemberPorUserId(userId: string): Promise<Member | null> {
-  const [fila] = await getSql()<FilaMember[]>`select * from members where user_id = ${userId}`;
+  const [fila] = await getSql()<FilaMember[]>`
+    select ${getSql()(COLS_MEMBER)} from members where user_id = ${userId}`;
   return fila ? aMember(fila) : null;
 }
 
-// Primer color de la paleta (0-5) que nadie del hogar usa; si ya están
-// todos, da la vuelta.
 export async function siguienteColor(householdId: string): Promise<number> {
   const usados = await getSql()<{ color: number }[]>`
     select color from members where household_id = ${householdId} and color is not null`;
-  const set = new Set(usados.map((u) => u.color));
-
-  for (let i = 0; i < 6; i += 1) {
-    if (!set.has(i)) return i;
-  }
-  return usados.length % 6;
+  return primerColorLibre(usados.map((u) => u.color));
 }
 
 export async function crearMember(
@@ -82,7 +88,7 @@ export async function crearMember(
   const [fila] = await sql<FilaMember[]>`
     insert into members (household_id, user_id, display_name, role, color)
     values (${householdId}, ${userId}, ${displayName}, ${role}, ${await siguienteColor(householdId)})
-    returning *`;
+    returning ${getSql()(COLS_MEMBER)}`;
   return aMember(fila);
 }
 
@@ -109,7 +115,7 @@ const aAccount = (r: FilaAccount): Account => ({
 
 export async function listAccounts(householdId: string): Promise<Account[]> {
   const filas = await getSql()<FilaAccount[]>`
-    select * from accounts where household_id = ${householdId} and not archived`;
+    select ${getSql()(COLS_ACCOUNT)} from accounts where household_id = ${householdId} and not archived`;
   return filas.map(aAccount);
 }
 
@@ -123,7 +129,7 @@ export async function crearAccount(input: Omit<Account, "id" | "archived">): Pro
       owner_member_id: nulo(input.ownerMemberId),
       opening_balance_cents: input.openingBalanceCents,
     })}
-    returning *`;
+    returning ${getSql()(COLS_ACCOUNT)}`;
   return aAccount(fila);
 }
 
@@ -156,7 +162,7 @@ const aCategory = (r: FilaCategory): Category => ({
 
 export async function listCategories(householdId: string): Promise<Category[]> {
   const filas = await getSql()<FilaCategory[]>`
-    select * from categories where household_id = ${householdId} and not archived`;
+    select ${getSql()(COLS_CATEGORY)} from categories where household_id = ${householdId} and not archived`;
   return filas.map(aCategory);
 }
 
@@ -176,7 +182,7 @@ export async function crearCategory(
       due_day: input.dueDay ?? null,
       owner_member_id: nulo(input.ownerMemberId),
     })}
-    returning *`;
+    returning ${getSql()(COLS_CATEGORY)}`;
   return aCategory(fila);
 }
 
@@ -216,14 +222,14 @@ const aCuenta = (r: FilaCuenta): Cuenta => ({
 
 export async function listCuentas(householdId: string): Promise<Cuenta[]> {
   const filas = await getSql()<FilaCuenta[]>`
-    select * from cuentas where household_id = ${householdId} and not archived`;
+    select ${getSql()(COLS_CUENTA)} from cuentas where household_id = ${householdId} and not archived`;
   return filas.map(aCuenta);
 }
 
 export async function crearCuenta(householdId: string, name: string): Promise<Cuenta> {
   const sql = getSql();
   const [fila] = await sql<FilaCuenta[]>`
-    insert into cuentas ${sql({ household_id: householdId, name })} returning *`;
+    insert into cuentas ${sql({ household_id: householdId, name })} returning ${getSql()(COLS_CUENTA)}`;
   return aCuenta(fila);
 }
 
@@ -263,7 +269,8 @@ const aBudget = (r: FilaBudget): Budget => ({
 });
 
 export async function listBudgets(householdId: string): Promise<Budget[]> {
-  const filas = await getSql()<FilaBudget[]>`select * from budgets where household_id = ${householdId}`;
+  const filas = await getSql()<FilaBudget[]>`
+    select ${getSql()(COLS_BUDGET)} from budgets where household_id = ${householdId}`;
   return filas.map(aBudget);
 }
 
@@ -284,7 +291,7 @@ export async function upsertBudget(
     on conflict (category_id, month) do update set
       planned_amount_cents = excluded.planned_amount_cents,
       due_date = ${dueDate === undefined ? sql`budgets.due_date` : sql`excluded.due_date`}
-    returning *`;
+    returning ${getSql()(COLS_BUDGET)}`;
   return aBudget(fila);
 }
 
@@ -325,9 +332,21 @@ const aTransaction = (r: FilaTransaction): Transaction => ({
   createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
 });
 
-export async function listTransactions(householdId: string): Promise<Transaction[]> {
-  const filas = await getSql()<FilaTransaction[]>`
-    select * from transactions where household_id = ${householdId}`;
+// meses (YYYY-MM): solo las de ese rango, filtradas en la base (usa el
+// índice household_id + date). Sin meses, todas.
+export async function listTransactions(
+  householdId: string,
+  meses?: string[]
+): Promise<Transaction[]> {
+  const sql = getSql();
+  const ordenados = meses?.length ? [...meses].sort() : null;
+  const desde = ordenados ? `${ordenados[0]}-01` : null;
+  const hasta = ordenados ? `${mesSiguiente(ordenados[ordenados.length - 1])}-01` : null;
+
+  const filas = await sql<FilaTransaction[]>`
+    select ${sql(COLS_TRANSACTION)} from transactions
+    where household_id = ${householdId}
+      ${desde ? sql`and date >= ${desde}::date and date < ${hasta}::date` : sql``}`;
   return filas.map(aTransaction);
 }
 
@@ -351,7 +370,7 @@ export async function crearTransaction(
       source: input.source,
       external_id: input.externalId,
     })}
-    returning *`;
+    returning ${getSql()(COLS_TRANSACTION)}`;
   return aTransaction(fila);
 }
 

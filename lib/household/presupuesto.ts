@@ -55,12 +55,23 @@ export function armarVistaMes(
     );
   }
 
+  // Presupuestos agrupados por categoría y ordenados por mes, una sola vez
+  // (antes se filtraba la lista completa por cada categoría).
+  const presupuestosPorCategoria = new Map<string, Budget[]>();
+
+  for (const b of budgets) {
+    const lista = presupuestosPorCategoria.get(b.categoryId);
+    if (lista) lista.push(b);
+    else presupuestosPorCategoria.set(b.categoryId, [b]);
+  }
+
+  for (const lista of presupuestosPorCategoria.values()) {
+    lista.sort((a, b) => a.month.localeCompare(b.month));
+  }
+
   return categories.map((category) => {
     const actualCents = actualPorCategoria.get(category.id) ?? 0;
-
-    const budgetsDeCategoria = budgets
-      .filter((b) => b.categoryId === category.id)
-      .sort((a, b) => a.month.localeCompare(b.month));
+    const budgetsDeCategoria = presupuestosPorCategoria.get(category.id) ?? [];
 
     const budgetDeEsteMes = budgetsDeCategoria.find((b) => b.month === month);
 
@@ -77,9 +88,7 @@ export function armarVistaMes(
     }
 
     if (category.fixed) {
-      const anterior = [...budgetsDeCategoria]
-        .filter((b) => b.month < month)
-        .pop();
+      const anterior = budgetsDeCategoria.filter((b) => b.month < month).pop();
 
       if (anterior) {
         return {

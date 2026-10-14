@@ -548,11 +548,16 @@ function buildTransaction(row: string[]): Transaction {
 }
 
 export async function listTransactions(
-  householdId: string
+  householdId: string,
+  meses?: string[]
 ): Promise<Transaction[]> {
   return (await readRows(TRANSACTIONS_FULL_RANGE))
     .map(buildTransaction)
-    .filter((t) => t.householdId === householdId);
+    .filter(
+      (t) =>
+        t.householdId === householdId &&
+        (!meses?.length || meses.some((m) => t.date.startsWith(m)))
+    );
 }
 
 export async function crearTransaction(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
 
 export type MiembroHogar = { id: string; displayName: string; color?: number };
@@ -11,12 +11,30 @@ export type TotalesMes = {
   actualExpenseCents: number;
 };
 
+// Los totales salen siempre de los ítems (igual que en el servidor), así
+// no se desfasan cuando un ítem se guarda, se agrega o se elimina.
+function sumarTotales(items: CategoriaDelMes[]): TotalesMes {
+  return items.reduce<TotalesMes>(
+    (acc, item) => {
+      if (item.category.kind === "income") {
+        acc.plannedIncomeCents += item.plannedAmountCents;
+        acc.actualIncomeCents += item.actualCents;
+      } else {
+        acc.plannedExpenseCents += item.plannedAmountCents;
+        acc.actualExpenseCents += item.actualCents;
+      }
+      return acc;
+    },
+    { plannedIncomeCents: 0, actualIncomeCents: 0, plannedExpenseCents: 0, actualExpenseCents: 0 }
+  );
+}
+
 // Hook compartido por /presupuesto y /configuracion: ambas leen la misma
 // vista del mes (planeado + gastado por categoría), solo cambia qué
 // categorías muestran (fijas vs variables) y si dejan elegir el mes.
 export function usePresupuestoMes(month: string, refreshKey = 0) {
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
-  const [totales, setTotales] = useState<TotalesMes | null>(null);
+  const [cargado, setCargado] = useState(false);
   const [members, setMembers] = useState<MiembroHogar[]>([]);
   const [cuentas, setCuentas] = useState<CuentaHogar[]>([]);
   // Member id de quien está logueado.
@@ -24,37 +42,45 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
-  async function cargar() {
-    setCargando(true);
-    setError("");
-
-    try {
-      const res = await fetch(
-        `/api/hogar/presupuesto?month=${encodeURIComponent(month)}`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo cargar el presupuesto.");
-      }
-
-      setItems(data.data.items);
-      setTotales(data.data.totales);
-      setMembers(data.data.members ?? []);
-      setCuentas(data.data.cuentas ?? []);
-      setYo(data.data.yo ?? "");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
-    } finally {
-      setCargando(false);
-    }
-  }
-
   useEffect(() => {
+    // Si el mes cambia (o el componente se desmonta) antes de que llegue la
+    // respuesta, esa respuesta vieja se descarta y no pisa la del mes nuevo.
+    const controlador = new AbortController();
+
+    async function cargar() {
+      setCargando(true);
+      setError("");
+
+      try {
+        const res = await fetch(
+          `/api/hogar/presupuesto?month=${encodeURIComponent(month)}`,
+          { cache: "no-store", signal: controlador.signal }
+        );
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "No se pudo cargar el presupuesto.");
+        }
+
+        setItems(data.data.items);
+        setCargado(true);
+        setMembers(data.data.members ?? []);
+        setCuentas(data.data.cuentas ?? []);
+        setYo(data.data.yo ?? "");
+        setCargando(false);
+      } catch (err) {
+        if (controlador.signal.aborted) return;
+        setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
+        setCargando(false);
+      }
+    }
+
     void cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => controlador.abort();
   }, [month, refreshKey]);
+
+  const totales = useMemo(() => (cargado ? sumarTotales(items) : null), [cargado, items]);
 
   // fechaPago undefined = no cambió la fecha.
   function handleGuardado(
@@ -74,59 +100,14 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
           : item
       )
     );
-
-    setTotales((actuales) => {
-      if (!actuales) return actuales;
-      const item = items.find((i) => i.category.id === categoryId);
-      if (!item) return actuales;
-
-      const delta = plannedAmountCents - item.plannedAmountCents;
-
-      return item.category.kind === "income"
-        ? { ...actuales, plannedIncomeCents: actuales.plannedIncomeCents + delta }
-        : { ...actuales, plannedExpenseCents: actuales.plannedExpenseCents + delta };
-    });
   }
 
   function agregarItem(item: CategoriaDelMes) {
     setItems((actuales) => [...actuales, item]);
-
-    setTotales((actuales) => {
-      if (!actuales) return actuales;
-
-      return item.category.kind === "income"
-        ? {
-            ...actuales,
-            plannedIncomeCents: actuales.plannedIncomeCents + item.plannedAmountCents,
-          }
-        : {
-            ...actuales,
-            plannedExpenseCents: actuales.plannedExpenseCents + item.plannedAmountCents,
-          };
-    });
   }
 
   function eliminarItem(categoryId: string) {
-    const item = items.find((i) => i.category.id === categoryId);
-    if (!item) return;
-
     setItems((actuales) => actuales.filter((i) => i.category.id !== categoryId));
-
-    setTotales((actuales) => {
-      if (!actuales) return actuales;
-
-      return item.category.kind === "income"
-        ? {
-            ...actuales,
-            plannedIncomeCents: actuales.plannedIncomeCents - item.plannedAmountCents,
-            actualIncomeCents: actuales.actualIncomeCents - item.actualCents,
-          }
-        : {
-            ...actuales,
-            plannedExpenseCents: actuales.plannedExpenseCents - item.plannedAmountCents,
-            actualExpenseCents: actuales.actualExpenseCents - item.actualCents,
-          };
-    });
   }
 
   function asignarCuenta(categoryId: string, cuentaId: string) {

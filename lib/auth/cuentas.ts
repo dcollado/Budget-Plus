@@ -4,6 +4,7 @@ import { hashPassword } from "@/lib/password-hash";
 import { correoInvitacion, correoReset, urlApp } from "@/lib/mail";
 import { olvidarEstado } from "@/lib/auth/sesion-vigente";
 import { registrarEvento } from "@/lib/auth/eventos";
+import { primerColorLibre } from "@/lib/household/colores";
 
 // Error con mensaje seguro para mostrar al usuario.
 export class ErrorCuenta extends Error {}
@@ -124,14 +125,7 @@ export async function aceptarInvitacion(input: {
 
     const usados = await tx<{ color: number }[]>`
       select color from members where household_id = ${inv.household_id} and color is not null`;
-    const set = new Set(usados.map((u) => u.color));
-    let color = usados.length % 6;
-    for (let i = 0; i < 6; i += 1) {
-      if (!set.has(i)) {
-        color = i;
-        break;
-      }
-    }
+    const color = primerColorLibre(usados.map((u) => u.color));
 
     await tx`
       insert into members (household_id, user_id, display_name, role, color)
