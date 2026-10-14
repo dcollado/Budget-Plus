@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   let email: string | null = null;
   let hogar: string | null = null;
   let usuario = getUsuarioNombre(req) ?? "";
+  let idioma: string | null = null;
 
   if (usaPostgres()) {
     const [fila] = await getSql()<
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       usuario = fila.usuario;
       email = fila.email;
       hogar = fila.hogar;
+      idioma = fila.idioma;
     }
   }
 
@@ -43,6 +45,7 @@ export async function GET(req: NextRequest) {
       usuario,
       email,
       hogar,
+      idioma,
       esSuperadmin: acceso.esSuperadmin,
       rol: acceso.rol,
     },

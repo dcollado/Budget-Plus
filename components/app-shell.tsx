@@ -17,7 +17,8 @@ import {
   usePathname,
   useRouter,
 } from "next/navigation";
-import { useT } from "@/lib/i18n/client";
+import { useLocale, useSetLocale, useT } from "@/lib/i18n/client";
+import { isLocale } from "@/lib/i18n/config";
 import type { MessageKey } from "@/lib/i18n/messages";
 
 // Daily-use items. What is set up once and rarely changes (accounts, fixed
@@ -42,6 +43,7 @@ type Perfil = {
   email: string | null;
   esSuperadmin: boolean;
   rol: "admin" | "member" | null;
+  idioma?: string | null;
 };
 
 const claseLink = (activo: boolean) =>
@@ -57,6 +59,8 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const t = useT();
+  const locale = useLocale();
+  const setLocale = useSetLocale();
 
   const isLoginPage = [
     "/login",
@@ -77,9 +81,17 @@ export function AppShell({
   const cargarPerfil = useCallback(() => {
     fetch("/api/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((json) => setPerfil((json?.data as Perfil | undefined) ?? null))
+      .then((json) => {
+        const datos = (json?.data as Perfil | undefined) ?? null;
+        setPerfil(datos);
+        // The saved preference wins: align this browser with it.
+        if (datos && isLocale(datos.idioma) && datos.idioma !== locale) {
+          setLocale(datos.idioma);
+          router.refresh();
+        }
+      })
       .catch(() => setPerfil(null));
-  }, []);
+  }, [locale, router, setLocale]);
 
   useEffect(() => {
     if (isLoginPage) return;
