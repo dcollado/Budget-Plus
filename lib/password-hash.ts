@@ -1,28 +1,11 @@
-const ITERATIONS = 100_000;
+import { base64UrlToBytes, bytesToBase64Url } from "@/lib/base64url";
+
+// Formato viejo "salt:hash" (100k). Nuevo: "pbkdf2-sha256$<iteraciones>$salt$hash".
+const ITERATIONS_VIEJAS = 100_000;
+const ITERATIONS = 600_000;
+const PREFIJO = "pbkdf2-sha256$";
 const HASH_ALG = "SHA-256";
 const KEY_LENGTH = 256;
-
-function bytesToBase64Url(bytes: Uint8Array): string {
-  return Buffer.from(bytes)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
-
-function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-
-  const decoded = Buffer.from(padded, "base64");
-
-  const buffer = new ArrayBuffer(decoded.byteLength);
-  const bytes = new Uint8Array(buffer);
-
-  bytes.set(decoded);
-
-  return bytes;
-}
 
 function encodeText(value: string): Uint8Array<ArrayBuffer> {
   const encoded = new TextEncoder().encode(value);
@@ -37,7 +20,8 @@ function encodeText(value: string): Uint8Array<ArrayBuffer> {
 
 async function derivePasswordHash(
   password: string,
-  salt: Uint8Array<ArrayBuffer>
+  salt: Uint8Array<ArrayBuffer>,
+  iterations: number
 ): Promise<Uint8Array<ArrayBuffer>> {
   const passwordBytes = encodeText(password);
 
@@ -53,7 +37,7 @@ async function derivePasswordHash(
     {
       name: "PBKDF2",
       salt,
-      iterations: ITERATIONS,
+      iterations,
       hash: HASH_ALG,
     },
     keyMaterial,
@@ -69,24 +53,55 @@ export async function hashPassword(password: string): Promise<string> {
 
   crypto.getRandomValues(salt);
 
-  const hash = await derivePasswordHash(password, salt);
+  const hash = await derivePasswordHash(password, salt, ITERATIONS);
 
-  return `${bytesToBase64Url(salt)}:${bytesToBase64Url(hash)}`;
+  return `${PREFIJO}${ITERATIONS}$${bytesToBase64Url(salt)}$${bytesToBase64Url(hash)}`;
+}
+
+// true si el hash guardado usa el formato o las iteraciones viejas: al
+// iniciar sesión con éxito se vuelve a guardar con el nuevo.
+export function passwordNecesitaRehash(storedPassword: string): boolean {
+  const stored = storedPassword.trim();
+  if (!stored.startsWith(PREFIJO)) return true;
+  return Number(stored.split("$")[1]) < ITERATIONS;
+}
+
+function leerAlmacenado(stored: string): {
+  iterations: number;
+  saltEncoded: string;
+  expectedHash: string;
+} | null {
+  const valor = stored.trim();
+
+  if (valor.startsWith(PREFIJO)) {
+    const [, iter, saltEncoded, expectedHash] = valor.split("$");
+    const iterations = Number(iter);
+    if (!saltEncoded || !expectedHash || !Number.isInteger(iterations) || iterations < 1) {
+      return null;
+    }
+    return { iterations, saltEncoded, expectedHash };
+  }
+
+  const [saltEncoded, expectedHash] = valor.split(":");
+  if (!saltEncoded || !expectedHash) return null;
+  return { iterations: ITERATIONS_VIEJAS, saltEncoded, expectedHash };
 }
 
 export async function verifyPassword(
   password: string,
   storedPassword: string
 ): Promise<boolean> {
-  const [saltEncoded, expectedHash] = storedPassword.trim().split(":");
+  const almacenado = leerAlmacenado(storedPassword);
 
-  if (!saltEncoded || !expectedHash) {
+  if (!almacenado) {
     return false;
   }
 
+  const { iterations, saltEncoded, expectedHash } = almacenado;
+
   try {
     const salt = base64UrlToBytes(saltEncoded);
-    const calculatedHashBytes = await derivePasswordHash(password, salt);
+    const calculatedHashBytes = await derivePasswordHash(password, salt, iterations);
     const calculatedHash = bytesToBase64Url(calculatedHashBytes);
 
     if (calculatedHash.length !== expectedHash.length) {
@@ -105,4 +120,13 @@ export async function verifyPassword(
   } catch {
     return false;
   }
+}
+
+// Hash válido de una contraseña que nadie conoce, con las iteraciones
+// actuales. Se verifica contra él cuando el usuario no existe para que
+// responder tarde lo mismo que con un usuario real (no delatar cuentas).
+const HASH_FALSO = `${PREFIJO}${ITERATIONS}$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`;
+
+export async function gastarTiempoDeVerificacion(password: string): Promise<void> {
+  await verifyPassword(password, HASH_FALSO);
 }

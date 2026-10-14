@@ -1,0 +1,657 @@
+import { randomUUID } from "crypto";
+import { getSheetsClient } from "@/lib/google-sheets";
+import type {
+  Account,
+  Cuenta,
+  Budget,
+  Category,
+  Household,
+  Member,
+  Transaction,
+} from "./schema";
+
+// Nombres y rangos de las hojas. Si agregás una columna, agregala al
+// final para no correr el índice de las demás (varias rutas van a
+// referenciar columnas por posición, igual que en el resto del proyecto).
+
+export const HOUSEHOLDS_SHEET = "Households";
+export const HOUSEHOLDS_RANGE = `${HOUSEHOLDS_SHEET}!A:B`; // id, name
+
+export const MEMBERS_SHEET = "Members";
+export const MEMBERS_RANGE = `${MEMBERS_SHEET}!A:E`; // id, householdId, userId, displayName, role
+
+export const ACCOUNTS_SHEET = "Accounts";
+export const ACCOUNTS_RANGE = `${ACCOUNTS_SHEET}!A:G`; // id, householdId, name, type, ownerMemberId, openingBalanceCents, archived
+
+export const CATEGORIES_SHEET = "Categories";
+export const CATEGORIES_RANGE = `${CATEGORIES_SHEET}!A:I`; // id, householdId, name, kind, archived, fixed, dueDay, ownerMemberId, cuentaId
+
+export const CUENTAS_SHEET = "Cuentas";
+export const CUENTAS_RANGE = `${CUENTAS_SHEET}!A:D`; // id, householdId, name, archived
+
+export const BUDGETS_SHEET = "Budgets";
+export const BUDGETS_RANGE = `${BUDGETS_SHEET}!A:F`; // id, householdId, categoryId, month, plannedAmountCents, dueDate
+
+export const TRANSACTIONS_SHEET = "Transactions";
+export const TRANSACTIONS_RANGE = `${TRANSACTIONS_SHEET}!A:M`;
+// id, householdId, accountId, transferAccountId, categoryId, type,
+// amountCents, date, payee, note, createdByMemberId, ownerMemberId,
+// source (externalId y createdAt se agregan al final en N:O)
+export const TRANSACTIONS_FULL_RANGE = `${TRANSACTIONS_SHEET}!A:O`;
+
+function getSheetId(): string {
+  const sheetId = process.env.GOOGLE_SHEET_ID;
+
+  if (!sheetId) {
+    throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+  }
+
+  return sheetId;
+}
+
+function boolFrom(value: string | undefined): boolean {
+  return (value ?? "").trim().toLowerCase() === "true";
+}
+
+function numFrom(value: string | undefined): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function dayFrom(value: string | undefined): number | null {
+  const n = Number((value ?? "").trim());
+  return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
+}
+
+// Google Sheets permite 60 lecturas por minuto. Cada pantalla pide varias
+// hojas (y Presupuesto dos meses a la vez), así que navegar rápido se
+// comía la cuota. Las lecturas se guardan unos segundos en memoria y las
+// que están en vuelo se comparten; cualquier escritura vacía el caché.
+const CACHE_MS = 20_000;
+const cacheLecturas = new Map<string, { hasta: number; filas: Promise<string[][]> }>();
+
+function invalidarLecturas() {
+  cacheLecturas.clear();
+}
+
+function esCuotaExcedida(error: unknown): boolean {
+  const e = error as { code?: number; status?: number; response?: { status?: number } };
+  return e?.code === 429 || e?.status === 429 || e?.response?.status === 429;
+}
+
+async function leerDeLaHoja(range: string): Promise<string[][]> {
+  const sheets = await getSheetsClient();
+
+  // Si igual se pasa de la cuota, espera a que se libere (se renueva por
+  // minuto) en vez de mostrar un error.
+  for (let intento = 0; ; intento++) {
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: getSheetId(),
+        range,
+      });
+      // La primera fila es el encabezado.
+      return ((response.data.values ?? []) as string[][]).slice(1);
+    } catch (error) {
+      if (!esCuotaExcedida(error) || intento >= 3) throw error;
+      await new Promise((r) => setTimeout(r, 5_000 * (intento + 1)));
+    }
+  }
+}
+
+async function readRows(range: string): Promise<string[][]> {
+  const ahora = Date.now();
+  const enCache = cacheLecturas.get(range);
+  if (enCache && enCache.hasta > ahora) return enCache.filas;
+
+  const filas = leerDeLaHoja(range);
+  cacheLecturas.set(range, { hasta: ahora + CACHE_MS, filas });
+  // Un error no se queda en caché.
+  filas.catch(() => {
+    if (cacheLecturas.get(range)?.filas === filas) cacheLecturas.delete(range);
+  });
+  return filas;
+}
+
+async function appendRow(sheet: string, row: (string | number)[]) {
+  const sheets = await getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: getSheetId(),
+    range: sheet,
+    valueInputOption: "RAW",
+    requestBody: { values: [row] },
+  });
+  invalidarLecturas();
+}
+
+// ---------- Households ----------
+
+function buildHousehold(row: string[]): Household {
+  return { id: row[0] ?? "", name: row[1] ?? "" };
+}
+
+export async function listHouseholds(): Promise<Household[]> {
+  return (await readRows(HOUSEHOLDS_RANGE)).map(buildHousehold);
+}
+
+export async function crearHousehold(name: string): Promise<Household> {
+  const household: Household = { id: randomUUID(), name };
+  await appendRow(HOUSEHOLDS_SHEET, [household.id, household.name]);
+  return household;
+}
+
+// ---------- Members ----------
+
+function buildMember(row: string[]): Member {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    userId: row[2] ?? "",
+    displayName: row[3] ?? "",
+    role: row[4] ?? "member",
+  };
+}
+
+export async function listMembers(householdId: string): Promise<Member[]> {
+  return (await readRows(MEMBERS_RANGE))
+    .map(buildMember)
+    .filter((m) => m.householdId === householdId);
+}
+
+export async function buscarMemberPorUserId(
+  userId: string
+): Promise<Member | null> {
+  const member = (await readRows(MEMBERS_RANGE))
+    .map(buildMember)
+    .find((m) => m.userId === userId);
+
+  return member ?? null;
+}
+
+export async function crearMember(
+  householdId: string,
+  userId: string,
+  displayName: string,
+  role = "member"
+): Promise<Member> {
+  const member: Member = {
+    id: randomUUID(),
+    householdId,
+    userId,
+    displayName,
+    role,
+  };
+
+  await appendRow(MEMBERS_SHEET, [
+    member.id,
+    member.householdId,
+    member.userId,
+    member.displayName,
+    member.role,
+  ]);
+
+  return member;
+}
+
+// ---------- Accounts ----------
+
+function buildAccount(row: string[]): Account {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    name: row[2] ?? "",
+    type: (row[3] as Account["type"]) || "cash",
+    ownerMemberId: row[4] ?? "",
+    openingBalanceCents: numFrom(row[5]),
+    archived: boolFrom(row[6]),
+  };
+}
+
+export async function listAccounts(householdId: string): Promise<Account[]> {
+  return (await readRows(ACCOUNTS_RANGE))
+    .map(buildAccount)
+    .filter((a) => a.householdId === householdId && !a.archived);
+}
+
+export async function crearAccount(
+  input: Omit<Account, "id" | "archived">
+): Promise<Account> {
+  const account: Account = { ...input, id: randomUUID(), archived: false };
+
+  await appendRow(ACCOUNTS_SHEET, [
+    account.id,
+    account.householdId,
+    account.name,
+    account.type,
+    account.ownerMemberId,
+    account.openingBalanceCents,
+    "false",
+  ]);
+
+  return account;
+}
+
+// ---------- Categories ----------
+
+function buildCategory(row: string[]): Category {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    name: row[2] ?? "",
+    kind: (row[3] as Category["kind"]) || "expense",
+    archived: boolFrom(row[4]),
+    fixed: boolFrom(row[5]),
+    dueDay: dayFrom(row[6]),
+    ownerMemberId: row[7] ?? "",
+    cuentaId: row[8] ?? "",
+    ahorro: false,
+  };
+}
+
+export async function listCategories(
+  householdId: string
+): Promise<Category[]> {
+  return (await readRows(CATEGORIES_RANGE))
+    .map(buildCategory)
+    .filter((c) => c.householdId === householdId && !c.archived);
+}
+
+export async function crearCategory(
+  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId" | "ahorro"> & {
+    dueDay?: number | null;
+    ownerMemberId?: string;
+  }
+): Promise<Category> {
+  const category: Category = {
+    ...input,
+    dueDay: input.dueDay ?? null,
+    ownerMemberId: input.ownerMemberId ?? "",
+    cuentaId: "",
+    ahorro: false,
+    id: randomUUID(),
+    archived: false,
+  };
+
+  await appendRow(CATEGORIES_SHEET, [
+    category.id,
+    category.householdId,
+    category.name,
+    category.kind,
+    "false",
+    category.fixed ? "true" : "false",
+    category.dueDay ?? "",
+    category.ownerMemberId,
+    category.cuentaId,
+  ]);
+
+  return category;
+}
+
+// "Borrar" una categoría = archivarla (no se elimina la fila). Así los
+// Budgets y Transactions históricos que ya la referencian por id no
+// quedan huérfanos ni rompen nada — listCategories ya filtra
+// !archived, así que simplemente deja de aparecer en la UI.
+export async function archivarCategory(
+  id: string,
+  householdId: string
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: CATEGORIES_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${CATEGORIES_SHEET}!E${sheetRowNumber}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [["true"]] },
+  });
+  invalidarLecturas();
+
+  return true;
+}
+
+// Cambios parciales de una categoría: solo escribe los campos presentes.
+export async function actualizarCategoria(
+  id: string,
+  householdId: string,
+  cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean }
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: CATEGORIES_RANGE,
+  });
+
+  const dataRows = (response.data.values ?? []).slice(1);
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  const fila = dataIndex + 2;
+  const data = [];
+
+  if ("dueDay" in cambios) {
+    data.push({ range: `${CATEGORIES_SHEET}!G${fila}`, values: [[cambios.dueDay ?? ""]] });
+  }
+  if ("cuentaId" in cambios) {
+    data.push({ range: `${CATEGORIES_SHEET}!I${fila}`, values: [[cambios.cuentaId ?? ""]] });
+  }
+
+  if (data.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: { valueInputOption: "RAW", data },
+    });
+    invalidarLecturas();
+  }
+
+  return true;
+}
+
+// ---------- Cuentas ----------
+
+function buildCuenta(row: string[]): Cuenta {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    name: row[2] ?? "",
+    archived: boolFrom(row[3]),
+  };
+}
+
+export async function listCuentas(householdId: string): Promise<Cuenta[]> {
+  try {
+    return (await readRows(CUENTAS_RANGE))
+      .map(buildCuenta)
+      .filter((c) => c.householdId === householdId && !c.archived);
+  } catch (error) {
+    // Hoja "Cuentas" todavía no creada (ej. PROD antes de migrar): sin cuentas.
+    if (String(error).includes("Unable to parse range")) return [];
+    throw error;
+  }
+}
+
+export async function crearCuenta(householdId: string, name: string): Promise<Cuenta> {
+  const cuenta: Cuenta = { id: randomUUID(), householdId, name, archived: false };
+  await appendRow(CUENTAS_SHEET, [cuenta.id, cuenta.householdId, cuenta.name, "false"]);
+  return cuenta;
+}
+
+// Renombra o archiva. Devuelve false si la cuenta no es de este hogar.
+export async function actualizarCuenta(
+  id: string,
+  householdId: string,
+  cambios: { name?: string; archived?: boolean }
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: CUENTAS_RANGE,
+  });
+
+  const dataRows = (response.data.values ?? []).slice(1);
+  const dataIndex = dataRows.findIndex(
+    (row) => (row[0] ?? "") === id && (row[1] ?? "") === householdId
+  );
+
+  if (dataIndex === -1) return false;
+
+  const fila = dataIndex + 2;
+  const data = [];
+  if (cambios.name !== undefined) {
+    data.push({ range: `${CUENTAS_SHEET}!C${fila}`, values: [[cambios.name]] });
+  }
+  if (cambios.archived !== undefined) {
+    data.push({ range: `${CUENTAS_SHEET}!D${fila}`, values: [[cambios.archived ? "true" : "false"]] });
+  }
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: { valueInputOption: "RAW", data },
+  });
+  invalidarLecturas();
+
+  return true;
+}
+
+// ---------- Budgets ----------
+
+function buildBudget(row: string[]): Budget {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    categoryId: row[2] ?? "",
+    month: row[3] ?? "",
+    plannedAmountCents: numFrom(row[4]),
+    dueDate: row[5] ?? "",
+  };
+}
+
+export async function listBudgets(householdId: string): Promise<Budget[]> {
+  return (await readRows(BUDGETS_RANGE))
+    .map(buildBudget)
+    .filter((b) => b.householdId === householdId);
+}
+
+// Crea o actualiza el monto planeado de una categoría para un mes. No hay
+// un índice de fila estable para hacer un update parcial barato, así que
+// lee todo, busca la fila (household+categoria+mes) y actualiza esa celda
+// puntual si existe, o agrega una fila nueva si no.
+export async function upsertBudget(
+  householdId: string,
+  categoryId: string,
+  month: string,
+  plannedAmountCents: number,
+  // undefined = no tocar la fecha que ya tenga; "" = borrarla.
+  dueDate?: string
+): Promise<Budget> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: BUDGETS_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) =>
+      (row[1] ?? "") === householdId &&
+      (row[2] ?? "") === categoryId &&
+      (row[3] ?? "") === month
+  );
+
+  if (dataIndex === -1) {
+    const budget: Budget = {
+      id: randomUUID(),
+      householdId,
+      categoryId,
+      month,
+      plannedAmountCents,
+      dueDate: dueDate ?? "",
+    };
+
+    await appendRow(BUDGETS_SHEET, [
+      budget.id,
+      budget.householdId,
+      budget.categoryId,
+      budget.month,
+      budget.plannedAmountCents,
+      budget.dueDate,
+    ]);
+
+    return budget;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+  const id = dataRows[dataIndex][0] ?? "";
+  const fechaFinal = dueDate ?? (dataRows[dataIndex][5] ?? "");
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${BUDGETS_SHEET}!E${sheetRowNumber}:F${sheetRowNumber}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[plannedAmountCents, fechaFinal]] },
+  });
+  invalidarLecturas();
+
+  return { id, householdId, categoryId, month, plannedAmountCents, dueDate: fechaFinal };
+}
+
+// ---------- Transactions ----------
+
+function buildTransaction(row: string[]): Transaction {
+  return {
+    id: row[0] ?? "",
+    householdId: row[1] ?? "",
+    accountId: row[2] ?? "",
+    transferAccountId: row[3] ?? "",
+    categoryId: row[4] ?? "",
+    type: (row[5] as Transaction["type"]) || "expense",
+    amountCents: numFrom(row[6]),
+    date: row[7] ?? "",
+    payee: row[8] ?? "",
+    note: row[9] ?? "",
+    createdByMemberId: row[10] ?? "",
+    ownerMemberId: row[11] ?? "",
+    source: (row[12] as Transaction["source"]) || "manual",
+    externalId: row[13] ?? "",
+    createdAt: row[14] ?? "",
+  };
+}
+
+export async function listTransactions(
+  householdId: string,
+  meses?: string[]
+): Promise<Transaction[]> {
+  return (await readRows(TRANSACTIONS_FULL_RANGE))
+    .map(buildTransaction)
+    .filter(
+      (t) =>
+        t.householdId === householdId &&
+        (!meses?.length || meses.some((m) => t.date.startsWith(m)))
+    );
+}
+
+export async function crearTransaction(
+  input: Omit<Transaction, "id" | "createdAt">
+): Promise<Transaction> {
+  const transaction: Transaction = {
+    ...input,
+    id: randomUUID(),
+    createdAt: new Date().toISOString(),
+  };
+
+  await appendRow(TRANSACTIONS_SHEET, [
+    transaction.id,
+    transaction.householdId,
+    transaction.accountId,
+    transaction.transferAccountId,
+    transaction.categoryId,
+    transaction.type,
+    transaction.amountCents,
+    transaction.date,
+    transaction.payee,
+    transaction.note,
+    transaction.createdByMemberId,
+    transaction.ownerMemberId,
+    transaction.source,
+    transaction.externalId,
+    transaction.createdAt,
+  ]);
+
+  return transaction;
+}
+
+// Borra por id Y por householdId — así nadie borra una transacción de
+// otro hogar ni siquiera adivinando el id. Devuelve false si no la
+// encontró (ya borrada, o no es de este hogar).
+export async function eliminarTransaction(
+  id: string,
+  householdId: string
+): Promise<boolean> {
+  const sheets = await getSheetsClient();
+  const sheetId = getSheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: TRANSACTIONS_FULL_RANGE,
+  });
+
+  const rows = response.data.values ?? [];
+  const dataRows = rows.slice(1);
+
+  const dataIndex = dataRows.findIndex(
+    (row) =>
+      (row[0] ?? "").trim() === id && (row[1] ?? "").trim() === householdId
+  );
+
+  if (dataIndex === -1) {
+    return false;
+  }
+
+  const sheetRowNumber = dataIndex + 2;
+
+  const spreadsheetResponse = await sheets.spreadsheets.get({
+    spreadsheetId: sheetId,
+    fields: "sheets.properties",
+  });
+
+  const targetSheet = spreadsheetResponse.data.sheets?.find(
+    (sheet) => sheet.properties?.title === TRANSACTIONS_SHEET
+  );
+
+  const sheetNumericId = targetSheet?.properties?.sheetId;
+
+  if (sheetNumericId === undefined) {
+    throw new Error(`No se encontró la hoja ${TRANSACTIONS_SHEET}`);
+  }
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheetNumericId,
+              dimension: "ROWS",
+              startIndex: sheetRowNumber - 1,
+              endIndex: sheetRowNumber,
+            },
+          },
+        },
+      ],
+    },
+  });
+  invalidarLecturas();
+
+  return true;
+}
