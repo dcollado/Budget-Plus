@@ -21,6 +21,10 @@ const PUBLIC_ROUTES = [
   "/api/password",
   // Registro público de cambios de UI (contenido estático, sin datos).
   "/cambios",
+  // Inicio público y solicitud de acceso (nada se crea sin aprobación).
+  "/inicio",
+  "/solicitar",
+  "/api/solicitudes",
 ];
 
 
@@ -75,6 +79,12 @@ export async function proxy(req: NextRequest) {
 
 async function manejar(req: NextRequest, session: SessionPayload | null) {
   const { pathname } = req.nextUrl;
+
+  // "/" sin sesión muestra el inicio público (sin cambiar la URL); con
+  // sesión, la página lleva a Presupuesto.
+  if (pathname === "/" && !session) {
+    return NextResponse.rewrite(new URL("/inicio", req.url));
+  }
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)

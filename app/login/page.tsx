@@ -236,6 +236,13 @@ export default function LoginPage() {
                   {t("login.forgot")}
                 </Link>
               </p>
+
+              <p className="text-center text-sm text-text-muted">
+                {t("login.noAccount")}{" "}
+                <Link href="/solicitar" className="underline hover:text-text">
+                  {t("access.submit")}
+                </Link>
+              </p>
             </form>
           </div>
 

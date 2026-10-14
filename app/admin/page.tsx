@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import Actividad from "@/components/admin/Actividad";
+import SolicitudesAcceso from "@/components/admin/SolicitudesAcceso";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -133,6 +134,8 @@ export default function AdminPage() {
           {mensaje.texto}
         </div>
       ) : null}
+
+      <SolicitudesAcceso onAprobada={() => void cargar()} />
 
       {nuevoAbierto ? (
         <form onSubmit={crearHogar} className={`${sectionCardClass} space-y-4`}>
