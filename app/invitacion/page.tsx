@@ -81,13 +81,13 @@ function Invitacion() {
   return (
     <AuthCard
       titulo={`Únete a ${info.hogar}`}
-      subtitulo={`Crea tu cuenta para ${info.email}.`}
+      subtitulo={`Crea tu cuenta para ${info.email}. Ese correo será tu usuario para iniciar sesión.`}
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="text"
           autoComplete="name"
-          placeholder="Tu nombre"
+          placeholder="Tu nombre (como te verán en el hogar)"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required

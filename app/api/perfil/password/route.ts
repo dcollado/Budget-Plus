@@ -7,6 +7,7 @@ import { ErrorCuenta, validarPassword } from "@/lib/auth/cuentas";
 import { limpiarFallos, loginBloqueado, registrarFallo } from "@/lib/auth/login-limite";
 import { olvidarEstado } from "@/lib/auth/sesion-vigente";
 import { registrarEvento } from "@/lib/auth/eventos";
+import { ipDe } from "@/lib/auth/ip";
 
 function error(message: string, status: number) {
   return NextResponse.json({ success: false, message }, { status });
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     if (!u || !u.activo) return error("No autorizado.", 401);
 
     // Misma protección que el login: la "actual" no se puede adivinar a ciegas.
-    const ip = (req.headers.get("x-forwarded-for")?.split(",")[0] ?? "desconocida").trim();
+    const ip = ipDe(req.headers);
     if (await loginBloqueado(u.usuario, ip)) {
       return error("Demasiados intentos. Espera unos minutos e intenta de nuevo.", 429);
     }

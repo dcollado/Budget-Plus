@@ -4,7 +4,14 @@ import {
   createSessionToken,
 } from "@/lib/auth-session";
 import { buscarUsuarioPorNombreDeUsuario } from "@/lib/usuarios-sheet";
-import { passwordNecesitaRehash, verifyPassword, hashPassword } from "@/lib/password-hash";
+import {
+  gastarTiempoDeVerificacion,
+  hashPassword,
+  passwordNecesitaRehash,
+  verifyPassword,
+} from "@/lib/password-hash";
+import { ipDe } from "@/lib/auth/ip";
+import { fallo } from "@/lib/api";
 import { getSql, usaPostgres } from "@/lib/db";
 import { obtenerAcceso } from "@/lib/auth/acceso";
 import {
@@ -15,11 +22,7 @@ import {
 
 const MENSAJE_BLOQUEO =
   "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
-
-function ipDe(request: Request): string {
-  const reenviada = request.headers.get("x-forwarded-for");
-  return (reenviada?.split(",")[0] ?? request.headers.get("x-real-ip") ?? "desconocida").trim();
-}
+const MENSAJE_INVALIDO = "Usuario o contraseña incorrectos.";
 
 export async function POST(request: Request) {
   try {
@@ -34,36 +37,30 @@ export async function POST(request: Request) {
       typeof body.password === "string" ? body.password : "";
 
     if (!username || !password) {
-      return NextResponse.json(
-        { error: "Usuario o contraseña incorrectos." },
-        { status: 401 }
-      );
+      return fallo(MENSAJE_INVALIDO, 401);
     }
 
-    const ip = ipDe(request);
+    const ip = ipDe(request.headers);
 
     if (await loginBloqueado(username, ip)) {
-      return NextResponse.json({ error: MENSAJE_BLOQUEO }, { status: 429 });
+      return fallo(MENSAJE_BLOQUEO, 429);
     }
 
     const usuario = await buscarUsuarioPorNombreDeUsuario(username);
 
-    if (!usuario || !usuario.activo) {
+    // Siempre se gasta el mismo tiempo de verificación, exista o no la
+    // cuenta, para que la demora no delate qué usuarios existen.
+    if (!usuario) {
+      await gastarTiempoDeVerificacion(password);
       await registrarFallo(username, ip);
-      return NextResponse.json(
-        { error: "Usuario o contraseña incorrectos." },
-        { status: 401 }
-      );
+      return fallo(MENSAJE_INVALIDO, 401);
     }
 
     const passwordValida = await verifyPassword(password, usuario.passwordHash);
 
-    if (!passwordValida) {
+    if (!passwordValida || !usuario.activo) {
       await registrarFallo(username, ip);
-      return NextResponse.json(
-        { error: "Usuario o contraseña incorrectos." },
-        { status: 401 }
-      );
+      return fallo(MENSAJE_INVALIDO, 401);
     }
 
     await limpiarFallos(username);
@@ -78,10 +75,7 @@ export async function POST(request: Request) {
     const acceso = await obtenerAcceso(usuario.id);
 
     if (acceso?.hogarArchivado) {
-      return NextResponse.json(
-        { error: "Tu hogar está archivado. Contacta al administrador de Budget Plus." },
-        { status: 403 }
-      );
+      return fallo("Tu hogar está archivado. Contacta al administrador de Budget Plus.", 403);
     }
 
     const token = await createSessionToken(
@@ -103,9 +97,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error iniciando sesión:", error);
 
-    return NextResponse.json(
-      { error: "No se pudo iniciar sesión." },
-      { status: 500 }
-    );
+    return fallo("No se pudo iniciar sesión.", 500);
   }
 }

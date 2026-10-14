@@ -34,17 +34,17 @@ export default function LoginPage() {
 
       const data = (await response.json()) as {
         success?: boolean;
-        error?: string;
+        message?: string;
       };
 
       if (!response.ok) {
-        setError(data.error || "No se pudo iniciar sesión.");
+        setError(data.message || "No se pudo iniciar sesión.");
         return;
       }
 
       const nextPath = new URLSearchParams(window.location.search).get("next");
       const safeNextPath =
-        nextPath?.startsWith("/") && !nextPath.startsWith("//")
+        nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\")
           ? nextPath
           : "/";
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
                   htmlFor="username"
                   className="mb-2 block text-sm font-medium text-text"
                 >
-                  Usuario
+                  Correo o usuario
                 </label>
 
                 <input
@@ -165,7 +165,7 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Tu usuario"
+                  placeholder="Tu correo o usuario"
                   required
                   disabled={loading}
                   className="h-12 w-full rounded-xl border border-line bg-surface-raised px-4 text-sm text-text outline-none transition placeholder:text-text-muted/60 focus:border-sage focus:ring-4 focus:ring-sage/10 disabled:opacity-60"

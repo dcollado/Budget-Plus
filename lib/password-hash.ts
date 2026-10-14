@@ -1,31 +1,11 @@
+import { base64UrlToBytes, bytesToBase64Url } from "@/lib/base64url";
+
 // Formato viejo "salt:hash" (100k). Nuevo: "pbkdf2-sha256$<iteraciones>$salt$hash".
 const ITERATIONS_VIEJAS = 100_000;
 const ITERATIONS = 600_000;
 const PREFIJO = "pbkdf2-sha256$";
 const HASH_ALG = "SHA-256";
 const KEY_LENGTH = 256;
-
-function bytesToBase64Url(bytes: Uint8Array): string {
-  return Buffer.from(bytes)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
-
-function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-
-  const decoded = Buffer.from(padded, "base64");
-
-  const buffer = new ArrayBuffer(decoded.byteLength);
-  const bytes = new Uint8Array(buffer);
-
-  bytes.set(decoded);
-
-  return bytes;
-}
 
 function encodeText(value: string): Uint8Array<ArrayBuffer> {
   const encoded = new TextEncoder().encode(value);
@@ -140,4 +120,13 @@ export async function verifyPassword(
   } catch {
     return false;
   }
+}
+
+// Hash válido de una contraseña que nadie conoce, con las iteraciones
+// actuales. Se verifica contra él cuando el usuario no existe para que
+// responder tarde lo mismo que con un usuario real (no delatar cuentas).
+const HASH_FALSO = `${PREFIJO}${ITERATIONS}$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`;
+
+export async function gastarTiempoDeVerificacion(password: string): Promise<void> {
+  await verifyPassword(password, HASH_FALSO);
 }

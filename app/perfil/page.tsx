@@ -135,8 +135,13 @@ export default function PerfilPage() {
             <dt className="text-text-muted">Correo</dt>
             <dd className="break-all text-text">{perfil.email ?? "Sin correo registrado"}</dd>
 
-            <dt className="text-text-muted">Usuario</dt>
-            <dd className="break-all text-text">{perfil.usuario}</dd>
+            <dt className="text-text-muted">Para iniciar sesión</dt>
+            <dd className="break-all text-text">
+              {perfil.email ?? perfil.usuario}
+              {perfil.email && perfil.usuario.toLowerCase() !== perfil.email.toLowerCase()
+                ? ` (o tu usuario «${perfil.usuario}»)`
+                : ""}
+            </dd>
 
             <dt className="text-text-muted">Hogar</dt>
             <dd className="text-text">{perfil.hogar ?? "Sin hogar"}</dd>

@@ -47,8 +47,14 @@ export async function buscarUsuarioPorNombreDeUsuario(
   usuario: string
 ): Promise<Usuario | null> {
   if (usaPostgres()) {
+    // Se entra con el correo o con el usuario de siempre. El correo es único
+    // (índice usuarios_email_unico); si algo coincidiera con los dos, gana el correo.
+    const clave = usuario.trim().toLowerCase();
     const [fila] = await getSql()<FilaUsuario[]>`
-      select * from usuarios where lower(usuario) = lower(${usuario.trim()})`;
+      select * from usuarios
+      where lower(email) = ${clave} or lower(usuario) = ${clave}
+      order by (lower(email) = ${clave}) desc
+      limit 1`;
     return fila ? aUsuario(fila) : null;
   }
 
