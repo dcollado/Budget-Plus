@@ -78,6 +78,30 @@ async function probarAcceso(calendarId: string) {
   }
 }
 
+// Retira de un calendario todos los eventos que Budget Plus creó para este hogar.
+async function borrarEventosDelHogar(calendarId: string, householdId: string) {
+  const calendar = await getCalendarClient();
+  let pageToken: string | undefined;
+
+  do {
+    const res = await calendar.events.list({
+      calendarId,
+      privateExtendedProperty: [`bpApp=${APP_TAG}`, `bpHousehold=${householdId}`],
+      maxResults: 250,
+      pageToken,
+    });
+
+    for (const evento of res.data.items ?? []) {
+      if (evento.id && evento.status !== "cancelled") {
+        await calendar.events.delete({ calendarId, eventId: evento.id }).catch((e) => {
+          if ((e as { code?: number }).code !== 410) throw e;
+        });
+      }
+    }
+    pageToken = res.data.nextPageToken ?? undefined;
+  } while (pageToken);
+}
+
 export async function conectarCalendario(householdId: string, calendarIdBruto: unknown) {
   if (!usaPostgres()) {
     throw new ErrorCuenta("Connecting a calendar requires the Postgres database.");
@@ -86,8 +110,18 @@ export async function conectarCalendario(householdId: string, calendarIdBruto: u
 
   await probarAcceso(calendarId);
 
+  const anterior = await calendarioDelHogar(householdId);
+
   await getSql()`
     update households set calendar_id = ${calendarId} where id = ${householdId}`;
+
+  // Cambio de calendario: los eventos se mueven (se quitan del anterior). Si
+  // el anterior ya no es accesible no es grave: el nuevo queda sincronizado.
+  if (anterior && anterior !== calendarId) {
+    await borrarEventosDelHogar(anterior, householdId).catch((e) =>
+      console.error("Error removing events from the previous calendar:", e)
+    );
+  }
 
   // Primer volcado: sin esperar al cron de mañana.
   await sincronizarDosMeses(householdId, mesActual());
@@ -101,26 +135,7 @@ export async function desconectarCalendario(householdId: string, borrarEventos: 
   const calendarId = await calendarioDelHogar(householdId);
 
   if (borrarEventos && calendarId) {
-    const calendar = await getCalendarClient();
-    let pageToken: string | undefined;
-
-    do {
-      const res = await calendar.events.list({
-        calendarId,
-        privateExtendedProperty: [`bpApp=${APP_TAG}`, `bpHousehold=${householdId}`],
-        maxResults: 250,
-        pageToken,
-      });
-
-      for (const evento of res.data.items ?? []) {
-        if (evento.id && evento.status !== "cancelled") {
-          await calendar.events.delete({ calendarId, eventId: evento.id }).catch((e) => {
-            if ((e as { code?: number }).code !== 410) throw e;
-          });
-        }
-      }
-      pageToken = res.data.nextPageToken ?? undefined;
-    } while (pageToken);
+    await borrarEventosDelHogar(calendarId, householdId);
   }
 
   // También apaga la bandera heredada: sin calendario propio, no sincroniza.

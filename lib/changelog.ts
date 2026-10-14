@@ -24,8 +24,8 @@ export const CHANGELOG: EntradaChangelog[] = [
   {
     fecha: "2026-10-15",
     titulo: {
-      en: "English and Spanish, saved to your profile",
-      es: "Inglés y español, guardado en tu perfil",
+      en: "English and Spanish, and your own Google Calendar",
+      es: "Inglés y español, y tu propio Google Calendar",
     },
     cambios: [
       {
@@ -33,6 +33,13 @@ export const CHANGELOG: EntradaChangelog[] = [
         texto: {
           en: "Each household can connect its own Google Calendar from Profile → Calendar, so payment reminders land in your own calendar.",
           es: "Cada hogar puede conectar su propio Google Calendar desde Perfil → Calendario, para que los recordatorios de pago lleguen a tu propio calendario.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "You can change your connected Google Calendar at any time; your payment reminders move to the new calendar.",
+          es: "Puedes cambiar tu Google Calendar conectado cuando quieras; tus recordatorios de pago se mueven al nuevo calendario.",
         },
       },
       {

@@ -57,6 +57,8 @@ export const es: Record<MessageKey, string> = {
   "budget.loadError": "No se pudo cargar el presupuesto.",
   "budget.loadingError": "Error cargando el presupuesto.",
   "calendar.change": "Cambiar calendario",
+  "calendar.changedOk": "Calendario cambiado. Tus pagos se movieron al nuevo calendario.",
+  "calendar.confirmChange": "¿Cambiar el calendario? Los eventos de Budget Plus se quitarán del actual y se crearán en el nuevo.",
   "calendar.confirmDisconnect": "¿Desconectar el calendario? Se quitarán de él los eventos de Budget Plus.",
   "calendar.connect": "Conectar",
   "calendar.connected": "Conectado",

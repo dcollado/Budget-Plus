@@ -56,6 +56,8 @@ export const en = {
   "budget.loadError": "Could not load the budget.",
   "budget.loadingError": "Error loading the budget.",
   "calendar.change": "Change calendar",
+  "calendar.changedOk": "Calendar changed. Your payments were moved to the new calendar.",
+  "calendar.confirmChange": "Change the calendar? Your Budget Plus events will be removed from the current one and created in the new one.",
   "calendar.confirmDisconnect": "Disconnect the calendar? The Budget Plus events will be removed from it.",
   "calendar.connect": "Connect",
   "calendar.connected": "Connected",
