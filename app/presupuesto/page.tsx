@@ -7,16 +7,11 @@ import PrimerosPasos from "@/components/presupuesto/PrimerosPasos";
 import TarjetaTransferencias from "@/components/presupuesto/TarjetaTransferencias";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { armarCuadro } from "@/lib/household/transferencias";
-import { mesSiguiente } from "@/lib/household/formato";
-
-function mesActualISO(): string {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
-}
+import { mesActual, mesSiguiente } from "@/lib/household/formato";
 
 export default function PresupuestoPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
-  const [month, setMonth] = useState(mesActualISO);
+  const [month, setMonth] = useState(mesActual);
 
   // Una carga por mes. La del primero también alimenta "Tus transferencias".
   const primerMes = usePresupuestoMes(month);

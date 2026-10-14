@@ -3,15 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, PiggyBank } from "lucide-react";
-import { formatearCentavos } from "@/lib/household/formato";
+import { formatearCentavos, mesActual } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
 import { colorMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import type { ReporteAnual } from "@/lib/household/reporte";
-
-function mesActualISO(): string {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
-}
 
 function nombreMes(month: string): string {
   const [anio, mes] = month.split("-").map(Number);
@@ -43,7 +38,7 @@ function Tarjeta({ label, valor, color }: { label: string; valor: number; color:
 }
 
 export default function ReportePage() {
-  const [year, setYear] = useState(() => Number(mesActualISO().slice(0, 4)));
+  const [year, setYear] = useState(() => Number(mesActual().slice(0, 4)));
   const [reporte, setReporte] = useState<ReporteAnual | null>(null);
   const [error, setError] = useState("");
 
@@ -67,7 +62,7 @@ export default function ReportePage() {
     };
   }, [year]);
 
-  const actual = mesActualISO();
+  const actual = mesActual();
   const cargando = reporte === null || reporte.year !== year;
 
   // Para reutilizar la paleta de colores por persona.

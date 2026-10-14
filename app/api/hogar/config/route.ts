@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fallo } from "@/lib/api";
 import { getUsuarioId } from "@/lib/current-user";
 import { getContextoHogar, getCuentasYCategorias } from "@/lib/household/contexto";
 import { listMembers } from "@/lib/household/datos";
@@ -11,10 +12,7 @@ export async function GET(req: NextRequest) {
     const usuarioId = getUsuarioId(req);
 
     if (!usuarioId) {
-      return NextResponse.json(
-        { success: false, message: "No autorizado." },
-        { status: 401 }
-      );
+      return fallo("No autorizado.", 401);
     }
 
     const contexto = await getContextoHogar(usuarioId);
@@ -44,9 +42,6 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Error obteniendo configuración del hogar:", error);
 
-    return NextResponse.json(
-      { success: false, message: "No se pudo cargar la configuración del hogar." },
-      { status: 500 }
-    );
+    return fallo("No se pudo cargar la configuración del hogar.", 500);
   }
 }

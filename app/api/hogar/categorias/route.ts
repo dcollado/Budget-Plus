@@ -1,6 +1,6 @@
-import { after, NextRequest, NextResponse } from "next/server";
-import { getUsuarioId } from "@/lib/current-user";
-import { getContextoHogar } from "@/lib/household/contexto";
+import { after, NextRequest } from "next/server";
+import { exito, fallo } from "@/lib/api";
+import { requerirHogar } from "@/lib/household/contexto";
 import {
   actualizarCategoria,
   archivarCategory,
@@ -11,10 +11,10 @@ import {
 import type { CategoryKind } from "@/lib/household/schema";
 import {
   borrarEventosDeCategoria,
-  mesActual,
   sincronizarDosMeses,
   sincronizarSinFallar,
 } from "@/lib/household/calendario";
+import { mesActual } from "@/lib/household/formato";
 
 const KINDS: CategoryKind[] = ["expense", "income"];
 
@@ -24,36 +24,14 @@ function parseDueDay(value: unknown): number | null {
   return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
 }
 
-function sinHogar() {
-  return NextResponse.json(
-    {
-      success: false,
-      message:
-        "Tu cuenta todavía no tiene un hogar. Pídele a quien administra tu hogar que te invite.",
-    },
-    { status: 409 }
-  );
-}
-
 // Crea una categoría nueva. `fixed` decide si es un gasto/ingreso
 // comprometido (se da de alta desde Configuración) o variable (se agrega
 // al vuelo desde Presupuesto, sin estar atado a una lista cerrada).
 export async function POST(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
-
-    if (!usuarioId) {
-      return NextResponse.json(
-        { success: false, message: "No autorizado." },
-        { status: 401 }
-      );
-    }
-
-    const contexto = await getContextoHogar(usuarioId);
-
-    if (!contexto) {
-      return sinHogar();
-    }
+    const r = await requerirHogar(req);
+    if (!r.ok) return r.response;
+    const { contexto } = r;
 
     const body = (await req.json()) as Record<string, unknown>;
     const name = String(body.name ?? "").trim();
@@ -63,27 +41,18 @@ export async function POST(req: NextRequest) {
     const ownerMemberId = String(body.ownerMemberId ?? "").trim();
 
     if (!name) {
-      return NextResponse.json(
-        { success: false, message: "Falta el nombre de la categoría." },
-        { status: 400 }
-      );
+      return fallo("Falta el nombre de la categoría.", 400);
     }
 
     if (!KINDS.includes(kind as CategoryKind)) {
-      return NextResponse.json(
-        { success: false, message: "Tipo de categoría inválido." },
-        { status: 400 }
-      );
+      return fallo("Tipo de categoría inválido.", 400);
     }
 
     if (ownerMemberId) {
       const members = await listMembers(contexto.householdId);
 
       if (!members.some((m) => m.id === ownerMemberId)) {
-        return NextResponse.json(
-          { success: false, message: "Ese miembro no es de este hogar." },
-          { status: 400 }
-        );
+        return fallo("Ese miembro no es de este hogar.", 400);
       }
     }
 
@@ -96,66 +65,41 @@ export async function POST(req: NextRequest) {
       ownerMemberId,
     });
 
-    return NextResponse.json({ success: true, data: category });
+    return exito(category);
   } catch (error) {
     console.error("Error creando categoría:", error);
-
-    return NextResponse.json(
-      { success: false, message: "No se pudo crear la categoría." },
-      { status: 500 }
-    );
+    return fallo("No se pudo crear la categoría.", 500);
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
-
-    if (!usuarioId) {
-      return NextResponse.json(
-        { success: false, message: "No autorizado." },
-        { status: 401 }
-      );
-    }
-
-    const contexto = await getContextoHogar(usuarioId);
-
-    if (!contexto) {
-      return sinHogar();
-    }
+    const r = await requerirHogar(req);
+    if (!r.ok) return r.response;
+    const { contexto } = r;
 
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
-      return NextResponse.json(
-        { success: false, message: "Falta el id de la categoría." },
-        { status: 400 }
-      );
+      return fallo("Falta el id de la categoría.", 400);
     }
 
     const archivada = await archivarCategory(id, contexto.householdId);
 
     if (!archivada) {
-      return NextResponse.json(
-        { success: false, message: "Categoría no encontrada." },
-        { status: 404 }
-      );
+      return fallo("Categoría no encontrada.", 404);
     }
 
     const householdId = contexto.householdId;
     after(() => sincronizarSinFallar(() => borrarEventosDeCategoria(householdId, id)));
 
-    return NextResponse.json({
+    return Response.json({
       success: true,
       message: "Categoría eliminada correctamente.",
     });
   } catch (error) {
     console.error("Error eliminando categoría:", error);
-
-    return NextResponse.json(
-      { success: false, message: "No se pudo eliminar la categoría." },
-      { status: 500 }
-    );
+    return fallo("No se pudo eliminar la categoría.", 500);
   }
 }
 
@@ -163,29 +107,15 @@ export async function DELETE(req: NextRequest) {
 // cuenta a la que va la plata (cuentaId). Solo se tocan los que vengan.
 export async function PATCH(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
-
-    if (!usuarioId) {
-      return NextResponse.json(
-        { success: false, message: "No autorizado." },
-        { status: 401 }
-      );
-    }
-
-    const contexto = await getContextoHogar(usuarioId);
-
-    if (!contexto) {
-      return sinHogar();
-    }
+    const r = await requerirHogar(req);
+    if (!r.ok) return r.response;
+    const { contexto } = r;
 
     const body = (await req.json()) as Record<string, unknown>;
     const id = String(body.id ?? "").trim();
 
     if (!id) {
-      return NextResponse.json(
-        { success: false, message: "Falta el id de la categoría." },
-        { status: 400 }
-      );
+      return fallo("Falta el id de la categoría.", 400);
     }
 
     const cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean } = {};
@@ -205,10 +135,7 @@ export async function PATCH(req: NextRequest) {
         const cuentas = await listCuentas(contexto.householdId);
 
         if (!cuentas.some((c) => c.id === cuentaId)) {
-          return NextResponse.json(
-            { success: false, message: "Esa cuenta no existe." },
-            { status: 400 }
-          );
+          return fallo("Esa cuenta no existe.", 400);
         }
       }
 
@@ -218,10 +145,7 @@ export async function PATCH(req: NextRequest) {
     const ok = await actualizarCategoria(id, contexto.householdId, cambios);
 
     if (!ok) {
-      return NextResponse.json(
-        { success: false, message: "Categoría no encontrada." },
-        { status: 404 }
-      );
+      return fallo("Categoría no encontrada.", 404);
     }
 
     // La cuenta no sale en el calendario; solo un cambio de día lo afecta.
@@ -232,13 +156,9 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, data: { id, ...cambios } });
+    return exito({ id, ...cambios });
   } catch (error) {
     console.error("Error actualizando categoría:", error);
-
-    return NextResponse.json(
-      { success: false, message: "No se pudo guardar el cambio." },
-      { status: 500 }
-    );
+    return fallo("No se pudo guardar el cambio.", 500);
   }
 }

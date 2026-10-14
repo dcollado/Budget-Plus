@@ -34,3 +34,11 @@ export function mesSiguiente(month: string): string {
   const fecha = new Date(anio, mes, 1);
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
 }
+
+// Mes de "hoy" en Panamá (UTC-5, sin horario de verano), "YYYY-MM". Una sola
+// definición para servidor y cliente: con la hora local del servidor (UTC) el
+// mes cambiaba a las 7 pm del último día.
+export function mesActual(ahora: number = Date.now()): string {
+  const panama = new Date(ahora - 5 * 60 * 60 * 1000);
+  return `${panama.getUTCFullYear()}-${String(panama.getUTCMonth() + 1).padStart(2, "0")}`;
+}

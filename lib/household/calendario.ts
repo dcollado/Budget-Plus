@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { google, type calendar_v3 } from "googleapis";
+import type { calendar_v3 } from "googleapis";
 import { armarVistaMes, type CategoriaDelMes } from "./presupuesto";
 import { listBudgets, listCategories, listTransactions } from "./datos";
 import { getSql, usaPostgres } from "@/lib/db";
@@ -35,7 +35,9 @@ async function hogarSincroniza(householdId: string): Promise<boolean> {
   return fila?.sincroniza_calendario === true && fila.archivado_en === null;
 }
 
-function getCalendarClient(): Calendar {
+// googleapis pesa mucho: se carga solo cuando de verdad hay que sincronizar.
+async function getCalendarClient(): Promise<Calendar> {
+  const { google } = await import("googleapis");
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
@@ -158,11 +160,11 @@ type DatosHogar = {
 // Lecturas de la hoja que necesita una sincronización. Se hacen una sola
 // vez aunque se sincronicen varios meses: Google Sheets limita a 60
 // lecturas por minuto, y cada guardado ya dispara una sincronización.
-async function leerDatosHogar(householdId: string): Promise<DatosHogar> {
+async function leerDatosHogar(householdId: string, meses: string[]): Promise<DatosHogar> {
   const [categories, budgets, transactions] = await Promise.all([
     listCategories(householdId),
     listBudgets(householdId),
-    listTransactions(householdId),
+    listTransactions(householdId, meses),
   ]);
   return { categories, budgets, transactions };
 }
@@ -226,8 +228,8 @@ export async function sincronizarDosMeses(householdId: string, month: string) {
   if (!calendarId) return;
   if (!(await hogarSincroniza(householdId))) return;
 
-  const calendar = getCalendarClient();
-  const datos = await leerDatosHogar(householdId);
+  const calendar = await getCalendarClient();
+  const datos = await leerDatosHogar(householdId, [month, mesSiguiente(month)]);
 
   await sincronizarMes(calendar, calendarId, householdId, month, datos);
   await sincronizarMes(calendar, calendarId, householdId, mesSiguiente(month), datos);
@@ -239,7 +241,7 @@ export async function borrarEventosDeCategoria(householdId: string, categoryId: 
   if (!calendarId) return;
   if (!(await hogarSincroniza(householdId))) return;
 
-  const calendar = getCalendarClient();
+  const calendar = await getCalendarClient();
   const res = await calendar.events.list({
     calendarId,
     privateExtendedProperty: [
@@ -267,10 +269,4 @@ export async function sincronizarSinFallar(tarea: () => Promise<void>) {
   } catch (error) {
     console.error("Error sincronizando Google Calendar:", error);
   }
-}
-
-export function mesActual(): string {
-  // Panamá (UTC-5, sin horario de verano).
-  const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000);
-  return `${ahora.getUTCFullYear()}-${String(ahora.getUTCMonth() + 1).padStart(2, "0")}`;
 }

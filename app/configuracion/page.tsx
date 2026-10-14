@@ -8,13 +8,8 @@ import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import GestionCuentas from "@/components/presupuesto/GestionCuentas";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
-import { formatearCentavos } from "@/lib/household/formato";
+import { formatearCentavos, mesActual } from "@/lib/household/formato";
 import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
-
-function mesActualISO(): string {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
-}
 
 type Tab = "fijos" | "cuentas";
 
@@ -46,7 +41,7 @@ function Configuracion() {
       scroll: false,
     });
   }
-  const month = mesActualISO();
+  const month = mesActual();
   const {
     items,
     members,

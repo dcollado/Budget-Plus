@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listHouseholds } from "@/lib/household/datos";
-import { mesActual, sincronizarDosMeses } from "@/lib/household/calendario";
+import { sincronizarDosMeses } from "@/lib/household/calendario";
+import { mesActual } from "@/lib/household/formato";
 
 // Corre una vez por día (vercel.json) y sincroniza el mes actual y el
 // siguiente de cada hogar. Cubre lo que no dispara un guardado: los fijos
