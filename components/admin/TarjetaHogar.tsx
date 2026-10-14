@@ -42,6 +42,7 @@ export function TarjetaHogar({
   onRestaurar,
   onEliminar,
   calendarioEndpoint,
+  interior = false,
 }: {
   hogar: HogarResumen;
   yo: string;
@@ -61,6 +62,8 @@ export function TarjetaHogar({
   onEliminar?: () => void;
   // Solo el super-admin la pasa: ruta del calendario de este hogar.
   calendarioEndpoint?: string;
+  // Dentro de la tabla de hogares: sin tarjeta ni encabezado propios.
+  interior?: boolean;
 }) {
   const t = useT();
   const [abierto, setAbierto] = useState(true);
@@ -91,7 +94,8 @@ export function TarjetaHogar({
   const activos = hogar.miembros.filter((m) => m.activo).length;
 
   return (
-    <section className={`${sectionCardClass} p-0!`}>
+    <section className={interior ? "" : `${sectionCardClass} p-0!`}>
+      {interior ? null : (
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
@@ -119,9 +123,10 @@ export function TarjetaHogar({
           className={`shrink-0 text-text-muted transition ${abierto ? "rotate-180" : ""}`}
         />
       </button>
+      )}
 
       {abierto ? (
-        <div className="space-y-5 border-t border-line px-5 py-4">
+        <div className={interior ? "space-y-5" : "space-y-5 border-t border-line px-5 py-4"}>
           <ul className="divide-y divide-line">
             {hogar.miembros.map((m) => {
               const etiqueta = m.nombre || m.email || "La persona";
@@ -342,7 +347,7 @@ export function TarjetaHogar({
 
           {calendarioEndpoint && !hogar.archivadoEn ? (
             <div className="border-t border-line pt-4">
-              <CalendarCard endpoint={calendarioEndpoint} bare />
+              <CalendarCard endpoint={calendarioEndpoint} bare collapsible />
             </div>
           ) : null}
 

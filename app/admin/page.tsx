@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import Actividad from "@/components/admin/Actividad";
 import SolicitudesAcceso from "@/components/admin/SolicitudesAcceso";
+import TablaHogares from "@/components/admin/TablaHogares";
 import {
   fieldBaseClass,
   fieldNormalClass,
@@ -107,7 +108,7 @@ export default function AdminPage() {
     );
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gold">{t("admin.kicker")}</p>
@@ -176,12 +177,15 @@ export default function AdminPage() {
         </form>
       ) : null}
 
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       {hogares === null ? (
         <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
       ) : (
-        hogares.map((h) => (
+        <TablaHogares
+          hogares={hogares}
+          renderDetalle={(h) => (
           <TarjetaHogar
-            key={h.id}
+            interior
             hogar={h}
             yo={yo}
             ocupado={ocupado}
@@ -252,10 +256,12 @@ export default function AdminPage() {
               )
             }
           />
-        ))
+          )}
+        />
       )}
 
       <Actividad refrescar={version} />
+      </div>
     </main>
   );
 }
