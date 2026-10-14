@@ -19,10 +19,10 @@ function error(message: string, status: number) {
 export async function POST(req: NextRequest) {
   try {
     const usuarioId = getUsuarioId(req);
-    if (!usuarioId) return error("No autorizado.", 401);
+    if (!usuarioId) return error("Unauthorized.", 401);
 
     if (!usaPostgres()) {
-      return error("Cambiar la contraseña requiere la base Postgres.", 400);
+      return error("Changing the password requires the Postgres database.", 400);
     }
 
     const body = (await req.json()) as { actual?: unknown; nueva?: unknown };
@@ -33,23 +33,23 @@ export async function POST(req: NextRequest) {
       { usuario: string; password_hash: string; sesion_version: number; activo: boolean }[]
     >`select usuario, password_hash, sesion_version, activo from usuarios where id = ${usuarioId}`;
 
-    if (!u || !u.activo) return error("No autorizado.", 401);
+    if (!u || !u.activo) return error("Unauthorized.", 401);
 
     // Misma protección que el login: la "actual" no se puede adivinar a ciegas.
     const ip = ipDe(req.headers);
     if (await loginBloqueado(u.usuario, ip)) {
-      return error("Demasiados intentos. Espera unos minutos e intenta de nuevo.", 429);
+      return error("Too many attempts. Wait a few minutes and try again.", 429);
     }
 
     if (!actual || !(await verifyPassword(actual, u.password_hash))) {
       await registrarFallo(u.usuario, ip);
-      return error("La contraseña actual no es correcta.", 400);
+      return error("The current password is not correct.", 400);
     }
 
     const nueva = validarPassword(body.nueva);
 
     if (nueva === actual) {
-      return error("La contraseña nueva tiene que ser distinta a la actual.", 400);
+      return error("The new password must be different from the current one.", 400);
     }
 
     await limpiarFallos(u.usuario);
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     return respuesta;
   } catch (e) {
     if (e instanceof ErrorCuenta) return error(e.message, 400);
-    console.error("Error cambiando contraseña:", e);
-    return error("No se pudo cambiar la contraseña.", 500);
+    console.error("Error changing password:", e);
+    return error("Could not change the password.", 500);
   }
 }

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { LogOut, MoreVertical, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
 export function LogoutMenu() {
   const router = useRouter();
+  const t = useT();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
@@ -54,7 +56,7 @@ export function LogoutMenu() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        aria-label="Abrir menú de usuario"
+        aria-label={t("userMenu.open")}
         aria-expanded={open}
         className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-sage/50 hover:text-text"
       >
@@ -74,7 +76,7 @@ export function LogoutMenu() {
                   Facturas App
                 </p>
                 <p className="truncate text-xs text-text-muted">
-                  Sesión activa
+                  {t("userMenu.activeSession")}
                 </p>
               </div>
             </div>
@@ -87,7 +89,7 @@ export function LogoutMenu() {
             className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-rust transition hover:bg-rust/10 disabled:opacity-60"
           >
             <LogOut size={17} />
-            {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+            {loggingOut ? t("userMenu.signingOut") : t("userMenu.signOut")}
           </button>
         </div>
       )}

@@ -42,7 +42,7 @@ async function getCalendarClient(): Promise<Calendar> {
   const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   if (!clientEmail || !privateKey) {
-    throw new Error("Faltan credenciales de Google en las variables de entorno.");
+    throw new Error("Google credentials are missing from the environment variables.");
   }
 
   const auth = new google.auth.JWT({
@@ -83,7 +83,7 @@ function armarEvento(
     summary: esIngreso
       ? `💰 ${item.category.name} — +${monto}`
       : `💸 ${item.category.name} — ${monto}`,
-    description: `Budget Plus · ${item.category.fixed ? "Fijo" : "Variable"} · ${formatearMes(month)}`,
+    description: `Budget Plus · ${item.category.fixed ? "Fixed" : "Variable"} · ${formatearMes(month)}`,
     start: { date: item.fechaPago },
     end: { date: diaSiguiente(item.fechaPago) },
     // No bloquea el calendario (no aparece como "ocupado").
@@ -217,7 +217,7 @@ async function sincronizarMes(
   }
 
   if (errores.length > 0) {
-    throw new AggregateError(errores, `Fallaron ${errores.length} eventos de ${month}`);
+    throw new AggregateError(errores, `${errores.length} events failed for ${month}`);
   }
 }
 
@@ -267,6 +267,6 @@ export async function sincronizarSinFallar(tarea: () => Promise<void>) {
   try {
     await tarea();
   } catch (error) {
-    console.error("Error sincronizando Google Calendar:", error);
+    console.error("Error syncing Google Calendar:", error);
   }
 }

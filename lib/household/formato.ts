@@ -5,27 +5,25 @@ export function formatearCentavos(cents: number): string {
   });
 }
 
-const MESES_CORTOS = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
-];
-
-const MESES_LARGOS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
-
-// "2026-09-15" -> "15 sep". "" -> "".
-export function formatearFechaCorta(fecha: string): string {
-  const [, mes, dia] = fecha.split("-");
-  if (!mes || !dia) return "";
-  return `${Number(dia)} ${MESES_CORTOS[Number(mes) - 1] ?? ""}`;
+function nombreMes(mes: number, locale: string, estilo: "short" | "long"): string {
+  const texto = new Intl.DateTimeFormat(locale, { month: estilo, timeZone: "UTC" }).format(
+    new Date(Date.UTC(2000, mes - 1, 1))
+  );
+  return texto.endsWith(".") ? texto.slice(0, -1) : texto;
 }
 
-// "2026-09" -> "septiembre 2026".
-export function formatearMes(month: string): string {
+// "2026-09-15" -> "15 Sep" (en) / "15 sept" (es). "" -> "".
+export function formatearFechaCorta(fecha: string, locale = "en"): string {
+  const [, mes, dia] = fecha.split("-");
+  if (!mes || !dia) return "";
+  return `${Number(dia)} ${nombreMes(Number(mes), locale, "short")}`;
+}
+
+// "2026-09" -> "September 2026" (en) / "Septiembre 2026" (es).
+export function formatearMes(month: string, locale = "en"): string {
   const [anio, mes] = month.split("-");
-  return `${MESES_LARGOS[Number(mes) - 1] ?? mes} ${anio}`;
+  const nombre = nombreMes(Number(mes), locale, "long");
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${anio}`;
 }
 
 // "2026-12" -> "2027-01".

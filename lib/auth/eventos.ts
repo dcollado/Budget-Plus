@@ -47,7 +47,7 @@ export async function registrarEvento(evento: {
     if (evento.objetivoUserId) {
       const [o] = await sql<{ nombre: string; email: string | null }[]>`
         select nombre, email from usuarios where id = ${evento.objetivoUserId}`;
-      if (o) objetivo = o.nombre ? `${o.nombre} (${o.email ?? "sin correo"})` : (o.email ?? "");
+      if (o) objetivo = o.nombre ? `${o.nombre} (${o.email ?? "no email"})` : (o.email ?? "");
     }
 
     await sql`
@@ -58,7 +58,7 @@ export async function registrarEvento(evento: {
          ${evento.householdId ?? null}, ${hogar?.name ?? ""},
          ${evento.accion}, ${objetivo}, ${evento.detalle ?? ""})`;
   } catch (error) {
-    console.error("No se pudo registrar el evento de auditoría:", error);
+    console.error("Could not record the audit event:", error);
   }
 }
 

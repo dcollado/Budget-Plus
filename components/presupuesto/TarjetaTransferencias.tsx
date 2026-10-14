@@ -8,14 +8,15 @@ import type { CuadroTransferencias as Cuadro } from "@/lib/household/transferenc
 import { quincena } from "@/lib/household/transferencias";
 import { formatearCentavos } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 const CLAVE_ABIERTA = "presupuesto:transferencias-abierta";
 const EVENTO = "transferencias-abierta";
 
-// Abierta/cerrada se recuerda en este navegador (localStorage). Se lee con
-// useSyncExternalStore: en el servidor (y si el almacenamiento está
-// bloqueado, ej. modo privado) vale "abierta".
-// Respaldo en memoria para cuando localStorage no se puede usar.
+// Open/closed is remembered in this browser (localStorage). Read with
+// useSyncExternalStore: on the server (and if storage is
+// blocked, e.g. private mode) it is "open".
+// In-memory fallback for when localStorage cannot be used.
 let abiertaEnMemoria = true;
 
 function leerAbierta(): boolean {
@@ -35,10 +36,11 @@ function suscribir(avisar: () => void) {
   };
 }
 
-// "Tus transferencias" arriba de todo en Presupuesto, a todo el ancho.
-// Se colapsa tocando el encabezado; colapsada igual muestra total y
-// remanente.
+// "Your transfers" at the very top of Budget, full width.
+// It collapses by tapping the header; collapsed it still shows total and
+// remainder.
 export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | null }) {
+  const t = useT();
   const abierta = useSyncExternalStore(suscribir, leerAbierta, () => true);
 
   function alternar() {
@@ -64,14 +66,14 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
             size={16}
             className={`shrink-0 text-text-muted transition ${abierta ? "" : "-rotate-90"}`}
           />
-          <h2 className="whitespace-nowrap text-sm font-semibold text-text">Tus transferencias</h2>
+          <h2 className="whitespace-nowrap text-sm font-semibold text-text">{t("transfers.title")}</h2>
 
-          {/* Resumen visible con la tarjeta cerrada. En el celular baja a su
-              propia línea (basis-full), en pantallas anchas va a la derecha. */}
+          {/* Summary visible with the card closed. On mobile it drops to its
+              own line (basis-full), on wide screens it goes to the right. */}
           {!abierta && cuadro ? (
             <span className="flex basis-full flex-wrap gap-x-3 pl-6 text-xs text-text-muted sm:ml-auto sm:basis-auto sm:justify-end sm:pl-0">
               <span className="whitespace-nowrap">
-                Total{" "}
+                {t("transfers.total")}{" "}
                 <span className="font-semibold text-text">
                   {formatearCentavos(cuadro.totalCents)}
                 </span>{" "}
@@ -79,7 +81,7 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
               </span>
               {cuadro.salarioCents > 0 ? (
                 <span className="whitespace-nowrap">
-                  Remanente{" "}
+                  {t("transfers.remainder")}{" "}
                   <span
                     className={`font-semibold ${
                       cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"
@@ -98,7 +100,7 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
             href="/configuracion?tab=cuentas"
             className="shrink-0 text-xs text-gold hover:underline"
           >
-            Editar cuentas →
+            {t("transfers.editAccounts")}
           </Link>
         ) : null}
       </div>
@@ -108,7 +110,7 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
           {cuadro ? (
             <CuadroTransferencias cuadro={cuadro} />
           ) : (
-            <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
+            <p className="px-4 py-4 text-center text-sm text-text-muted">{t("common.loading")}</p>
           )}
         </div>
       ) : null}

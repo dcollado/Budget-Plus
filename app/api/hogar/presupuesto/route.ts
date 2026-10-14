@@ -63,8 +63,8 @@ export async function GET(req: NextRequest) {
       yo: contexto.member.id,
     });
   } catch (error) {
-    console.error("Error obteniendo presupuesto:", error);
-    return fallo("No se pudo obtener el presupuesto.", 500);
+    console.error("Error getting budget:", error);
+    return fallo("Could not get the budget.", 500);
   }
 }
 
@@ -84,19 +84,19 @@ export async function POST(req: NextRequest) {
       body.dueDate === undefined ? undefined : String(body.dueDate ?? "").trim();
 
     if (!categoryId) {
-      return fallo("Falta la categoría.", 400);
+      return fallo("Category is missing.", 400);
     }
 
     if (!mesValido(month)) {
-      return fallo("Mes inválido.", 400);
+      return fallo("Invalid month.", 400);
     }
 
     if (plannedCents === null) {
-      return fallo("El monto planeado no es válido (no puede ser negativo).", 400);
+      return fallo("The planned amount is not valid (it cannot be negative).", 400);
     }
 
     if (dueDate && !(fechaValida(dueDate) && dueDate.startsWith(month))) {
-      return fallo("La fecha tiene que ser del mismo mes.", 400);
+      return fallo("The date must be in the same month.", 400);
     }
 
     const errorRef = await validarReferencias(contexto.householdId, { categoryId });
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return exito(budget);
   } catch (error) {
-    console.error("Error guardando presupuesto:", error);
-    return fallo("No se pudo guardar el presupuesto.", 500);
+    console.error("Error saving budget:", error);
+    return fallo("Could not save the budget.", 500);
   }
 }

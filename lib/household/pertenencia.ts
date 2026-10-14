@@ -22,17 +22,17 @@ export async function validarReferencias(
   ]);
 
   if (refs.categoryId && !categorias?.some((c) => c.id === refs.categoryId)) {
-    return "Esa categoría no es de este hogar.";
+    return "That category is not part of this household.";
   }
 
   for (const id of refs.accountIds ?? []) {
     if (id && !cuentas?.some((a) => a.id === id)) {
-      return "Esa cuenta no es de este hogar.";
+      return "That account is not part of this household.";
     }
   }
 
   if (refs.memberId && !miembros?.some((m) => m.id === refs.memberId)) {
-    return "Ese miembro no es de este hogar.";
+    return "That member is not part of this household.";
   }
 
   return null;

@@ -19,7 +19,7 @@ const nuevoToken = () => randomBytes(32).toString("base64url");
 export function normalizarEmail(valor: unknown): string {
   const email = typeof valor === "string" ? valor.trim().toLowerCase() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ErrorCuenta("El correo no es válido.");
+    throw new ErrorCuenta("The email is not valid.");
   }
   return email;
 }
@@ -27,7 +27,7 @@ export function normalizarEmail(valor: unknown): string {
 export function validarPassword(valor: unknown): string {
   const password = typeof valor === "string" ? valor : "";
   if (password.length < 8) {
-    throw new ErrorCuenta("La contraseña debe tener al menos 8 caracteres.");
+    throw new ErrorCuenta("The password must be at least 8 characters.");
   }
   return password;
 }
@@ -46,13 +46,13 @@ export async function crearInvitacion(input: {
   const [cuenta] = await sql`
     select 1 from usuarios where lower(email) = ${email} or lower(usuario) = ${email}`;
   if (cuenta) {
-    throw new ErrorCuenta("Ese correo ya tiene una cuenta.");
+    throw new ErrorCuenta("That email already has an account.");
   }
 
   const [hogar] = await sql<{ name: string; archivado_en: Date | null }[]>`
     select name, archivado_en from households where id = ${input.householdId}`;
-  if (!hogar) throw new ErrorCuenta("El hogar no existe.");
-  if (hogar.archivado_en) throw new ErrorCuenta("El hogar está archivado.");
+  if (!hogar) throw new ErrorCuenta("The household does not exist.");
+  if (hogar.archivado_en) throw new ErrorCuenta("The household is archived.");
 
   // Una sola invitación vigente por correo y hogar: reemplaza la anterior.
   await sql`
@@ -72,7 +72,7 @@ export async function crearInvitacion(input: {
     actorUserId: input.invitedBy,
     householdId: input.householdId,
     objetivo: email,
-    detalle: input.role === "admin" ? "como admin" : "como miembro",
+    detalle: input.role === "admin" ? "as admin" : "as member",
   });
   return { enlace };
 }
@@ -95,7 +95,7 @@ export async function aceptarInvitacion(input: {
   password: string;
 }): Promise<void> {
   const nombre = input.nombre.trim();
-  if (!nombre) throw new ErrorCuenta("Escribe tu nombre.");
+  if (!nombre) throw new ErrorCuenta("Enter your name.");
   const password = validarPassword(input.password);
   const passwordHash = await hashPassword(password);
   const userId = randomUUID();
@@ -111,13 +111,13 @@ export async function aceptarInvitacion(input: {
         and exists (select 1 from households h where h.id = i.household_id and h.archivado_en is null)
       returning i.household_id, i.email, i.role`;
 
-    if (!inv) throw new ErrorCuenta("La invitación no es válida o ya venció.");
+    if (!inv) throw new ErrorCuenta("The invitation is not valid or has expired.");
     hogarDeAlta = inv.household_id;
     correoDeAlta = inv.email;
 
     const [existe] = await tx`
       select 1 from usuarios where lower(email) = ${inv.email} or lower(usuario) = ${inv.email}`;
-    if (existe) throw new ErrorCuenta("Ese correo ya tiene una cuenta.");
+    if (existe) throw new ErrorCuenta("That email already has an account.");
 
     await tx`
       insert into usuarios (id, nombre, usuario, password_hash, activo, email)
@@ -167,7 +167,7 @@ export async function reenviarInvitacion(input: {
     select email, role from invitaciones
     where id = ${input.invitacionId} and household_id = ${input.householdId} and used_at is null`;
 
-  if (!inv) throw new ErrorCuenta("La invitación ya no existe.");
+  if (!inv) throw new ErrorCuenta("The invitation no longer exists.");
 
   const resultado = await crearInvitacion({
     householdId: input.householdId,
@@ -248,18 +248,18 @@ export async function cambiarEstadoMiembro(input: {
   const sql = getSql();
 
   if (!input.activo && input.userId === input.actorUserId) {
-    throw new ErrorCuenta("No puedes quitarte a ti mismo.");
+    throw new ErrorCuenta("You cannot remove yourself.");
   }
 
   const [miembro] = await sql<{ role: string; es_superadmin: boolean }[]>`
     select m.role, u.es_superadmin from members m join usuarios u on u.id = m.user_id
     where m.household_id = ${input.householdId} and m.user_id = ${input.userId}`;
-  if (!miembro) throw new ErrorCuenta("Esa persona no es de tu hogar.");
+  if (!miembro) throw new ErrorCuenta("That person is not part of your household.");
   if (miembro.es_superadmin && !input.actorEsSuperadmin) {
-    throw new ErrorCuenta("No puedes modificar al super-admin.");
+    throw new ErrorCuenta("You cannot modify the super-admin.");
   }
   if (miembro.es_superadmin && !input.activo) {
-    throw new ErrorCuenta("No se puede quitar al super-admin.");
+    throw new ErrorCuenta("The super-admin cannot be removed.");
   }
 
   await sql`update usuarios set activo = ${input.activo} where id = ${input.userId}`;
@@ -324,7 +324,7 @@ export async function restablecerPassword(token: string, passwordCrudo: unknown)
       where token_hash = ${hashToken(token)} and used_at is null and expires_at > now()
       returning user_id`;
 
-    if (!reset) throw new ErrorCuenta("El enlace no es válido o ya venció.");
+    if (!reset) throw new ErrorCuenta("The link is not valid or has expired.");
     userId = reset.user_id;
 
     // sesion_version + 1: las sesiones abiertas con la contraseña anterior caen.
@@ -364,14 +364,14 @@ export async function editarMiembro(input: {
       where m.household_id = ${input.householdId} and m.user_id = ${input.userId}
       for update of m, u`;
 
-    if (!m) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+    if (!m) throw new ErrorCuenta("That person is not part of that household.");
     if (m.es_superadmin && !input.actorEsSuperadmin) {
-      throw new ErrorCuenta("No puedes modificar al super-admin.");
+      throw new ErrorCuenta("You cannot modify the super-admin.");
     }
 
     if (input.nombre !== undefined) {
       const nombre = input.nombre.trim();
-      if (!nombre) throw new ErrorCuenta("El nombre no puede estar vacío.");
+      if (!nombre) throw new ErrorCuenta("The name cannot be empty.");
       await tx`update usuarios set nombre = ${nombre} where id = ${input.userId}`;
       await tx`update members set display_name = ${nombre} where id = ${m.id}`;
     }
@@ -384,7 +384,7 @@ export async function editarMiembro(input: {
         const [otro] = await tx`
           select 1 from usuarios
           where id <> ${input.userId} and (lower(email) = ${email} or lower(usuario) = ${email})`;
-        if (otro) throw new ErrorCuenta("Ese correo ya lo usa otra cuenta.");
+        if (otro) throw new ErrorCuenta("That email is already used by another account.");
 
         // Quien entra con su correo como usuario sigue entrando con el nuevo;
         // los usuarios con nombre propio (ej. "david") no cambian.
@@ -405,7 +405,7 @@ export async function editarMiembro(input: {
             and uu.activo and mm.user_id <> ${input.userId}
             and (${input.actorEsSuperadmin} or not uu.es_superadmin)`;
         if (n === 0) {
-          throw new ErrorCuenta("El hogar debe tener al menos un administrador activo.");
+          throw new ErrorCuenta("The household must have at least one active administrator.");
         }
       }
       await tx`update members set role = ${input.role} where id = ${m.id}`;
@@ -441,12 +441,12 @@ export async function enviarResetAMiembro(
     from members m join usuarios u on u.id = m.user_id
     where m.household_id = ${householdId} and m.user_id = ${userId}`;
 
-  if (!fila) throw new ErrorCuenta("Esa persona no es de ese hogar.");
+  if (!fila) throw new ErrorCuenta("That person is not part of that household.");
   if (fila.es_superadmin && !actorEsSuperadmin) {
-    throw new ErrorCuenta("No puedes modificar al super-admin.");
+    throw new ErrorCuenta("You cannot modify the super-admin.");
   }
-  if (!fila.email) throw new ErrorCuenta("Esa persona no tiene correo registrado.");
-  if (!fila.activo) throw new ErrorCuenta("La cuenta está desactivada: reactívala primero.");
+  if (!fila.email) throw new ErrorCuenta("That person has no email on file.");
+  if (!fila.activo) throw new ErrorCuenta("The account is deactivated: reactivate it first.");
 
   await solicitarReset(fila.email);
 

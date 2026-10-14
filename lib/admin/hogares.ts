@@ -5,23 +5,23 @@ import { crearInvitacion, ErrorCuenta, normalizarEmail } from "@/lib/auth/cuenta
 // Categorías de arranque de un hogar nuevo (genéricas: las de un hogar
 // real tienen nombres propios). El admin las ajusta desde Configuración.
 const CATEGORIAS_BASE = [
-  { name: "Renta", kind: "expense", fixed: true },
-  { name: "Luz y Agua", kind: "expense", fixed: true },
-  { name: "Internet y Telefonía", kind: "expense", fixed: true },
-  { name: "Ahorros", kind: "expense", fixed: true },
-  { name: "Comida", kind: "expense", fixed: true },
-  { name: "Transporte", kind: "expense", fixed: true },
-  { name: "Salud", kind: "expense", fixed: true },
-  { name: "Misceláneos", kind: "expense", fixed: false },
-  { name: "Restaurantes", kind: "expense", fixed: false },
-  { name: "Entretenimiento", kind: "expense", fixed: false },
-  { name: "Ingreso Base", kind: "income", fixed: true },
-  { name: "Ingreso Variable", kind: "income", fixed: false },
+  { name: "Rent", kind: "expense", fixed: true },
+  { name: "Electricity and Water", kind: "expense", fixed: true },
+  { name: "Internet and Phone", kind: "expense", fixed: true },
+  { name: "Savings", kind: "expense", fixed: true },
+  { name: "Food", kind: "expense", fixed: true },
+  { name: "Transportation", kind: "expense", fixed: true },
+  { name: "Health", kind: "expense", fixed: true },
+  { name: "Miscellaneous", kind: "expense", fixed: false },
+  { name: "Restaurants", kind: "expense", fixed: false },
+  { name: "Entertainment", kind: "expense", fixed: false },
+  { name: "Base Income", kind: "income", fixed: true },
+  { name: "Variable Income", kind: "income", fixed: false },
 ] as const;
 
 const CUENTAS_BASE = [
-  { name: "Efectivo", type: "cash" },
-  { name: "Cuenta banco", type: "bank" },
+  { name: "Cash", type: "cash" },
+  { name: "Bank account", type: "bank" },
 ] as const;
 
 export type HogarResumen = {
@@ -100,7 +100,7 @@ export async function crearHogarConAdmin(input: {
   invitedBy: string;
 }): Promise<{ householdId: string; enlace: string }> {
   const nombre = input.nombreHogar.trim();
-  if (!nombre) throw new ErrorCuenta("Falta el nombre del hogar.");
+  if (!nombre) throw new ErrorCuenta("Household name is missing.");
 
   // Validar antes de crear nada: si el correo ya tiene cuenta, no queda un
   // hogar vacío.
@@ -108,7 +108,7 @@ export async function crearHogarConAdmin(input: {
   const sql = getSql();
   const [existe] = await sql`
     select 1 from usuarios where lower(email) = ${email} or lower(usuario) = ${email}`;
-  if (existe) throw new ErrorCuenta("Ese correo ya tiene una cuenta.");
+  if (existe) throw new ErrorCuenta("That email already has an account.");
 
   const householdId = await sql.begin(async (tx) => {
     const [h] = await tx<{ id: string }[]>`
@@ -158,9 +158,9 @@ async function hogarParaCambio(householdId: string) {
            ) as tiene_superadmin
     from households h where h.id = ${householdId}`;
 
-  if (!h) throw new ErrorCuenta("El hogar no existe.");
+  if (!h) throw new ErrorCuenta("The household does not exist.");
   if (h.tiene_superadmin) {
-    throw new ErrorCuenta("Este hogar tiene al super-admin: no se puede archivar ni eliminar.");
+    throw new ErrorCuenta("This household has the super-admin: it cannot be archived or deleted.");
   }
   return h;
 }
@@ -169,7 +169,7 @@ async function hogarParaCambio(householdId: string) {
 // datos se conservan. Es reversible.
 export async function archivarHogar(householdId: string, actorUserId: string): Promise<void> {
   const h = await hogarParaCambio(householdId);
-  if (h.archivado_en) throw new ErrorCuenta("El hogar ya está archivado.");
+  if (h.archivado_en) throw new ErrorCuenta("The household is already archived.");
 
   await getSql()`update households set archivado_en = now() where id = ${householdId}`;
   await registrarEvento({ accion: "archivar_hogar", actorUserId, householdId, detalle: h.name });
@@ -177,7 +177,7 @@ export async function archivarHogar(householdId: string, actorUserId: string): P
 
 export async function restaurarHogar(householdId: string, actorUserId: string): Promise<void> {
   const h = await hogarParaCambio(householdId);
-  if (!h.archivado_en) throw new ErrorCuenta("El hogar no está archivado.");
+  if (!h.archivado_en) throw new ErrorCuenta("The household is not archived.");
 
   await getSql()`update households set archivado_en = null where id = ${householdId}`;
   await registrarEvento({ accion: "restaurar_hogar", actorUserId, householdId, detalle: h.name });
@@ -193,10 +193,10 @@ export async function eliminarHogar(
   const h = await hogarParaCambio(householdId);
 
   if (!h.archivado_en) {
-    throw new ErrorCuenta("Primero archiva el hogar; solo uno archivado se puede eliminar.");
+    throw new ErrorCuenta("Archive the household first; only an archived one can be deleted.");
   }
   if (confirmacion.trim() !== h.name) {
-    throw new ErrorCuenta("El nombre no coincide: no se eliminó nada.");
+    throw new ErrorCuenta("The name does not match: nothing was deleted.");
   }
 
   await getSql().begin(async (tx) => {

@@ -17,12 +17,13 @@ export async function GET(req: NextRequest) {
   let email: string | null = null;
   let hogar: string | null = null;
   let usuario = getUsuarioNombre(req) ?? "";
+  let idioma: string | null = null;
 
   if (usaPostgres()) {
     const [fila] = await getSql()<
-      { nombre: string; usuario: string; email: string | null; hogar: string | null }[]
+      { nombre: string; usuario: string; email: string | null; hogar: string | null; idioma: string | null }[]
     >`
-      select u.nombre, u.usuario, u.email, h.name as hogar
+      select u.nombre, u.usuario, u.email, h.name as hogar, u.idioma
       from usuarios u
       left join members m on m.user_id = u.id
       left join households h on h.id = m.household_id
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       usuario = fila.usuario;
       email = fila.email;
       hogar = fila.hogar;
+      idioma = fila.idioma;
     }
   }
 
@@ -43,6 +45,7 @@ export async function GET(req: NextRequest) {
       usuario,
       email,
       hogar,
+      idioma,
       esSuperadmin: acceso.esSuperadmin,
       rol: acceso.rol,
     },

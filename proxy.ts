@@ -91,7 +91,7 @@ async function manejar(req: NextRequest, session: SessionPayload | null) {
   if (!session) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
-        { error: "No autorizado." },
+        { error: "Unauthorized." },
         { status: 401 }
       );
     }

@@ -43,7 +43,7 @@ function getSheetId(): string {
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId) {
-    throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    throw new Error("GOOGLE_SHEET_ID is missing from .env.local");
   }
 
   return sheetId;
@@ -631,7 +631,7 @@ export async function eliminarTransaction(
   const sheetNumericId = targetSheet?.properties?.sheetId;
 
   if (sheetNumericId === undefined) {
-    throw new Error(`No se encontró la hoja ${TRANSACTIONS_SHEET}`);
+    throw new Error(`Sheet ${TRANSACTIONS_SHEET} was not found`);
   }
 
   await sheets.spreadsheets.batchUpdate({

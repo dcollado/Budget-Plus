@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as { email?: unknown };
     await solicitarReset(body.email);
   } catch (error) {
-    console.error("Error solicitando restablecimiento:", error);
+    console.error("Error requesting password reset:", error);
   }
 
   return NextResponse.json({ success: true });

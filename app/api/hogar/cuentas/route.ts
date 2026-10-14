@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 
     return exito(await listCuentas(r.contexto.householdId));
   } catch (error) {
-    console.error("Error obteniendo cuentas:", error);
-    return fallo("No se pudieron obtener las cuentas.", 500);
+    console.error("Error getting accounts:", error);
+    return fallo("Could not get the accounts.", 500);
   }
 }
 
@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
     const name = String(body.name ?? "").trim();
 
     if (!name) {
-      return fallo("Falta el nombre de la cuenta.", 400);
+      return fallo("Account name is missing.", 400);
     }
 
     return exito(await crearCuenta(r.contexto.householdId, name));
   } catch (error) {
-    console.error("Error creando cuenta:", error);
-    return fallo("No se pudo crear la cuenta.", 500);
+    console.error("Error creating account:", error);
+    return fallo("Could not create the account.", 500);
   }
 }
 
@@ -48,19 +48,19 @@ export async function PATCH(req: NextRequest) {
     const name = String(body.name ?? "").trim();
 
     if (!id || !name) {
-      return fallo("Falta el id o el nombre.", 400);
+      return fallo("Id or name is missing.", 400);
     }
 
     const ok = await actualizarCuenta(id, r.contexto.householdId, { name });
 
     if (!ok) {
-      return fallo("Cuenta no encontrada.", 404);
+      return fallo("Account not found.", 404);
     }
 
     return exito({ id, name });
   } catch (error) {
-    console.error("Error renombrando cuenta:", error);
-    return fallo("No se pudo renombrar la cuenta.", 500);
+    console.error("Error renaming account:", error);
+    return fallo("Could not rename the account.", 500);
   }
 }
 
@@ -74,18 +74,18 @@ export async function DELETE(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
-      return fallo("Falta el id de la cuenta.", 400);
+      return fallo("Account id is missing.", 400);
     }
 
     const ok = await actualizarCuenta(id, r.contexto.householdId, { archived: true });
 
     if (!ok) {
-      return fallo("Cuenta no encontrada.", 404);
+      return fallo("Account not found.", 404);
     }
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error("Error borrando cuenta:", error);
-    return fallo("No se pudo borrar la cuenta.", 500);
+    console.error("Error deleting account:", error);
+    return fallo("Could not delete the account.", 500);
   }
 }

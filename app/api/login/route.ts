@@ -14,6 +14,7 @@ import { ipDe } from "@/lib/auth/ip";
 import { fallo } from "@/lib/api";
 import { getSql, usaPostgres } from "@/lib/db";
 import { obtenerAcceso } from "@/lib/auth/acceso";
+import { LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
 import {
   limpiarFallos,
   loginBloqueado,
@@ -21,8 +22,8 @@ import {
 } from "@/lib/auth/login-limite";
 
 const MENSAJE_BLOQUEO =
-  "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
-const MENSAJE_INVALIDO = "Usuario o contraseña incorrectos.";
+  "Too many attempts. Wait a few minutes and try again.";
+const MENSAJE_INVALIDO = "Incorrect username or password.";
 
 export async function POST(request: Request) {
   try {
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     const acceso = await obtenerAcceso(usuario.id);
 
     if (acceso?.hogarArchivado) {
-      return fallo("Tu hogar está archivado. Contacta al administrador de Budget Plus.", 403);
+      return fallo("Your household is archived. Contact the Budget Plus administrator.", 403);
     }
 
     const token = await createSessionToken(
@@ -93,10 +94,22 @@ export async function POST(request: Request) {
       maxAge: 8 * 60 * 60,
     });
 
+    // Saved language preference follows the person to this browser.
+    if (usaPostgres()) {
+      const [fila] = await getSql()<{ idioma: string | null }[]>`select idioma from usuarios where id = ${usuario.id}`;
+      if (isLocale(fila?.idioma)) {
+        response.cookies.set(LOCALE_COOKIE, fila.idioma, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      }
+    }
+
     return response;
   } catch (error) {
-    console.error("Error iniciando sesión:", error);
+    console.error("Error signing in:", error);
 
-    return fallo("No se pudo iniciar sesión.", 500);
+    return fallo("Could not sign in.", 500);
   }
 }

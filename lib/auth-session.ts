@@ -6,7 +6,7 @@ function getSecret(): string {
   const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
-    throw new Error("Falta SESSION_SECRET en las variables de entorno.");
+    throw new Error("SESSION_SECRET is missing from the environment variables.");
   }
 
   return secret;

@@ -27,12 +27,12 @@ export async function PATCH(req: NextRequest, { params }: Contexto) {
     } else if (body.accion === "restaurar") {
       await restaurarHogar(id, r.acceso.usuarioId);
     } else {
-      return NextResponse.json({ success: false, message: "Acción inválida." }, { status: 400 });
+      return NextResponse.json({ success: false, message: "Invalid action." }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return manejarError(error, "No se pudo actualizar el hogar.");
+    return manejarError(error, "Could not update the household.");
   }
 }
 
@@ -49,6 +49,6 @@ export async function DELETE(req: NextRequest, { params }: Contexto) {
     await eliminarHogar(id, confirmar, r.acceso.usuarioId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    return manejarError(error, "No se pudo eliminar el hogar.");
+    return manejarError(error, "Could not delete the household.");
   }
 }

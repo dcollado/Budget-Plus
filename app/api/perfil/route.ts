@@ -11,17 +11,17 @@ function error(message: string, status: number) {
 export async function PATCH(req: NextRequest) {
   try {
     const usuarioId = getUsuarioId(req);
-    if (!usuarioId) return error("No autorizado.", 401);
+    if (!usuarioId) return error("Unauthorized.", 401);
 
     if (!usaPostgres()) {
-      return error("Editar el perfil requiere la base Postgres.", 400);
+      return error("Editing the profile requires the Postgres database.", 400);
     }
 
     const body = (await req.json()) as { nombre?: unknown };
     const nombre = typeof body.nombre === "string" ? body.nombre.trim() : "";
 
-    if (!nombre) return error("El nombre no puede estar vacío.", 400);
-    if (nombre.length > 60) return error("El nombre es demasiado largo (máximo 60).", 400);
+    if (!nombre) return error("The name cannot be empty.", 400);
+    if (nombre.length > 60) return error("The name is too long (maximum 60).", 400);
 
     const sql = getSql();
 
@@ -35,12 +35,12 @@ export async function PATCH(req: NextRequest) {
       accion: "editar_miembro",
       actorUserId: usuarioId,
       objetivoUserId: usuarioId,
-      detalle: "nombre (desde su perfil)",
+      detalle: "name (from their profile)",
     });
 
     return NextResponse.json({ success: true, data: { nombre } });
   } catch (e) {
-    console.error("Error editando perfil:", e);
-    return error("No se pudo guardar el nombre.", 500);
+    console.error("Error editing profile:", e);
+    return error("Could not save the name.", 500);
   }
 }

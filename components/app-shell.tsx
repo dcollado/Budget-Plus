@@ -17,22 +17,25 @@ import {
   usePathname,
   useRouter,
 } from "next/navigation";
+import { useLocale, useSetLocale, useT } from "@/lib/i18n/client";
+import { isLocale } from "@/lib/i18n/config";
+import type { MessageKey } from "@/lib/i18n/messages";
 
-// Lo del uso diario. Lo que se carga una vez y casi no cambia (cuentas, gastos
-// fijos, miembros, perfil) vive en el menú de usuario.
-const navLinks = [
+// Daily-use items. What is set up once and rarely changes (accounts, fixed
+// expenses, members, profile) lives in the user menu.
+const navLinks: { href: string; label: MessageKey }[] = [
   {
     href: "/presupuesto",
-    label: "Presupuesto",
+    label: "nav.budget",
   },
   {
     href: "/reporte",
-    label: "Reporte",
+    label: "nav.report",
   },
 ];
 
-// La página de perfil avisa con este evento cuando cambia el nombre, para
-// que la cabecera se actualice sin recargar.
+// The profile page fires this event when the name changes, so the
+// header updates without reloading.
 export const EVENTO_PERFIL = "bp:perfil-actualizado";
 
 type Perfil = {
@@ -40,6 +43,7 @@ type Perfil = {
   email: string | null;
   esSuperadmin: boolean;
   rol: "admin" | "member" | null;
+  idioma?: string | null;
 };
 
 const claseLink = (activo: boolean) =>
@@ -54,6 +58,9 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
+  const setLocale = useSetLocale();
 
   const isLoginPage = [
     "/login",
@@ -63,7 +70,7 @@ export function AppShell({
     "/cambios",
   ].includes(pathname);
 
-  // Menú hamburguesa (celular) y menú de usuario (escritorio).
+  // Hamburger menu (mobile) and user menu (desktop).
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -74,9 +81,17 @@ export function AppShell({
   const cargarPerfil = useCallback(() => {
     fetch("/api/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((json) => setPerfil((json?.data as Perfil | undefined) ?? null))
+      .then((json) => {
+        const datos = (json?.data as Perfil | undefined) ?? null;
+        setPerfil(datos);
+        // The saved preference wins: align this browser with it.
+        if (datos && isLocale(datos.idioma) && datos.idioma !== locale) {
+          setLocale(datos.idioma);
+          router.refresh();
+        }
+      })
       .catch(() => setPerfil(null));
-  }, []);
+  }, [locale, router, setLocale]);
 
   useEffect(() => {
     if (isLoginPage) return;
@@ -87,7 +102,7 @@ export function AppShell({
     return () => window.removeEventListener(EVENTO_PERFIL, cargarPerfil);
   }, [isLoginPage, cargarPerfil]);
 
-  // El menú de usuario se cierra con clic afuera o con Escape.
+  // The user menu closes on outside click or Escape.
   useEffect(() => {
     if (!userMenuOpen) return;
 
@@ -113,19 +128,19 @@ export function AppShell({
   const esSuperadmin = perfil?.esSuperadmin === true;
   const esAdminHogar = perfil?.rol === "admin";
 
-  // Datos del hogar (se alimentan y casi no cambian). El super-admin gestiona
-  // todo, su hogar incluido, desde Admin, así que no necesita "Miembros".
+  // Household data (set up once, rarely changes). The super-admin manages
+  // everything, their household included, from Admin, so doesn't need "Members".
   const hogarLinks = [
-    { href: "/configuracion", label: "Cuentas y gastos fijos", Icono: Wallet },
+    { href: "/configuracion", label: t("nav.accounts"), Icono: Wallet },
     ...(esAdminHogar && !esSuperadmin
-      ? [{ href: "/miembros", label: "Miembros", Icono: Users }]
+      ? [{ href: "/miembros", label: t("nav.members"), Icono: Users }]
       : []),
   ];
 
-  // Lo mío: perfil y, si aplica, administración de la plataforma.
+  // Mine: profile and, if applicable, platform administration.
   const cuentaLinks = [
-    { href: "/perfil", label: "Perfil y seguridad", Icono: UserCog },
-    ...(esSuperadmin ? [{ href: "/admin", label: "Admin", Icono: ShieldCheck }] : []),
+    { href: "/perfil", label: t("nav.profile"), Icono: UserCog },
+    ...(esSuperadmin ? [{ href: "/admin", label: t("nav.admin"), Icono: ShieldCheck }] : []),
   ];
 
   const menuLinks = [...hogarLinks, ...cuentaLinks];
@@ -182,12 +197,12 @@ export function AppShell({
                   linkActivo(link.href)
                 )}`}
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             ))}
           </nav>
 
-          {/* Menú de usuario (escritorio): clic para abrir. */}
+          {/* User menu (desktop): click to open. */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
               type="button"
@@ -199,7 +214,7 @@ export function AppShell({
               )}`}
             >
               <User size={16} className="shrink-0" />
-              <span className="truncate capitalize">{perfil?.nombre || "Mi cuenta"}</span>
+              <span className="truncate capitalize">{perfil?.nombre || t("nav.myAccount")}</span>
               <ChevronDown
                 size={14}
                 className={`shrink-0 transition ${userMenuOpen ? "rotate-180" : ""}`}
@@ -213,7 +228,7 @@ export function AppShell({
               >
                 <div className="border-b border-line px-4 py-3">
                   <p className="truncate text-sm font-medium capitalize text-text">
-                    {perfil?.nombre || "Mi cuenta"}
+                    {perfil?.nombre || t("nav.myAccount")}
                   </p>
                   {perfil?.email ? (
                     <p className="truncate text-xs text-text-muted">{perfil.email}</p>
@@ -254,7 +269,7 @@ export function AppShell({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rust transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogOut size={16} className="shrink-0" />
-                    {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                    {loggingOut ? t("userMenu.signingOut") : t("userMenu.signOut")}
                   </button>
                 </div>
               </div>
@@ -268,8 +283,8 @@ export function AppShell({
             }
             aria-label={
               menuOpen
-                ? "Cerrar menú"
-                : "Abrir menú"
+                ? t("nav.closeMenu")
+                : t("nav.openMenu")
             }
             aria-expanded={menuOpen}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text md:hidden"
@@ -294,13 +309,13 @@ export function AppShell({
                     linkActivo(link.href)
                   )}`}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               ))}
 
               <div className="mt-2 border-t border-line pt-3">
                 <p className="truncate px-2 text-sm font-medium capitalize text-text">
-                  {perfil?.nombre || "Mi cuenta"}
+                  {perfil?.nombre || t("nav.myAccount")}
                 </p>
                 {perfil?.email ? (
                   <p className="truncate px-2 pb-1 text-xs text-text-muted">{perfil.email}</p>
@@ -333,8 +348,8 @@ export function AppShell({
                 <LogOut size={18} />
 
                 {loggingOut
-                  ? "Cerrando sesión..."
-                  : "Cerrar sesión"}
+                  ? t("userMenu.signingOut")
+                  : t("userMenu.signOut")}
               </button>
             </div>
           </nav>

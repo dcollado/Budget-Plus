@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     return exito(reporte);
   } catch (error) {
-    console.error("Error armando el reporte anual:", error);
-    return fallo("No se pudo armar el reporte.", 500);
+    console.error("Error building the annual report:", error);
+    return fallo("Could not build the report.", 500);
   }
 }

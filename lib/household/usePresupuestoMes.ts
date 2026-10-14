@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
+import { useT } from "@/lib/i18n/client";
 
 export type MiembroHogar = { id: string; displayName: string; color?: number };
 export type CuentaHogar = { id: string; name: string };
@@ -33,6 +34,7 @@ function sumarTotales(items: CategoriaDelMes[]): TotalesMes {
 // vista del mes (planeado + gastado por categoría), solo cambia qué
 // categorías muestran (fijas vs variables) y si dejan elegir el mes.
 export function usePresupuestoMes(month: string, refreshKey = 0) {
+  const t = useT();
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
   const [cargado, setCargado] = useState(false);
   const [members, setMembers] = useState<MiembroHogar[]>([]);
@@ -59,7 +61,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          throw new Error(data.message || "No se pudo cargar el presupuesto.");
+          throw new Error(t.msg(data.message, "budget.loadError"));
         }
 
         setItems(data.data.items);
@@ -70,7 +72,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
         setCargando(false);
       } catch (err) {
         if (controlador.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
+        setError(err instanceof Error ? err.message : t("budget.loadingError"));
         setCargando(false);
       }
     }
@@ -78,7 +80,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     void cargar();
 
     return () => controlador.abort();
-  }, [month, refreshKey]);
+  }, [month, refreshKey, t]);
 
   const totales = useMemo(() => (cargado ? sumarTotales(items) : null), [cargado, items]);
 

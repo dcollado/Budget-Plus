@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass, sectionCardClass } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 type Totales = {
   plannedIncomeCents: number;
@@ -27,6 +28,7 @@ function FilaCategoria({
   month: string;
   onGuardado: (categoryId: string, plannedAmountCents: number) => void;
 }) {
+  const t = useT();
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -59,12 +61,12 @@ function FilaCategoria({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo guardar.");
+        throw new Error(t.msg(data.message, "common.saveError"));
       }
 
       onGuardado(item.category.id, Math.round(Number(valor || 0) * 100));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando.");
+      setError(err instanceof Error ? err.message : t("common.savingError"));
     } finally {
       setGuardando(false);
     }
@@ -81,7 +83,7 @@ function FilaCategoria({
             </span>
           ) : null}
           {item.inherited ? (
-            <span className="text-xs text-text-muted">(heredado del mes anterior)</span>
+            <span className="text-xs text-text-muted">{t("row.inherited")}</span>
           ) : null}
         </div>
 
@@ -105,7 +107,7 @@ function FilaCategoria({
             disabled={!dirty || guardando}
             className="rounded-lg bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {guardando ? "..." : "Guardar"}
+            {guardando ? "..." : t("common.save")}
           </button>
         </div>
       </div>
@@ -125,6 +127,7 @@ function FilaCategoria({
 }
 
 export default function PlanDelMes({ month, refreshKey }: Props) {
+  const t = useT();
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
   const [totales, setTotales] = useState<Totales | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -142,13 +145,13 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo cargar el presupuesto.");
+        throw new Error(t.msg(data.message, "budget.loadError"));
       }
 
       setItems(data.data.items);
       setTotales(data.data.totales);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
+      setError(err instanceof Error ? err.message : t("budget.loadingError"));
     } finally {
       setCargando(false);
     }
@@ -196,19 +199,19 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       {totales ? (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Planeado</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">{t("plan.planned")}</p>
             <p className="mt-1 text-lg font-semibold text-text">
               {formatearCentavos(totales.plannedExpenseCents)}
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Gastado</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">{t("plan.spent")}</p>
             <p className="mt-1 text-lg font-semibold text-rust">
               {formatearCentavos(totales.actualExpenseCents)}
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Por gastar</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">{t("month.leftToSpend")}</p>
             <p
               className={`mt-1 text-lg font-semibold ${
                 restante < 0 ? "text-rust" : "text-sage"
@@ -218,7 +221,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Ingresos</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">{t("report.income")}</p>
             <p className="mt-1 text-lg font-semibold text-sage">
               {formatearCentavos(totales.actualIncomeCents)}
             </p>
@@ -228,14 +231,14 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
 
       <div className={`${sectionCardClass} p-0`}>
         <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          Categorías de gasto
+          {t("plan.expenseCategories")}
         </h2>
 
         {cargando ? (
-          <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
+          <p className="px-4 py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
         ) : gastos.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-text-muted">
-            No hay categorías de gasto todavía.
+            {t("plan.noExpense")}
           </p>
         ) : (
           gastos.map((item) => (
@@ -252,7 +255,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       {ingresos.length > 0 ? (
         <div className={`${sectionCardClass} mt-4 p-0`}>
           <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-            Categorías de ingreso
+            {t("plan.incomeCategories")}
           </h2>
 
           {ingresos.map((item) => (

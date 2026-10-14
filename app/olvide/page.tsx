@@ -2,8 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { AuthCard, authButtonClass, authInputClass } from "@/components/auth-card";
+import { useT } from "@/lib/i18n/client";
 
 export default function OlvidePage() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
@@ -18,7 +20,7 @@ export default function OlvidePage() {
         body: JSON.stringify({ email }),
       });
     } finally {
-      // Mismo mensaje exista o no el correo.
+      // Same message whether or not the email exists.
       setEnviado(true);
       setEnviando(false);
     }
@@ -27,8 +29,8 @@ export default function OlvidePage() {
   if (enviado) {
     return (
       <AuthCard
-        titulo="Revisa tu correo"
-        subtitulo="Si ese correo tiene una cuenta, te enviamos un enlace para elegir una nueva contraseña. Vence en 1 hora."
+        titulo={t("forgot.checkEmail")}
+        subtitulo={t("forgot.sentBody")}
       >
         <></>
       </AuthCard>
@@ -37,14 +39,14 @@ export default function OlvidePage() {
 
   return (
     <AuthCard
-      titulo="Recuperar contraseña"
-      subtitulo="Escribe el correo de tu cuenta y te enviaremos un enlace."
+      titulo={t("forgot.title")}
+      subtitulo={t("forgot.subtitle")}
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="email"
           autoComplete="email"
-          placeholder="tu@correo.com"
+          placeholder={t("forgot.emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -52,7 +54,7 @@ export default function OlvidePage() {
           className={authInputClass}
         />
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Enviando..." : "Enviar enlace"}
+          {enviando ? t("forgot.sending") : t("forgot.send")}
         </button>
       </form>
     </AuthCard>

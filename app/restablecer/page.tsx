@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard, AuthError, authButtonClass, authInputClass } from "@/components/auth-card";
+import { useT } from "@/lib/i18n/client";
 
 export default function RestablecerPage() {
   return (
@@ -14,6 +15,7 @@ export default function RestablecerPage() {
 
 function Restablecer() {
   const router = useRouter();
+  const t = useT();
   const token = useSearchParams().get("token") ?? "";
 
   const [valido, setValido] = useState<boolean | null>(null);
@@ -33,7 +35,7 @@ function Restablecer() {
     setError("");
 
     if (password !== confirmar) {
-      setError("Las contraseñas no coinciden.");
+      setError(t("common.passwordsMismatch"));
       return;
     }
 
@@ -46,26 +48,26 @@ function Restablecer() {
       });
       const json = (await res.json()) as { message?: string };
       if (!res.ok) {
-        setError(json.message ?? "No se pudo restablecer la contraseña.");
+        setError(t.msg(json.message, "reset.errorGeneric"));
         return;
       }
       router.replace("/login");
     } catch {
-      setError("No se pudo conectar. Intenta de nuevo.");
+      setError(t("common.connectError"));
     } finally {
       setEnviando(false);
     }
   }
 
   if (valido === null) {
-    return <AuthCard titulo="Cargando…">{null}</AuthCard>;
+    return <AuthCard titulo={t("common.loadingEllipsis")}>{null}</AuthCard>;
   }
 
   if (!valido) {
     return (
       <AuthCard
-        titulo="Enlace no válido"
-        subtitulo="El enlace venció o ya se usó. Solicita uno nuevo desde «Olvidé mi contraseña»."
+        titulo={t("reset.invalidTitle")}
+        subtitulo={t("reset.invalidBody")}
       >
         <></>
       </AuthCard>
@@ -73,12 +75,12 @@ function Restablecer() {
   }
 
   return (
-    <AuthCard titulo="Nueva contraseña" subtitulo="Elige una contraseña de al menos 8 caracteres.">
+    <AuthCard titulo={t("reset.title")} subtitulo={t("reset.subtitle")}>
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Nueva contraseña"
+          placeholder={t("reset.newPlaceholder")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -89,7 +91,7 @@ function Restablecer() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Repite la contraseña"
+          placeholder={t("common.repeatPassword")}
           value={confirmar}
           onChange={(e) => setConfirmar(e.target.value)}
           required
@@ -99,7 +101,7 @@ function Restablecer() {
         />
         {error ? <AuthError>{error}</AuthError> : null}
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Guardando..." : "Guardar contraseña"}
+          {enviando ? t("common.saving") : t("reset.save")}
         </button>
       </form>
     </AuthCard>

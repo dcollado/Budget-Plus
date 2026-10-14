@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { sectionCardClass } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 const CLAVE = "bp_primeros_pasos_ok";
 
-// Tarjeta de bienvenida para un hogar sin plan cargado. Se puede cerrar y
-// no vuelve (por navegador; si localStorage no está, simplemente reaparece).
+// Welcome card for a household with no plan loaded. It can be closed and
+// does not come back (per browser; if localStorage is unavailable, it just reappears).
 export default function PrimerosPasos() {
+  const t = useT();
   // Solo se monta con el hogar ya cargado (después de hidratar), así que leer
   // localStorage al inicializar no desajusta el HTML del servidor.
   const [cerrada, setCerrada] = useState(() => {
@@ -35,7 +37,7 @@ export default function PrimerosPasos() {
     try {
       window.localStorage.setItem(CLAVE, "1");
     } catch {
-      // sin localStorage: reaparece la próxima vez, no pasa nada.
+      // without localStorage: it reappears next time, no big deal.
     }
   }
 
@@ -44,44 +46,44 @@ export default function PrimerosPasos() {
       <button
         type="button"
         onClick={cerrar}
-        aria-label="Cerrar"
+        aria-label={t("common.close")}
         className="absolute right-3 top-3 rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
       >
         <X size={16} />
       </button>
 
-      <h2 className="font-serif text-xl font-semibold text-text">Bienvenido a tu hogar</h2>
+      <h2 className="font-serif text-xl font-semibold text-text">{t("onboarding.welcome")}</h2>
       <p className="mt-1 text-sm text-text-muted">
-        Todavía no hay nada planeado. Tres pasos para dejarlo andando:
+        {t("onboarding.nothingPlanned")}
       </p>
 
       <ol className="mt-4 space-y-3 text-sm text-text">
         <li>
-          <span className="font-semibold text-gold">1.</span> Revisa tus{" "}
+          <span className="font-semibold text-gold">1.</span> {t("onboarding.review")}{" "}
           <Link href="/configuracion" className="underline">
-            categorías y cuentas
+            {t("onboarding.categoriesAccounts")}
           </Link>
-          : ajusta los nombres a tu realidad.
+          : {t("onboarding.adjust")}
         </li>
         <li>
-          <span className="font-semibold text-gold">2.</span> Carga tus{" "}
+          <span className="font-semibold text-gold">2.</span> {t("onboarding.enter")}{" "}
           <Link href="/configuracion" className="underline">
-            gastos e ingresos fijos
+            {t("onboarding.fixedItems")}
           </Link>{" "}
-          una sola vez; se heredan mes a mes.
+          {t("onboarding.carryOver")}
         </li>
         <li>
           <span className="font-semibold text-gold">3.</span>{" "}
           {esAdmin ? (
             <>
-              Invita a tu gente desde{" "}
+              {t("onboarding.invite")}{" "}
               <Link href="/miembros" className="underline">
-                Miembros
+                {t("nav.members")}
               </Link>
               .
             </>
           ) : (
-            <>Anota tus gastos del día a día en el presupuesto.</>
+            <>{t("onboarding.logDaily")}</>
           )}
         </li>
       </ol>

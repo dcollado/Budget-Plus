@@ -1,13 +1,14 @@
 import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import { useT } from "@/lib/i18n/client";
 
 export function nombreMiembro(members: MiembroHogar[], id: string): string {
   const nombre = members.find((m) => m.id === id)?.displayName ?? "";
   return nombre ? nombre.charAt(0).toUpperCase() + nombre.slice(1) : "";
 }
 
-// Paleta por persona (las clases tienen que estar escritas completas para
-// que Tailwind las genere). El índice es el color del miembro en su hogar:
-// 0 azul, 1 rojo, 2 verde, 3 ámbar, 4 violeta, 5 naranja.
+// Per-person palette (classes must be written out in full so Tailwind
+// generates them). The index is the member's color in their household:
+// 0 blue, 1 red, 2 green, 3 amber, 4 violet, 5 orange.
 const PALETA = [
   { texto: "text-sky-400", fondo: "bg-sky-500/15", borde: "border-t-sky-500/70" },
   { texto: "text-rose-400", fondo: "bg-rose-500/15", borde: "border-t-rose-500/70" },
@@ -17,8 +18,8 @@ const PALETA = [
   { texto: "text-orange-400", fondo: "bg-orange-500/15", borde: "border-t-orange-500/70" },
 ];
 
-// Sin dueño = neutro. Con color guardado, su lugar en la paleta; sin él (hoja
-// de Google), como siempre: nombre con "c" rojo, el resto azul.
+// No owner = neutral. With a saved color, its place in the palette; without
+// it (Google sheet), as always: name with "c" red, the rest blue.
 export function colorMiembro(members: MiembroHogar[], id: string) {
   if (!id) return { texto: "text-text-muted", fondo: "bg-surface-raised", borde: "border-t-line" };
 
@@ -28,7 +29,7 @@ export function colorMiembro(members: MiembroHogar[], id: string) {
   return nombreMiembro(members, id).toLowerCase().startsWith("c") ? PALETA[1] : PALETA[0];
 }
 
-// Inicial del dueño de un gasto ("D", "C"). Conjunto (sin dueño) no muestra nada.
+// Initial of an expense's owner ("D", "C"). Joint (no owner) shows nothing.
 export default function EtiquetaDueno({
   ownerMemberId,
   members,
@@ -36,6 +37,7 @@ export default function EtiquetaDueno({
   ownerMemberId: string;
   members: MiembroHogar[];
 }) {
+  const t = useT();
   const nombre = ownerMemberId ? nombreMiembro(members, ownerMemberId) : "";
   if (!nombre) return null;
   const color = colorMiembro(members, ownerMemberId);
@@ -43,7 +45,7 @@ export default function EtiquetaDueno({
   return (
     <span
       title={nombre}
-      aria-label={`De ${nombre}`}
+      aria-label={t("owner.of", { name: nombre })}
       className={`flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${color.fondo} ${color.texto}`}
     >
       {nombre.charAt(0)}

@@ -57,7 +57,7 @@ describe("armarReporteAnual", () => {
     expect(reporte.meses[11].month).toBe("2026-12");
   });
 
-  it("los fijos se heredan hasta el final del año; las variables no", () => {
+  it("fixed items carry over to the end of the year; variable ones do not", () => {
     const enero = reporte.meses[0];
     const diciembre = reporte.meses[11];
     const junio = reporte.meses[5];
@@ -82,13 +82,13 @@ describe("armarReporteAnual", () => {
     );
   });
 
-  it("separa por persona y deja Conjunto al final", () => {
-    expect(reporte.personas.map((p) => p.nombre)).toEqual(["Ana", "Conjunto"]);
+  it("splits by person and leaves Joint at the end", () => {
+    expect(reporte.personas.map((p) => p.nombre)).toEqual(["Ana", "Joint"]);
     expect(reporte.personas[0].ingresosCents).toBe(300000 * 12);
     expect(reporte.personas[1].gastosCents).toBe(100000 * 12);
   });
 
-  it("lista los extraordinarios y cuenta las categorías de ahorro", () => {
+  it("lists the extraordinary items and counts the savings categories", () => {
     expect(reporte.extraordinarios).toEqual([
       {
         fecha: "2026-06-15",

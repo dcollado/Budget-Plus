@@ -45,7 +45,7 @@ export type ResultadoHogar =
 // error lista para retornar (401 sin sesión, 409 sin hogar).
 export async function requerirHogar(req: NextRequest): Promise<ResultadoHogar> {
   const usuarioId = getUsuarioId(req);
-  if (!usuarioId) return { ok: false, response: fallo("No autorizado.", 401) };
+  if (!usuarioId) return { ok: false, response: fallo("Unauthorized.", 401) };
 
   const contexto = await getContextoHogar(usuarioId);
 
@@ -53,7 +53,7 @@ export async function requerirHogar(req: NextRequest): Promise<ResultadoHogar> {
     return {
       ok: false,
       response: fallo(
-        "Tu cuenta todavía no tiene un hogar. Pídele a quien administra tu hogar que te invite.",
+        "Your account does not have a household yet. Ask whoever manages your household to invite you.",
         409
       ),
     };

@@ -4,9 +4,12 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ReceiptText } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +41,7 @@ export default function LoginPage() {
       };
 
       if (!response.ok) {
-        setError(data.message || "No se pudo iniciar sesión.");
+        setError(t.msg(data.message, "login.errorGeneric"));
         return;
       }
 
@@ -51,7 +54,7 @@ export default function LoginPage() {
       router.replace(safeNextPath);
       router.refresh();
     } catch {
-      setError("Ocurrió un error al conectar con Budget Plus.");
+      setError(t("login.connectError"));
     } finally {
       setLoading(false);
     }
@@ -59,6 +62,9 @@ export default function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-ink px-5 py-10 text-text">
+      <div className="absolute right-4 top-4 z-10">
+        <LanguageSwitcher />
+      </div>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full bg-rust/10 blur-3xl" />
         <div className="absolute -bottom-24 -right-20 h-80 w-80 rounded-full bg-sage/10 blur-3xl" />
@@ -77,31 +83,30 @@ export default function LoginPage() {
                 Budget Plus
               </p>
               <p className="text-sm text-text-muted">
-                Finanzas personales
+                {t("login.tagline")}
               </p>
             </div>
           </div>
 
           <div className="max-w-xl">
             <p className="mb-4 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-sage">
-              Panel financiero personal
+              {t("login.kicker")}
             </p>
 
             <h1 className="font-display text-5xl font-semibold leading-[1.08] tracking-[-0.04em]">
-              Todo lo importante de tus finanzas, en un solo lugar.
+              {t("login.headline")}
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-8 text-text-muted">
-              Consulta tus facturas, movimientos, gastos fijos, deudas y reportes
-              desde un panel simple y privado.
+              {t("login.blurb")}
             </p>
           </div>
 
           <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
             {[
-              { label: "Facturas", value: "Organizadas", tone: "text-rust" },
-              { label: "Movimientos", value: "Al día", tone: "text-sage" },
-              { label: "Reportes", value: "Claros", tone: "text-gold" },
+              { label: t("login.bills"), value: t("login.organized"), tone: "text-rust" },
+              { label: t("login.transactions"), value: t("login.upToDate"), tone: "text-sage" },
+              { label: t("login.reports"), value: t("login.clear"), tone: "text-gold" },
             ].map((item) => (
               <div
                 key={item.label}
@@ -126,7 +131,7 @@ export default function LoginPage() {
 
             <div>
               <p className="font-display text-xl font-semibold">Budget Plus</p>
-              <p className="text-xs text-text-muted">Finanzas personales</p>
+              <p className="text-xs text-text-muted">{t("login.tagline")}</p>
             </div>
           </div>
 
@@ -137,15 +142,15 @@ export default function LoginPage() {
               </div>
 
               <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-                Acceso privado
+                {t("login.privateAccess")}
               </p>
 
               <h2 className="font-display text-3xl font-semibold tracking-[-0.03em]">
-                Bienvenido de vuelta
+                {t("login.welcome")}
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-text-muted">
-                Ingresa tus credenciales para abrir tu panel financiero.
+                {t("login.enterCredentials")}
               </p>
             </div>
 
@@ -155,7 +160,7 @@ export default function LoginPage() {
                   htmlFor="username"
                   className="mb-2 block text-sm font-medium text-text"
                 >
-                  Correo o usuario
+                  {t("login.emailOrUser")}
                 </label>
 
                 <input
@@ -165,7 +170,7 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Tu correo o usuario"
+                  placeholder={t("login.emailPlaceholder")}
                   required
                   disabled={loading}
                   className="h-12 w-full rounded-xl border border-line bg-surface-raised px-4 text-sm text-text outline-none transition placeholder:text-text-muted/60 focus:border-sage focus:ring-4 focus:ring-sage/10 disabled:opacity-60"
@@ -177,7 +182,7 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-text"
                 >
-                  Contraseña
+                  {t("login.password")}
                 </label>
 
                 <div className="relative">
@@ -188,7 +193,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Tu contraseña"
+                    placeholder={t("login.passwordPlaceholder")}
                     required
                     disabled={loading}
                     className="h-12 w-full rounded-xl border border-line bg-surface-raised px-4 pr-12 text-sm text-text outline-none transition placeholder:text-text-muted/60 focus:border-sage focus:ring-4 focus:ring-sage/10 disabled:opacity-60"
@@ -197,7 +202,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={showPassword ? t("login.hide") : t("login.show")}
                     disabled={loading}
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-text-muted transition hover:bg-line hover:text-text disabled:opacity-60"
                   >
@@ -220,7 +225,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="flex h-12 w-full items-center justify-center rounded-xl bg-rust px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+                {loading ? t("login.signingIn") : t("login.signIn")}
               </button>
 
               <p className="text-center text-sm">
@@ -228,7 +233,7 @@ export default function LoginPage() {
                   href="/olvide"
                   className="text-text-muted underline hover:text-text"
                 >
-                  ¿Olvidaste tu contraseña?
+                  {t("login.forgot")}
                 </Link>
               </p>
             </form>

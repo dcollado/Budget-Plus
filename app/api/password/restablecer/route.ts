@@ -26,9 +26,9 @@ export async function POST(req: Request) {
     if (error instanceof ErrorCuenta) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
-    console.error("Error restableciendo contraseña:", error);
+    console.error("Error resetting password:", error);
     return NextResponse.json(
-      { success: false, message: "No se pudo restablecer la contraseña." },
+      { success: false, message: "Could not reset the password." },
       { status: 500 }
     );
   }

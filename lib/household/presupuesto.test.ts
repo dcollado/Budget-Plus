@@ -46,23 +46,23 @@ const transaccion = (parcial: Partial<Transaction>): Transaction => ({
 });
 
 describe("fechaDelDia", () => {
-  it("arma la fecha con el día del mes", () => {
+  it("builds the date with the day of the month", () => {
     expect(fechaDelDia("2026-03", 5)).toBe("2026-03-05");
   });
 
-  it("acota al último día del mes (31 en febrero)", () => {
+  it("clamps to the last day of the month (31 in February)", () => {
     expect(fechaDelDia("2026-02", 31)).toBe("2026-02-28");
     expect(fechaDelDia("2028-02", 31)).toBe("2028-02-29");
     expect(fechaDelDia("2026-04", 31)).toBe("2026-04-30");
   });
 
-  it("sin día devuelve vacío", () => {
+  it("with no day returns empty", () => {
     expect(fechaDelDia("2026-03", null)).toBe("");
   });
 });
 
 describe("armarVistaMes", () => {
-  it("una fija hereda el monto del mes anterior más reciente", () => {
+  it("a fixed item inherits the amount from the most recent previous month", () => {
     const [item] = armarVistaMes(
       [categoria({})],
       [presupuesto({ month: "2026-01", plannedAmountCents: 50000 })],
@@ -75,7 +75,7 @@ describe("armarVistaMes", () => {
     expect(item.fechaPago).toBe("2026-03-05");
   });
 
-  it("hereda del mes más reciente, no del primero", () => {
+  it("inherits from the most recent month, not the first", () => {
     const [item] = armarVistaMes(
       [categoria({})],
       [
@@ -101,7 +101,7 @@ describe("armarVistaMes", () => {
     expect(item.inherited).toBe(false);
   });
 
-  it("el presupuesto explícito del mes manda sobre la herencia", () => {
+  it("the month's explicit budget wins over inheritance", () => {
     const [item] = armarVistaMes(
       [categoria({})],
       [
@@ -156,7 +156,7 @@ describe("armarVistaMes", () => {
 });
 
 describe("ordenarPorFecha", () => {
-  it("ordena por fecha y deja al final los que no tienen", () => {
+  it("sorts by date and leaves those without one at the end", () => {
     const base = armarVistaMes(
       [
         categoria({ id: "a", name: "A", dueDay: 20 }),

@@ -62,7 +62,7 @@ export function armarReporteAnual(
       const m = members.find((x) => x.id === memberId);
       p = {
         memberId,
-        nombre: memberId ? (m?.displayName ?? "Otro") : "Conjunto",
+        nombre: memberId ? (m?.displayName ?? "Other") : "Joint",
         color: m?.color,
         ingresosCents: 0,
         gastosCents: 0,

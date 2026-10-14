@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
 
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ success: false, message: "No autorizado." }, { status: 401 });
+    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
   }
 
   const month = mesActual();
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     try {
       await sincronizarDosMeses(household.id, month);
     } catch (error) {
-      console.error(`Error sincronizando calendario de ${household.id}:`, error);
+      console.error(`Error syncing calendar for ${household.id}:`, error);
       errores.push(household.id);
     }
   }

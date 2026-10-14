@@ -5,16 +5,18 @@ import { ChevronDown } from "lucide-react";
 import type { CuadroTransferencias as Cuadro } from "@/lib/household/transferencias";
 import { quincena } from "@/lib/household/transferencias";
 import { formatearCentavos } from "@/lib/household/formato";
+import { useT } from "@/lib/i18n/client";
 
-// Tabla "cuenta · mensual · quincenal" + total, salario y remanente. Cada
-// cuenta se puede abrir para ver qué fijos la componen.
+// "account · monthly · biweekly" table + total, salary and remainder. Each
+// account can be opened to see which fixed items make it up.
 export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
+  const t = useT();
   const [abierta, setAbierta] = useState<string | null>(null);
 
   if (cuadro.filas.length === 0) {
     return (
       <p className="px-4 py-3 text-sm text-text-muted">
-        No tenés gastos fijos a tu nombre todavía.
+        {t("transfers.noFixed")}
       </p>
     );
   }
@@ -22,9 +24,9 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
   return (
     <div className="text-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-b border-line px-4 py-2 text-[11px] uppercase tracking-wide text-text-muted">
-        <span>Cuenta</span>
-        <span className="w-20 text-right">Mensual</span>
-        <span className="w-20 text-right">Quincenal</span>
+        <span>{t("transfers.account")}</span>
+        <span className="w-20 text-right">{t("transfers.monthly")}</span>
+        <span className="w-20 text-right">{t("transfers.biweekly")}</span>
       </div>
 
       {cuadro.filas.map((fila) => {
@@ -48,9 +50,9 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
                   size={13}
                   className={`shrink-0 text-text-muted transition ${estaAbierta ? "" : "-rotate-90"}`}
                 />
-                {/* Sin truncar: "Cuenta Quincena" vs "Cuenta Chippu" tienen
-                    que distinguirse en el celular, aunque salte de línea. */}
-                <span className="break-words">{fila.nombre}</span>
+                {/* Do not truncate: "Biweekly account" vs "Joint account" must
+                    be distinguishable on mobile, even if it wraps. */}
+                <span className="break-words">{fila.cuentaId ? fila.nombre : t("transfers.noAccount")}</span>
               </span>
               <span className="w-20 text-right font-medium text-text">
                 {formatearCentavos(fila.totalCents)}
@@ -77,7 +79,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
       })}
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 gap-y-1 bg-surface-raised/60 px-4 py-3">
-        <span className="font-semibold text-text">Total</span>
+        <span className="font-semibold text-text">{t("transfers.total")}</span>
         <span className="w-20 text-right font-semibold text-text">
           {formatearCentavos(cuadro.totalCents)}
         </span>
@@ -87,7 +89,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
 
         {cuadro.salarioCents > 0 ? (
           <>
-            <span className="text-text-muted">Salario</span>
+            <span className="text-text-muted">{t("transfers.salary")}</span>
             <span className="w-20 text-right text-text-muted">
               {formatearCentavos(cuadro.salarioCents)}
             </span>
@@ -95,7 +97,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
               {formatearCentavos(quincena(cuadro.salarioCents))}
             </span>
 
-            <span className="font-semibold text-text">Remanente</span>
+            <span className="font-semibold text-text">{t("transfers.remainder")}</span>
             <span
               className={`w-20 text-right font-semibold ${
                 cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"

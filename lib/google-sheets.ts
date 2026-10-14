@@ -3,7 +3,7 @@ export async function getSheetsClient() {
   const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   if (!clientEmail || !privateKey) {
-    throw new Error("Faltan credenciales de Google Sheets en .env.local");
+    throw new Error("Google Sheets credentials are missing from .env.local");
   }
 
   // googleapis pesa mucho: se carga solo cuando de verdad se usa la hoja.

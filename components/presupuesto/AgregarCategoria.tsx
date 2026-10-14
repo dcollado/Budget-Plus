@@ -7,20 +7,21 @@ import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   kind: CategoryKind;
   month: string;
   onAgregado: (item: CategoriaDelMes) => void;
-  // false (default) = ítem variable de este mes, con fecha exacta.
-  // true = categoría fija (Configuración), con día del mes que se hereda.
+  // false (default) = variable item for this month, with an exact date.
+  // true = fixed category (Settings), with a day of the month that carries over.
   fixed?: boolean;
-  // "fila" = botón a lo ancho de una lista; "boton" = pill compacto, para
-  // ponerlo suelto (ej. los accesos rápidos de Presupuesto).
+  // "fila" = full-width list button; "boton" = compact pill, to
+  // place standalone (e.g. the quick actions in Budget).
   variant?: "fila" | "boton";
-  // Si se pasa (Configuración), muestra un selector de dueño del gasto.
+  // If passed (Settings), shows an expense owner selector.
   members?: MiembroHogar[];
-  // Gasto variable: selector de a qué cuenta va (solo informativo).
+  // Variable expense: selector for which account it goes to (informational only).
   cuentas?: CuentaHogar[];
 };
 
@@ -33,6 +34,7 @@ export default function AgregarCategoria({
   members,
   cuentas,
 }: Props) {
+  const t = useT();
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
@@ -59,23 +61,23 @@ export default function AgregarCategoria({
 
   async function agregar() {
     if (!nombre.trim()) {
-      setError("Ponele un nombre.");
+      setError(t("cat.giveName"));
       return;
     }
 
     const plannedAmountCents = Math.round(Number(monto || 0) * 100);
 
-    // Un variable sin monto no aparece en la lista (solo se listan los que
-    // tienen algo ese mes), así que no tiene sentido crearlo vacío.
+    // A variable item with no amount does not appear in the list (only those
+    // with something that month are listed), so creating it empty makes no sense.
     if (!fixed && plannedAmountCents <= 0) {
-      setError("Poné un monto mayor a 0.");
+      setError(t("cat.amountPositive"));
       return;
     }
 
     const dueDay = fixed && dia ? Number(dia) : null;
 
     if (fixed && dia && !(Number.isInteger(dueDay) && dueDay! >= 1 && dueDay! <= 31)) {
-      setError("El día tiene que ser entre 1 y 31.");
+      setError(t("cat.dayRange"));
       return;
     }
 
@@ -98,7 +100,7 @@ export default function AgregarCategoria({
       const dataCategoria = await resCategoria.json();
 
       if (!resCategoria.ok || !dataCategoria.success) {
-        throw new Error(dataCategoria.message || "No se pudo crear la categoría.");
+        throw new Error(t.msg(dataCategoria.message, "cat.createError"));
       }
 
       let category = dataCategoria.data;
@@ -111,7 +113,7 @@ export default function AgregarCategoria({
         });
         const dataCuenta = await resCuenta.json();
         if (!resCuenta.ok || !dataCuenta.success) {
-          throw new Error(dataCuenta.message || "No se pudo guardar la cuenta.");
+          throw new Error(t.msg(dataCuenta.message, "common.saveAccountError"));
         }
         category = { ...category, cuentaId };
       }
@@ -131,7 +133,7 @@ export default function AgregarCategoria({
         const dataMonto = await resMonto.json();
 
         if (!resMonto.ok || !dataMonto.success) {
-          throw new Error(dataMonto.message || "No se pudo guardar el monto.");
+          throw new Error(t.msg(dataMonto.message, "cat.saveAmountError"));
         }
       }
 
@@ -145,7 +147,7 @@ export default function AgregarCategoria({
 
       cerrar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error agregando.");
+      setError(err instanceof Error ? err.message : t("cat.addError"));
     } finally {
       setGuardando(false);
     }
@@ -153,11 +155,11 @@ export default function AgregarCategoria({
 
   const etiqueta = fixed
     ? kind === "income"
-      ? "Agregar ingreso fijo"
-      : "Agregar gasto fijo"
+      ? t("cat.addFixedIncome")
+      : t("cat.addFixedExpense")
     : kind === "income"
-    ? "Ingreso variable"
-    : "Gasto variable";
+    ? t("cat.variableIncome")
+    : t("cat.variableExpense");
 
   if (!abierto) {
     return variant === "boton" ? (
@@ -199,7 +201,7 @@ export default function AgregarCategoria({
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          placeholder={fixed ? "Nombre (ej. Gimnasio)" : "Nombre (ej. Regalo cumpleaños)"}
+          placeholder={fixed ? t("cat.namePlaceholderFixed") : t("cat.namePlaceholderVariable")}
           className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           autoFocus
         />
@@ -211,7 +213,7 @@ export default function AgregarCategoria({
             inputMode="decimal"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
-            placeholder="Monto"
+            placeholder={t("row.amount")}
             className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5 text-right`}
           />
           {fixed ? (
@@ -222,8 +224,8 @@ export default function AgregarCategoria({
               inputMode="numeric"
               value={dia}
               onChange={(e) => setDia(e.target.value)}
-              placeholder="Día"
-              aria-label="Día del mes en que se paga"
+              placeholder={t("row.day")}
+              aria-label={t("cat.dayTitle")}
               className={`${fieldBaseClass} ${fieldNormalClass} w-20 py-1.5 text-right`}
             />
           ) : (
@@ -233,7 +235,7 @@ export default function AgregarCategoria({
               min={`${month}-01`}
               max={`${month}-${String(ultimoDia).padStart(2, "0")}`}
               onChange={(e) => setFecha(e.target.value)}
-              aria-label="Fecha de pago"
+              aria-label={t("row.paymentDate")}
               className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5`}
             />
           )}
@@ -242,10 +244,10 @@ export default function AgregarCategoria({
           <select
             value={cuentaId}
             onChange={(e) => setCuentaId(e.target.value)}
-            aria-label="A qué cuenta va"
+            aria-label={t("row.whichAccount")}
             className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           >
-            <option value="">¿A qué cuenta va? (opcional)</option>
+            <option value="">{t("cat.whichAccountOptional")}</option>
             {cuentas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -257,10 +259,10 @@ export default function AgregarCategoria({
           <select
             value={dueno}
             onChange={(e) => setDueno(e.target.value)}
-            aria-label="De quién es"
+            aria-label={t("cat.whose")}
             className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           >
-            <option value="">Conjunto</option>
+            <option value="">{t("cat.joint")}</option>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {nombreMiembro(members, m.id)}
@@ -274,7 +276,7 @@ export default function AgregarCategoria({
             onClick={cerrar}
             className="text-xs text-text-muted hover:text-text"
           >
-            Cancelar
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -282,7 +284,7 @@ export default function AgregarCategoria({
             disabled={guardando}
             className="rounded-lg bg-gold px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {guardando ? "..." : "Agregar"}
+            {guardando ? "..." : t("common.add")}
           </button>
         </div>
       </div>

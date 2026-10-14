@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
   if (!invitacion) {
     return NextResponse.json(
-      { success: false, message: "La invitación no es válida o ya venció." },
+      { success: false, message: "The invitation is not valid or has expired." },
       { status: 404 }
     );
   }
@@ -39,9 +39,9 @@ export async function POST(req: Request) {
     if (error instanceof ErrorCuenta) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
-    console.error("Error aceptando invitación:", error);
+    console.error("Error accepting invitation:", error);
     return NextResponse.json(
-      { success: false, message: "No se pudo aceptar la invitación." },
+      { success: false, message: "Could not accept the invitation." },
       { status: 500 }
     );
   }

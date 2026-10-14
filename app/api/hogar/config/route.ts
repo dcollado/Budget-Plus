@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const usuarioId = getUsuarioId(req);
 
     if (!usuarioId) {
-      return fallo("No autorizado.", 401);
+      return fallo("Unauthorized.", 401);
     }
 
     const contexto = await getContextoHogar(usuarioId);
@@ -40,8 +40,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error obteniendo configuración del hogar:", error);
+    console.error("Error getting household configuration:", error);
 
-    return fallo("No se pudo cargar la configuración del hogar.", 500);
+    return fallo("Could not load the household configuration.", 500);
   }
 }
