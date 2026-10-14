@@ -225,6 +225,7 @@ export const en = {
   "profile.email": "Email",
   "profile.household": "Household",
   "profile.howAppear": "How you appear in the budget",
+  "profile.language": "Language",
   "profile.minChars": "Minimum 8 characters.",
   "profile.nameError": "Could not save the name.",
   "profile.nameSaved": "Name saved.",

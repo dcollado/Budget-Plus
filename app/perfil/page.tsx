@@ -10,6 +10,7 @@ import {
   sectionCardClass,
 } from "@/lib/ui";
 import { useT } from "@/lib/i18n/client";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 type Perfil = {
   nombre: string;
@@ -150,6 +151,11 @@ export default function PerfilPage() {
 
             <dt className="text-text-muted">{t("profile.role")}</dt>
             <dd className="text-text">{rolTexto}</dd>
+
+            <dt className="text-text-muted">{t("profile.language")}</dt>
+            <dd>
+              <LanguageSwitcher persist />
+            </dd>
           </dl>
         )}
       </section>

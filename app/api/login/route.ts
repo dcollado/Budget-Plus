@@ -14,6 +14,7 @@ import { ipDe } from "@/lib/auth/ip";
 import { fallo } from "@/lib/api";
 import { getSql, usaPostgres } from "@/lib/db";
 import { obtenerAcceso } from "@/lib/auth/acceso";
+import { LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
 import {
   limpiarFallos,
   loginBloqueado,
@@ -92,6 +93,18 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 8 * 60 * 60,
     });
+
+    // Saved language preference follows the person to this browser.
+    if (usaPostgres()) {
+      const [fila] = await getSql()<{ idioma: string | null }[]>`select idioma from usuarios where id = ${usuario.id}`;
+      if (isLocale(fila?.idioma)) {
+        response.cookies.set(LOCALE_COOKIE, fila.idioma, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      }
+    }
 
     return response;
   } catch (error) {

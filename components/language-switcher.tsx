@@ -6,7 +6,8 @@ import { useLocale, useSetLocale } from "@/lib/i18n/client";
 
 // Small EN | ES toggle. Saves the choice in a cookie and refreshes so the
 // server-rendered parts pick it up too.
-export function LanguageSwitcher() {
+// `persist`: the person is signed in, so also save the choice to their profile.
+export function LanguageSwitcher({ persist = false }: { persist?: boolean }) {
   const router = useRouter();
   const locale = useLocale();
   const setLocale = useSetLocale();
@@ -14,6 +15,13 @@ export function LanguageSwitcher() {
   function choose(next: Locale) {
     if (next === locale) return;
     setLocale(next);
+    if (persist) {
+      void fetch("/api/perfil/idioma", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: next }),
+      }).catch(() => {});
+    }
     router.refresh();
   }
 

@@ -247,7 +247,7 @@ export function AppShell({
                 ))}
 
                 <div className="border-t border-line px-3 py-2">
-                  <LanguageSwitcher />
+                  <LanguageSwitcher persist />
                 </div>
 
                 <div className="border-t border-line p-1.5">
@@ -307,7 +307,7 @@ export function AppShell({
               ))}
 
               <div className="mt-2 border-t border-line px-2 pt-3">
-                <LanguageSwitcher />
+                <LanguageSwitcher persist />
               </div>
 
               <div className="mt-2 border-t border-line pt-3">
