@@ -19,7 +19,6 @@ import {
 } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n/messages";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 // Daily-use items. What is set up once and rarely changes (accounts, fixed
 // expenses, members, profile) lives in the user menu.
@@ -246,10 +245,6 @@ export function AppShell({
                   </div>
                 ))}
 
-                <div className="border-t border-line px-3 py-2">
-                  <LanguageSwitcher persist />
-                </div>
-
                 <div className="border-t border-line p-1.5">
                   <button
                     type="button"
@@ -305,10 +300,6 @@ export function AppShell({
                   {t(link.label)}
                 </Link>
               ))}
-
-              <div className="mt-2 border-t border-line px-2 pt-3">
-                <LanguageSwitcher persist />
-              </div>
 
               <div className="mt-2 border-t border-line pt-3">
                 <p className="truncate px-2 text-sm font-medium capitalize text-text">
