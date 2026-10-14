@@ -11,6 +11,7 @@ import {
 } from "@/lib/ui";
 import { useT } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { CalendarCard } from "@/components/calendar-card";
 
 type Perfil = {
   nombre: string;
@@ -25,6 +26,7 @@ const mayuscula = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t
 
 export default function PerfilPage() {
   const t = useT();
+  const [tab, setTab] = useState<"perfil" | "calendario">("perfil");
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [nombre, setNombre] = useState("");
   const [guardandoNombre, setGuardandoNombre] = useState(false);
@@ -130,6 +132,29 @@ export default function PerfilPage() {
         <h1 className="font-display text-2xl font-semibold text-text">{t("nav.profile")}</h1>
       </div>
 
+      {perfil?.rol === "admin" ? (
+        <div role="tablist" className="flex overflow-hidden rounded-xl border border-line">
+          {(["perfil", "calendario"] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`flex-1 px-3 py-2 text-sm font-medium transition ${
+                tab === id ? "bg-gold-soft text-gold" : "text-text-muted hover:text-text"
+              }`}
+            >
+              {id === "perfil" ? t("profile.tabProfile") : t("profile.tabCalendar")}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {tab === "calendario" && perfil?.rol === "admin" ? (
+        <CalendarCard endpoint="/api/hogar/calendario" />
+      ) : (
+        <>
       <section className={sectionCardClass}>
         {perfil === null ? (
           <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
@@ -270,6 +295,8 @@ export default function PerfilPage() {
           {enviando ? t("common.saving") : t("profile.changePassword")}
         </button>
       </form>
+        </>
+      )}
     </main>
   );
 }

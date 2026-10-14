@@ -31,6 +31,13 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
+          en: "Each household can connect its own Google Calendar from Profile → Calendar, so payment reminders land in your own calendar.",
+          es: "Cada hogar puede conectar su propio Google Calendar desde Perfil → Calendario, para que los recordatorios de pago lleguen a tu propio calendario.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
           en: "The whole app is available in English and Spanish. Switch language (EN | ES) from your Profile, or from the sign-in and changes pages.",
           es: "Toda la app está disponible en inglés y español. Cambia el idioma (EN | ES) desde tu Perfil, o desde las páginas de acceso y de cambios.",
         },

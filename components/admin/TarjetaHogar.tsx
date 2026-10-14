@@ -19,6 +19,7 @@ import {
   labelClass,
   sectionCardClass,
 } from "@/lib/ui";
+import { CalendarCard } from "@/components/calendar-card";
 import type { HogarResumen } from "@/lib/admin/hogares";
 import { useT } from "@/lib/i18n/client";
 
@@ -40,6 +41,7 @@ export function TarjetaHogar({
   onArchivar,
   onRestaurar,
   onEliminar,
+  calendarioEndpoint,
 }: {
   hogar: HogarResumen;
   yo: string;
@@ -57,6 +59,8 @@ export function TarjetaHogar({
   onArchivar?: () => void;
   onRestaurar?: () => void;
   onEliminar?: () => void;
+  // Solo el super-admin la pasa: ruta del calendario de este hogar.
+  calendarioEndpoint?: string;
 }) {
   const t = useT();
   const [abierto, setAbierto] = useState(true);
@@ -335,6 +339,12 @@ export function TarjetaHogar({
             </button>
           </form>
           )}
+
+          {calendarioEndpoint && !hogar.archivadoEn ? (
+            <div className="border-t border-line pt-4">
+              <CalendarCard endpoint={calendarioEndpoint} bare />
+            </div>
+          ) : null}
 
           {!hogar.tieneSuperadmin && (onArchivar || onRestaurar || onEliminar) ? (
             <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
