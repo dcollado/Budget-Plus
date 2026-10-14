@@ -68,6 +68,9 @@ export function AppShell({
     "/olvide",
     "/restablecer",
     "/cambios",
+    "/inicio",
+    "/solicitar",
+    "/",
   ].includes(pathname);
 
   // Hamburger menu (mobile) and user menu (desktop).

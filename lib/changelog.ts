@@ -22,6 +22,29 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-16",
+    titulo: {
+      en: "New home page and access requests",
+      es: "Nueva página de inicio y solicitudes de acceso",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "A public home page that explains what Budget Plus is and how to get started, instead of going straight to the sign-in.",
+          es: "Una página de inicio pública que explica qué es Budget Plus y cómo empezar, en vez de ir directo al inicio de sesión.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "Anyone can request access from the home page. Requests are reviewed by an administrator, who can correct the details and accept or deny before the invitation is sent.",
+          es: "Cualquier persona puede pedir acceso desde la página de inicio. Un administrador revisa las solicitudes, puede corregir los datos y aceptar o rechazar antes de enviar la invitación.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-15",
     titulo: {
       en: "English and Spanish, and your own Google Calendar",
