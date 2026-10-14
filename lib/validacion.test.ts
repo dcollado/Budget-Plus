@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { centavosDe, fechaValida, mesValido } from "./validacion";
 
 describe("centavosDe", () => {
-  it("convierte montos válidos", () => {
+  it("converts valid amounts", () => {
     expect(centavosDe(10)).toBe(1000);
     expect(centavosDe(12.5)).toBe(1250);
     expect(centavosDe("19.99")).toBe(1999);

@@ -18,7 +18,7 @@ export default function OlvidePage() {
         body: JSON.stringify({ email }),
       });
     } finally {
-      // Mismo mensaje exista o no el correo.
+      // Same message whether or not the email exists.
       setEnviado(true);
       setEnviando(false);
     }
@@ -27,8 +27,8 @@ export default function OlvidePage() {
   if (enviado) {
     return (
       <AuthCard
-        titulo="Revisa tu correo"
-        subtitulo="Si ese correo tiene una cuenta, te enviamos un enlace para elegir una nueva contraseña. Vence en 1 hora."
+        titulo="Check your email"
+        subtitulo="If that email has an account, we sent you a link to choose a new password. It expires in 1 hour."
       >
         <></>
       </AuthCard>
@@ -37,14 +37,14 @@ export default function OlvidePage() {
 
   return (
     <AuthCard
-      titulo="Recuperar contraseña"
-      subtitulo="Escribe el correo de tu cuenta y te enviaremos un enlace."
+      titulo="Reset password"
+      subtitulo="Enter your account email and we'll send you a link."
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="email"
           autoComplete="email"
-          placeholder="tu@correo.com"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -52,7 +52,7 @@ export default function OlvidePage() {
           className={authInputClass}
         />
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Enviando..." : "Enviar enlace"}
+          {enviando ? "Sending..." : "Send link"}
         </button>
       </form>
     </AuthCard>

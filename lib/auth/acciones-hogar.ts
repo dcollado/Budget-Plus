@@ -26,7 +26,7 @@ export function manejarError(error: unknown, mensaje: string): NextResponse {
 }
 
 const invalida = () =>
-  NextResponse.json({ success: false, message: "Acción inválida." }, { status: 400 });
+  NextResponse.json({ success: false, message: "Invalid action." }, { status: 400 });
 
 // { accion: "invitar", email, role } | { accion: "reenviar", invitacionId }
 // | { accion: "reset", userId }
@@ -117,7 +117,7 @@ export async function accionDelete(
 ): Promise<NextResponse> {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) {
-    return NextResponse.json({ success: false, message: "Falta la invitación." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Invitation is missing." }, { status: 400 });
   }
   await cancelarInvitacion(householdId, id, actor.usuarioId);
   return NextResponse.json({ success: true });

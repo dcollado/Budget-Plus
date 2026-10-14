@@ -13,14 +13,14 @@ export default function PresupuestoPage() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const [month, setMonth] = useState(mesActual);
 
-  // Una carga por mes. La del primero también alimenta "Tus transferencias".
+  // One load per month. The first one also feeds "Your transfers".
   const primerMes = usePresupuestoMes(month);
   const segundoMes = usePresupuestoMes(mesSiguiente(month));
 
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
       .then((res) => res.json())
-      // Si falla (ej. cuota de Sheets) no es "sin hogar": se deja en null.
+      // If it fails (e.g. Sheets quota) it is not "no household": leave it null.
       .then((data) => data?.success && setHogarConfigurado(Boolean(data.data?.hogarConfigurado)))
       .catch(() => {});
   }, []);
@@ -29,13 +29,13 @@ export default function PresupuestoPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-gold">Presupuesto</p>
-          <h1 className="font-serif text-3xl font-semibold text-text">Plan del hogar</h1>
+          <p className="text-sm font-medium text-gold">Budget</p>
+          <h1 className="font-serif text-3xl font-semibold text-text">Household plan</h1>
         </div>
 
         <label>
           <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-muted">
-            Desde
+            From
           </span>
           <input
             type="month"
@@ -56,8 +56,8 @@ export default function PresupuestoPage() {
 
       {hogarConfigurado ? (
         <>
-          {/* Lo primero que se mira el día de pago: cuánto pasar a cada
-              cuenta. Solo el cuadro de quien está logueado. */}
+          {/* The first thing you check on payday: how much to move to each
+              account. Only the logged-in person's table. */}
           <TarjetaTransferencias
             cuadro={
               primerMes.cargando || !primerMes.yo
@@ -66,8 +66,8 @@ export default function PresupuestoPage() {
             }
           />
 
-          {/* Dos meses a la vez: el elegido y el siguiente. Lado a lado en
-              desktop, uno debajo del otro en mobile. */}
+          {/* Two months at a time: the selected one and the next. Side by side on
+              desktop, stacked on mobile. */}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <MesPanel month={month} datos={primerMes} />
             <MesPanel month={mesSiguiente(month)} datos={segundoMes} />

@@ -7,8 +7,8 @@ import { sectionCardClass } from "@/lib/ui";
 
 const CLAVE = "bp_primeros_pasos_ok";
 
-// Tarjeta de bienvenida para un hogar sin plan cargado. Se puede cerrar y
-// no vuelve (por navegador; si localStorage no está, simplemente reaparece).
+// Welcome card for a household with no plan loaded. It can be closed and
+// does not come back (per browser; if localStorage is unavailable, it just reappears).
 export default function PrimerosPasos() {
   // Solo se monta con el hogar ya cargado (después de hidratar), así que leer
   // localStorage al inicializar no desajusta el HTML del servidor.
@@ -35,7 +35,7 @@ export default function PrimerosPasos() {
     try {
       window.localStorage.setItem(CLAVE, "1");
     } catch {
-      // sin localStorage: reaparece la próxima vez, no pasa nada.
+      // without localStorage: it reappears next time, no big deal.
     }
   }
 
@@ -44,44 +44,44 @@ export default function PrimerosPasos() {
       <button
         type="button"
         onClick={cerrar}
-        aria-label="Cerrar"
+        aria-label="Close"
         className="absolute right-3 top-3 rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
       >
         <X size={16} />
       </button>
 
-      <h2 className="font-serif text-xl font-semibold text-text">Bienvenido a tu hogar</h2>
+      <h2 className="font-serif text-xl font-semibold text-text">Welcome to your household</h2>
       <p className="mt-1 text-sm text-text-muted">
-        Todavía no hay nada planeado. Tres pasos para dejarlo andando:
+        Nothing is planned yet. Three steps to get going:
       </p>
 
       <ol className="mt-4 space-y-3 text-sm text-text">
         <li>
-          <span className="font-semibold text-gold">1.</span> Revisa tus{" "}
+          <span className="font-semibold text-gold">1.</span> Review your{" "}
           <Link href="/configuracion" className="underline">
-            categorías y cuentas
+            categories and accounts
           </Link>
-          : ajusta los nombres a tu realidad.
+          : adjust the names to fit your reality.
         </li>
         <li>
-          <span className="font-semibold text-gold">2.</span> Carga tus{" "}
+          <span className="font-semibold text-gold">2.</span> Enter your{" "}
           <Link href="/configuracion" className="underline">
-            gastos e ingresos fijos
+            fixed expenses and income
           </Link>{" "}
-          una sola vez; se heredan mes a mes.
+          just once; they carry over month to month.
         </li>
         <li>
           <span className="font-semibold text-gold">3.</span>{" "}
           {esAdmin ? (
             <>
-              Invita a tu gente desde{" "}
+              Invite your people from{" "}
               <Link href="/miembros" className="underline">
-                Miembros
+                Members
               </Link>
               .
             </>
           ) : (
-            <>Anota tus gastos del día a día en el presupuesto.</>
+            <>Log your day-to-day expenses in the budget.</>
           )}
         </li>
       </ol>

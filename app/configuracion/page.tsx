@@ -14,12 +14,12 @@ import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDu
 type Tab = "fijos" | "cuentas";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "fijos", label: "Fijos" },
-  { id: "cuentas", label: "Mis cuentas" },
+  { id: "fijos", label: "Fixed" },
+  { id: "cuentas", label: "My accounts" },
 ];
 
-// useSearchParams necesita un Suspense alrededor para que la página se
-// pueda seguir prerenderizando (ver docs de Next).
+// useSearchParams needs a Suspense around it so the page can still be
+// prerendered (see Next docs).
 export default function ConfiguracionPage() {
   return (
     <Suspense fallback={null}>
@@ -32,8 +32,8 @@ function Configuracion() {
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const router = useRouter();
 
-  // La pestaña vive en la URL (?tab=cuentas), así el link "Editar
-  // cuentas" de Presupuesto abre directo en Mis cuentas.
+  // The tab lives in the URL (?tab=cuentas), so the "Edit accounts"
+  // link in Budget opens directly on My accounts.
   const tab: Tab = useSearchParams().get("tab") === "cuentas" ? "cuentas" : "fijos";
 
   function elegirTab(nuevo: Tab) {
@@ -60,7 +60,7 @@ function Configuracion() {
   useEffect(() => {
     fetch("/api/hogar/config", { cache: "no-store" })
       .then((res) => res.json())
-      // Si falla (ej. cuota de Sheets) no es "sin hogar": se deja en null.
+      // If it fails (e.g. Sheets quota) it is not "no household": leave it null.
       .then((data) => data?.success && setHogarConfigurado(Boolean(data.data?.hogarConfigurado)))
       .catch(() => {});
   }, []);
@@ -70,14 +70,14 @@ function Configuracion() {
 
   const suma = (lista: typeof items) => lista.reduce((t, i) => t + i.plannedAmountCents, 0);
 
-  // Un grupo por persona (yo primero) y "Conjunto" para los sin dueño.
+  // One group per person (me first) and "Joint" for those without an owner.
   const gruposFijos = [
     ...[...members].sort((a, b) => (a.id === yo ? -1 : b.id === yo ? 1 : 0)).map((m) => m.id),
     "",
   ]
     .map((id) => ({
       id,
-      nombre: id ? nombreMiembro(members, id) : "los dos",
+      nombre: id ? nombreMiembro(members, id) : "both",
       color: colorMiembro(members, id),
       items: gastosFijos.filter((i) =>
         id ? i.category.ownerMemberId === id : !members.some((m) => m.id === i.category.ownerMemberId)
@@ -90,20 +90,20 @@ function Configuracion() {
       className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? "max-w-5xl" : "max-w-3xl"}`}
     >
       <div className="mb-5">
-        <p className="text-sm font-medium text-gold">Cuentas y gastos fijos</p>
+        <p className="text-sm font-medium text-gold">Accounts and fixed expenses</p>
         <h1 className="font-serif text-3xl font-semibold text-text">
-          {tab === "fijos" ? "Gastos e ingresos fijos" : "Mis cuentas"}
+          {tab === "fijos" ? "Fixed expenses and income" : "My accounts"}
         </h1>
         <p className="mt-1 text-sm text-text-muted">
           {tab === "fijos"
-            ? "Se cargan una sola vez acá y se heredan solos mes a mes. Editalos cuando cambien (ej. sube la renta) — no hace falta tocarlos todos los meses."
-            : "A qué cuenta va cada uno de tus fijos. Con esto se arma tu cuadro de transferencias de Presupuesto."}
+            ? "Enter them once here and they carry over month to month on their own. Edit them when they change (e.g. rent goes up) — no need to touch them every month."
+            : "Which account each of your fixed items goes to. This builds your transfers table in Budget."}
         </p>
       </div>
 
       <div
         role="tablist"
-        aria-label="Secciones de configuración"
+        aria-label="Settings sections"
         className="mb-5 flex overflow-hidden rounded-xl border border-line"
       >
         {TABS.map((t) => (
@@ -134,7 +134,7 @@ function Configuracion() {
 
       {hogarConfigurado && tab === "cuentas" ? (
         cargando || !yo ? (
-          <p className="py-6 text-center text-sm text-text-muted">Cargando...</p>
+          <p className="py-6 text-center text-sm text-text-muted">Loading...</p>
         ) : (
           <GestionCuentas
             items={items}
@@ -150,12 +150,12 @@ function Configuracion() {
         <>
           <div className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold text-text">
-              Ingresos fijos
+              Fixed income
               <span className="text-sage">{formatearCentavos(suma(ingresosFijos))}</span>
             </h2>
 
             {cargando ? (
-              <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
+              <p className="px-4 py-6 text-center text-sm text-text-muted">Loading...</p>
             ) : (
               ingresosFijos.map((item) => (
                 <FilaPresupuesto
@@ -173,11 +173,11 @@ function Configuracion() {
             <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} fixed />
           </div>
 
-          {/* Gastos fijos agrupados por persona, cada grupo con su color
-              (David azul, Caro rojo). Lado a lado en pantallas anchas. */}
+          {/* Fixed expenses grouped by person, each group with its color
+              (David blue, Caro red). Side by side on wide screens. */}
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {cargando ? (
-              <p className="py-6 text-center text-sm text-text-muted">Cargando...</p>
+              <p className="py-6 text-center text-sm text-text-muted">Loading...</p>
             ) : (
               gruposFijos.map((grupo) => (
                 <div
@@ -185,14 +185,14 @@ function Configuracion() {
                   className={`${sectionCardClass} border-t-4 p-0! ${grupo.color.borde}`}
                 >
                   <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold">
-                    <span className={grupo.color.texto}>Fijos de {grupo.nombre}</span>
+                    <span className={grupo.color.texto}>Fixed items of {grupo.nombre}</span>
                     <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
                   </h2>
                   <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem_1.75rem]">
                     <span />
-                    <span className="text-right">Monto</span>
-                    <span className="text-center">Día</span>
-                    <span className="text-center" title="Cuenta como ahorro">Ahorro</span>
+                    <span className="text-right">Amount</span>
+                    <span className="text-center">Day</span>
+                    <span className="text-center" title="Counts as savings">Savings</span>
                   </div>
                   {grupo.items.map((item) => (
                     <FilaPresupuesto

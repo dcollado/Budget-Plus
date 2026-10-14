@@ -61,7 +61,7 @@ export async function buscarUsuarioPorNombreDeUsuario(
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   if (!sheetId) {
-    throw new Error("Falta GOOGLE_SHEET_ID en .env.local");
+    throw new Error("GOOGLE_SHEET_ID is missing from .env.local");
   }
 
   const sheets = await getSheetsClient();

@@ -23,14 +23,14 @@ const HOGAR_NOMBRE = "Casa";
 const CATEGORIAS_DEFAULT = [
   { name: "Renta", kind: "expense", fixed: true },
   { name: "Luz y Agua", kind: "expense", fixed: true },
-  { name: "Internet y Telefonía", kind: "expense", fixed: true },
+  { name: "Internet and Phone", kind: "expense", fixed: true },
   { name: "Ahorros", kind: "expense", fixed: true },
   { name: "Bancos", kind: "expense", fixed: true }, // cuotas de deuda + comisiones
   { name: "Comida", kind: "expense", fixed: true },
   { name: "Transporte", kind: "expense", fixed: true },
   { name: "Salud", kind: "expense", fixed: true },
   { name: "Cami", kind: "expense", fixed: true },
-  { name: "Misceláneos", kind: "expense", fixed: false },
+  { name: "Miscellaneous", kind: "expense", fixed: false },
   { name: "Restaurantes", kind: "expense", fixed: false },
   { name: "Entretenimiento", kind: "expense", fixed: false },
   { name: "Ingreso Base David", kind: "income", fixed: true },
@@ -51,7 +51,7 @@ function getSheetsClient() {
   if (!clientEmail || !privateKey || !sheetId) {
     console.error(
       "Faltan GOOGLE_SHEETS_CLIENT_EMAIL, GOOGLE_SHEETS_PRIVATE_KEY o GOOGLE_SHEET_ID.\n" +
-        "Corré el script con: node --env-file=.env.local scripts/seed-hogar.mjs <usuario1> <usuario2>"
+        "Run the script with: node --env-file=.env.local scripts/seed-hogar.mjs <usuario1> <usuario2>"
     );
     process.exit(1);
   }
@@ -108,7 +108,7 @@ async function main() {
 
     if (!match) {
       console.error(
-        `No encontré ningún usuario "${usuario}" en la hoja Usuarios. Revisá el nombre exacto.`
+        `No user "${usuario}" found in the Usuarios sheet. Check the exact name.`
       );
       process.exit(1);
     }
@@ -150,7 +150,7 @@ async function main() {
       ]);
       console.log(`Member creado para "${user.usuario}" (${memberId})`);
     } else {
-      console.log(`"${user.usuario}" ya tenía member (${memberId})`);
+      console.log(`"${user.usuario}" already had a member (${memberId})`);
     }
 
     memberIds.push(memberId);
@@ -174,7 +174,7 @@ async function main() {
     }
     console.log(`Cuentas creadas: ${CUENTAS_DEFAULT.map((c) => c.name).join(", ")}`);
   } else {
-    console.log("El household ya tenía cuentas, no se crean nuevas.");
+    console.log("The household already had accounts, no new ones are created.");
   }
 
   // Categorías por defecto, si el household todavía no tiene ninguna.
@@ -193,10 +193,10 @@ async function main() {
       ]);
     }
     console.log(
-      `Categorías creadas: ${CATEGORIAS_DEFAULT.map((c) => c.name).join(", ")}`
+      `Categories created: ${CATEGORIAS_DEFAULT.map((c) => c.name).join(", ")}`
     );
   } else {
-    console.log("El household ya tenía categorías, no se crean nuevas.");
+    console.log("The household already had categories, no new ones are created.");
   }
 
   console.log("\nListo.");

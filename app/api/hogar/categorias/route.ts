@@ -41,18 +41,18 @@ export async function POST(req: NextRequest) {
     const ownerMemberId = String(body.ownerMemberId ?? "").trim();
 
     if (!name) {
-      return fallo("Falta el nombre de la categoría.", 400);
+      return fallo("Category name is missing.", 400);
     }
 
     if (!KINDS.includes(kind as CategoryKind)) {
-      return fallo("Tipo de categoría inválido.", 400);
+      return fallo("Invalid category type.", 400);
     }
 
     if (ownerMemberId) {
       const members = await listMembers(contexto.householdId);
 
       if (!members.some((m) => m.id === ownerMemberId)) {
-        return fallo("Ese miembro no es de este hogar.", 400);
+        return fallo("That member is not part of this household.", 400);
       }
     }
 
@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
 
     return exito(category);
   } catch (error) {
-    console.error("Error creando categoría:", error);
-    return fallo("No se pudo crear la categoría.", 500);
+    console.error("Error creating category:", error);
+    return fallo("Could not create the category.", 500);
   }
 }
 
@@ -81,13 +81,13 @@ export async function DELETE(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
-      return fallo("Falta el id de la categoría.", 400);
+      return fallo("Category id is missing.", 400);
     }
 
     const archivada = await archivarCategory(id, contexto.householdId);
 
     if (!archivada) {
-      return fallo("Categoría no encontrada.", 404);
+      return fallo("Category not found.", 404);
     }
 
     const householdId = contexto.householdId;
@@ -95,11 +95,11 @@ export async function DELETE(req: NextRequest) {
 
     return Response.json({
       success: true,
-      message: "Categoría eliminada correctamente.",
+      message: "Category deleted successfully.",
     });
   } catch (error) {
-    console.error("Error eliminando categoría:", error);
-    return fallo("No se pudo eliminar la categoría.", 500);
+    console.error("Error deleting category:", error);
+    return fallo("Could not delete the category.", 500);
   }
 }
 
@@ -115,7 +115,7 @@ export async function PATCH(req: NextRequest) {
     const id = String(body.id ?? "").trim();
 
     if (!id) {
-      return fallo("Falta el id de la categoría.", 400);
+      return fallo("Category id is missing.", 400);
     }
 
     const cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean } = {};
@@ -135,7 +135,7 @@ export async function PATCH(req: NextRequest) {
         const cuentas = await listCuentas(contexto.householdId);
 
         if (!cuentas.some((c) => c.id === cuentaId)) {
-          return fallo("Esa cuenta no existe.", 400);
+          return fallo("That account does not exist.", 400);
         }
       }
 
@@ -145,7 +145,7 @@ export async function PATCH(req: NextRequest) {
     const ok = await actualizarCategoria(id, contexto.householdId, cambios);
 
     if (!ok) {
-      return fallo("Categoría no encontrada.", 404);
+      return fallo("Category not found.", 404);
     }
 
     // La cuenta no sale en el calendario; solo un cambio de día lo afecta.
@@ -158,7 +158,7 @@ export async function PATCH(req: NextRequest) {
 
     return exito({ id, ...cambios });
   } catch (error) {
-    console.error("Error actualizando categoría:", error);
-    return fallo("No se pudo guardar el cambio.", 500);
+    console.error("Error updating category:", error);
+    return fallo("Could not save the change.", 500);
   }
 }

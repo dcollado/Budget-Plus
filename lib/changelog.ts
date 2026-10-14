@@ -1,7 +1,6 @@
-// Registro de cambios de interfaz, a grandes rasgos, para que un admin pueda
-// revisarlos en /cambios (página pública: nada sensible aquí; sin nombres,
-// montos, correos ni IDs). Se agrega una entrada nueva ARRIBA al hacer
-// cambios visibles de UI.
+// Log of interface changes, in broad strokes, so an admin can review them
+// at /cambios (public page: nothing sensitive here; no names, amounts,
+// emails or IDs). Add a new entry at the TOP when making visible UI changes.
 
 export type CambioTipo = "nuevo" | "mejora" | "ajuste";
 
@@ -19,114 +18,119 @@ export type EntradaChangelog = {
 export const CHANGELOG: EntradaChangelog[] = [
   {
     fecha: "2026-10-14",
-    titulo: "Página de cambios y acceso más seguro",
+    titulo: "Changes page and safer sign-in",
     cambios: [
       {
         tipo: "nuevo",
         texto:
-          "Esta página (/cambios): resumen público de los cambios de interfaz, sin necesidad de iniciar sesión.",
+          "This page (/cambios): a public summary of interface changes, no sign-in required.",
       },
       {
         tipo: "mejora",
         texto:
-          "El inicio de sesión acepta correo o nombre de usuario, y limita los intentos fallidos.",
+          "Sign-in accepts email or username, and limits failed attempts.",
+      },
+      {
+        tipo: "ajuste",
+        texto:
+          "The whole interface is now in English.",
       },
     ],
   },
   {
     fecha: "2026-10-13",
-    titulo: "Menú de usuario, perfil y reporte anual",
+    titulo: "User menu, profile and annual report",
     cambios: [
       {
         tipo: "nuevo",
         texto:
-          "Reporte anual (\"Resumen del año\") con marca de ahorro por categoría.",
+          "Annual report (\"Year summary\") with a savings flag per category.",
       },
       {
         tipo: "nuevo",
         texto:
-          "Página de perfil: cambiar nombre y contraseña desde la app.",
+          "Profile page: change your name and password from the app.",
       },
       {
         tipo: "mejora",
         texto:
-          "Menú de usuario desplegable (perfil, miembros/admin, cerrar sesión).",
+          "Dropdown user menu (profile, members/admin, sign out).",
       },
       {
         tipo: "ajuste",
         texto:
-          "\"Cuentas y gastos fijos\" pasó al menú de usuario; la barra superior queda con Presupuesto y Reporte.",
+          "\"Accounts and fixed expenses\" moved to the user menu; the top bar keeps Budget and Report.",
       },
     ],
   },
   {
     fecha: "2026-10-12",
-    titulo: "Varios hogares y panel de administración",
+    titulo: "Multiple households and admin panel",
     cambios: [
       {
         tipo: "nuevo",
         texto:
-          "Panel Admin para crear y gestionar hogares y miembros en una sola pantalla.",
+          "Admin panel to create and manage households and members on a single screen.",
       },
       {
         tipo: "nuevo",
         texto:
-          "Invitaciones por correo y recuperación de contraseña (\"Olvidé mi contraseña\").",
+          "Email invitations and password recovery (\"Forgot password\").",
       },
       {
         tipo: "nuevo",
         texto:
-          "Archivar, restaurar y eliminar hogares con confirmación escribiendo el nombre.",
+          "Archive, restore and delete households, confirmed by typing the name.",
       },
       {
         tipo: "nuevo",
-        texto: "Registro de acciones de administración visible para el super-admin.",
+        texto: "Log of administration actions visible to the super-admin.",
       },
       {
         tipo: "mejora",
         texto:
-          "Colores por miembro tomados de una paleta del hogar.",
+          "Per-member colors taken from a household palette.",
       },
       {
         tipo: "mejora",
         texto:
-          "Mensaje claro cuando no hay hogar y tarjeta de primeros pasos para hogares vacíos.",
+          "Clear message when there is no household and a getting-started card for empty households.",
       },
     ],
   },
   {
     fecha: "2026-10-05",
-    titulo: "Gastos variables",
+    titulo: "Variable expenses",
     cambios: [
       {
         tipo: "mejora",
         texto:
-          "Los gastos variables pueden tener cuenta opcional y se muestran en la lista del mes.",
+          "Variable expenses can have an optional account and are shown in the month's list.",
       },
     ],
   },
   {
     fecha: "2026-09-30",
-    titulo: "Presupuesto, transferencias y gastos fijos",
+    titulo: "Budget, transfers and fixed expenses",
     cambios: [
       {
         tipo: "nuevo",
         texto:
-          "\"Tus transferencias\": tabla de cuánto enviar a cada cuenta, arriba del presupuesto, a todo el ancho y plegable.",
+          "\"Your transfers\": a table of how much to send to each account, above the budget, full width and collapsible.",
       },
       {
         tipo: "nuevo",
         texto:
-          "Presupuesto con dos meses lado a lado, fechas de pago y diseño compacto.",
+          "Budget with two months side by side, payment dates and a compact layout.",
       },
       {
         tipo: "nuevo",
-        texto: "Recordatorios de pagos sincronizados con un calendario compartido.",
+        texto: "Payment reminders synced with a shared calendar.",
       },
       {
         tipo: "mejora",
         texto:
-          "Configuración dividida en pestañas (Fijos y Mis cuentas), con ingresos primero y grupos por color de persona.",
+          "Settings split into tabs (Fixed and My accounts), with income first and groups by person color.",
       },
     ],
   },

@@ -33,7 +33,7 @@ function Restablecer() {
     setError("");
 
     if (password !== confirmar) {
-      setError("Las contraseñas no coinciden.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -46,26 +46,26 @@ function Restablecer() {
       });
       const json = (await res.json()) as { message?: string };
       if (!res.ok) {
-        setError(json.message ?? "No se pudo restablecer la contraseña.");
+        setError(json.message ?? "Could not reset the password.");
         return;
       }
       router.replace("/login");
     } catch {
-      setError("No se pudo conectar. Intenta de nuevo.");
+      setError("Could not connect. Please try again.");
     } finally {
       setEnviando(false);
     }
   }
 
   if (valido === null) {
-    return <AuthCard titulo="Cargando…">{null}</AuthCard>;
+    return <AuthCard titulo="Loading…">{null}</AuthCard>;
   }
 
   if (!valido) {
     return (
       <AuthCard
-        titulo="Enlace no válido"
-        subtitulo="El enlace venció o ya se usó. Solicita uno nuevo desde «Olvidé mi contraseña»."
+        titulo="Invalid link"
+        subtitulo="The link has expired or was already used. Request a new one from the Forgot password page."
       >
         <></>
       </AuthCard>
@@ -73,12 +73,12 @@ function Restablecer() {
   }
 
   return (
-    <AuthCard titulo="Nueva contraseña" subtitulo="Elige una contraseña de al menos 8 caracteres.">
+    <AuthCard titulo="New password" subtitulo="Choose a password of at least 8 characters.">
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Nueva contraseña"
+          placeholder="New password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -89,7 +89,7 @@ function Restablecer() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Repite la contraseña"
+          placeholder="Repeat the password"
           value={confirmar}
           onChange={(e) => setConfirmar(e.target.value)}
           required
@@ -99,7 +99,7 @@ function Restablecer() {
         />
         {error ? <AuthError>{error}</AuthError> : null}
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Guardando..." : "Guardar contraseña"}
+          {enviando ? "Saving..." : "Save password"}
         </button>
       </form>
     </AuthCard>

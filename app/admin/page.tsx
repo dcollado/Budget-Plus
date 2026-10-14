@@ -20,7 +20,7 @@ export default function AdminPage() {
   const [yo, setYo] = useState("");
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  // Sube cada vez que se recarga: la actividad abierta se actualiza sola.
+  // Increments on every reload: the open activity list refreshes itself.
   const [version, setVersion] = useState(0);
 
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
@@ -30,7 +30,7 @@ export default function AdminPage() {
   const cargar = useCallback(async () => {
     const res = await fetch("/api/admin/hogares", { cache: "no-store" });
     if (res.status === 403) {
-      setMensaje({ tipo: "error", texto: "Esta sección es solo para el super-admin." });
+      setMensaje({ tipo: "error", texto: "This section is for the super-admin only." });
       setHogares([]);
       return;
     }
@@ -39,7 +39,7 @@ export default function AdminPage() {
       message?: string;
     };
     if (!res.ok || !json.data) {
-      setMensaje({ tipo: "error", texto: json.message ?? "No se pudieron cargar los hogares." });
+      setMensaje({ tipo: "error", texto: json.message ?? "Could not load households." });
       setHogares([]);
       return;
     }
@@ -52,7 +52,7 @@ export default function AdminPage() {
     void cargar();
   }, [cargar]);
 
-  // Una sola vía para todas las acciones: muestra el resultado y recarga.
+  // A single path for all actions: shows the result and reloads.
   async function ejecutar(
     url: string,
     init: RequestInit,
@@ -67,15 +67,15 @@ export default function AdminPage() {
       });
       const json = (await res.json()) as { message?: string; data?: { enlaceDev?: string } };
       if (!res.ok) {
-        setMensaje({ tipo: "error", texto: json.message ?? "No se pudo completar la acción." });
+        setMensaje({ tipo: "error", texto: json.message ?? "Could not complete the action." });
         return false;
       }
-      const extra = json.data?.enlaceDev ? ` · Solo desarrollo: ${json.data.enlaceDev}` : "";
+      const extra = json.data?.enlaceDev ? ` · Development only: ${json.data.enlaceDev}` : "";
       setMensaje({ tipo: "ok", texto: exito + extra });
       await cargar();
       return true;
     } catch {
-      setMensaje({ tipo: "error", texto: "No se pudo conectar. Intenta de nuevo." });
+      setMensaje({ tipo: "error", texto: "Could not connect. Please try again." });
       return false;
     } finally {
       setOcupado(false);
@@ -87,7 +87,7 @@ export default function AdminPage() {
     const ok = await ejecutar(
       "/api/admin/hogares",
       { method: "POST", body: JSON.stringify({ nombreHogar, adminEmail }) },
-      `Hogar «${nombreHogar.trim()}» creado. Invitación enviada a ${adminEmail.trim()}.`
+      `Household "${nombreHogar.trim()}" created. Invitation sent to ${adminEmail.trim()}.`
     );
     if (ok) {
       setNombreHogar("");
@@ -107,15 +107,15 @@ export default function AdminPage() {
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-gold">Administración</p>
-          <h1 className="font-display text-2xl font-semibold text-text">Hogares y personas</h1>
+          <p className="text-sm font-medium text-gold">Administration</p>
+          <h1 className="font-display text-2xl font-semibold text-text">Households and people</h1>
         </div>
         <button
           type="button"
           onClick={() => setNuevoAbierto((v) => !v)}
           className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90"
         >
-          <Plus size={16} /> Nuevo hogar
+          <Plus size={16} /> New household
         </button>
       </div>
 
@@ -134,10 +134,10 @@ export default function AdminPage() {
 
       {nuevoAbierto ? (
         <form onSubmit={crearHogar} className={`${sectionCardClass} space-y-4`}>
-          <h2 className="text-base font-semibold text-text">Nuevo hogar</h2>
+          <h2 className="text-base font-semibold text-text">New household</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass} htmlFor="nombreHogar">Nombre del hogar</label>
+              <label className={labelClass} htmlFor="nombreHogar">Household name</label>
               <input
                 id="nombreHogar"
                 value={nombreHogar}
@@ -147,7 +147,7 @@ export default function AdminPage() {
               />
             </div>
             <div>
-              <label className={labelClass} htmlFor="adminEmail">Correo del administrador</label>
+              <label className={labelClass} htmlFor="adminEmail">Administrator email</label>
               <input
                 id="adminEmail"
                 type="email"
@@ -159,20 +159,20 @@ export default function AdminPage() {
             </div>
           </div>
           <p className={helperTextClass}>
-            Le llega una invitación para crear su nombre y contraseña.
+            They receive an invitation to set their name and password.
           </p>
           <button
             type="submit"
             disabled={ocupado}
             className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
           >
-            {ocupado ? "Enviando invitación..." : "Crear hogar e invitar"}
+            {ocupado ? "Sending invitation..." : "Create household and invite"}
           </button>
         </form>
       ) : null}
 
       {hogares === null ? (
-        <p className="text-sm text-text-muted">Cargando…</p>
+        <p className="text-sm text-text-muted">Loading…</p>
       ) : (
         hogares.map((h) => (
           <TarjetaHogar
@@ -181,42 +181,42 @@ export default function AdminPage() {
             yo={yo}
             ocupado={ocupado}
             onInvitar={(email, role) =>
-              accion(h.id, { accion: "invitar", email, role }, `Invitación enviada a ${email}.`)
+              accion(h.id, { accion: "invitar", email, role }, `Invitation sent to ${email}.`)
             }
             onReenviar={(invitacionId, email) =>
-              accion(h.id, { accion: "reenviar", invitacionId }, `Invitación reenviada a ${email}.`)
+              accion(h.id, { accion: "reenviar", invitacionId }, `Invitation resent to ${email}.`)
             }
             onReset={(userId, email) =>
               accion(
                 h.id,
                 { accion: "reset", userId },
-                `Enlace para cambiar contraseña enviado a ${email}.`
+                `Password change link sent to ${email}.`
               )
             }
             onEditar={(userId, datos) =>
               ejecutar(
                 `/api/admin/hogares/${h.id}/miembros`,
                 { method: "PATCH", body: JSON.stringify({ userId, ...datos }) },
-                "Cambios guardados."
+                "Changes saved."
               )
             }
             onEstado={(userId, activo, etiqueta) =>
               ejecutar(
                 `/api/admin/hogares/${h.id}/miembros`,
                 { method: "PATCH", body: JSON.stringify({ userId, activo }) },
-                activo ? `${etiqueta} reactivado.` : `${etiqueta} ya no tiene acceso.`
+                activo ? `${etiqueta} reactivated.` : `${etiqueta} no longer has access.`
               )
             }
             onArchivar={() => {
               if (
                 window.confirm(
-                  `¿Archivar «${h.name}»? Nadie del hogar podrá entrar. Los datos se conservan y puedes restaurarlo.`
+                  `Archive "${h.name}"? Nobody in the household will be able to sign in. The data is kept and you can restore it.`
                 )
               ) {
                 void ejecutar(
                   `/api/admin/hogares/${h.id}`,
                   { method: "PATCH", body: JSON.stringify({ accion: "archivar" }) },
-                  `Hogar «${h.name}» archivado.`
+                  `Household "${h.name}" archived.`
                 );
               }
             }}
@@ -224,27 +224,27 @@ export default function AdminPage() {
               void ejecutar(
                 `/api/admin/hogares/${h.id}`,
                 { method: "PATCH", body: JSON.stringify({ accion: "restaurar" }) },
-                `Hogar «${h.name}» restaurado.`
+                `Household "${h.name}" restored.`
               )
             }
             onEliminar={() => {
               const escrito = window.prompt(
-                `Esto borra TODO el hogar «${h.name}» y las cuentas de sus miembros, sin vuelta atrás.
+                `This deletes the ENTIRE household "${h.name}" and its members accounts, with no way back.
 
-Escribe el nombre exacto del hogar para confirmar:`
+Type the exact household name to confirm:`
               );
               if (escrito === null) return;
               void ejecutar(
                 `/api/admin/hogares/${h.id}?confirmar=${encodeURIComponent(escrito)}`,
                 { method: "DELETE" },
-                `Hogar «${h.name}» eliminado.`
+                `Household "${h.name}" deleted.`
               );
             }}
             onCancelar={(invitacionId, email) =>
               ejecutar(
                 `/api/admin/hogares/${h.id}/miembros?id=${encodeURIComponent(invitacionId)}`,
                 { method: "DELETE" },
-                `Invitación a ${email} cancelada.`
+                `Invitation to ${email} cancelled.`
               )
             }
           />

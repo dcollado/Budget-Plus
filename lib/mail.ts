@@ -19,10 +19,10 @@ export async function enviarCorreo(correo: Correo): Promise<void> {
 
   if (!host || !pass) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("Falta la configuración SMTP (SMTP_HOST / SMTP_PASS).");
+      throw new Error("SMTP configuration is missing (SMTP_HOST / SMTP_PASS).");
     }
     console.log(
-      `\n[correo simulado] Para: ${correo.to}\nAsunto: ${correo.subject}\n${correo.text}\n`
+      `\n[simulated email] To: ${correo.to}\nSubject: ${correo.subject}\n${correo.text}\n`
     );
     return;
   }
@@ -56,7 +56,7 @@ function plantilla(titulo: string, parrafo: string, boton: string, enlace: strin
 <h2 style="margin:0 0 12px">${escaparHtml(titulo)}</h2>
 <p style="line-height:1.5">${escaparHtml(parrafo)}</p>
 <p style="margin:24px 0"><a href="${escaparHtml(enlace)}" style="background:#d4a24c;color:#111;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">${escaparHtml(boton)}</a></p>
-<p style="font-size:12px;color:#6b7280">Si el botón no funciona, copia este enlace en tu navegador:<br>${escaparHtml(enlace)}</p>
+<p style="font-size:12px;color:#6b7280">If the button does not work, copy this link into your browser:<br>${escaparHtml(enlace)}</p>
 </div>`;
 }
 
@@ -65,22 +65,22 @@ export async function correoInvitacion(opts: {
   hogar: string;
   enlace: string;
 }): Promise<void> {
-  const parrafo = `Te invitaron a unirte al hogar «${opts.hogar}» en Budget Plus. El enlace vence en 7 días y solo se puede usar una vez.`;
+  const parrafo = `You have been invited to join the household "${opts.hogar}" on Budget Plus. The link expires in 7 days and can only be used once.`;
   await enviarCorreo({
     to: opts.to,
-    subject: `Te invitaron a ${opts.hogar} en Budget Plus`,
-    text: `${parrafo}\n\nAcepta la invitación: ${opts.enlace}`,
-    html: plantilla("Te invitaron a Budget Plus", parrafo, "Aceptar invitación", opts.enlace),
+    subject: `You have been invited to ${opts.hogar} on Budget Plus`,
+    text: `${parrafo}\n\nAccept the invitation: ${opts.enlace}`,
+    html: plantilla("You have been invited to Budget Plus", parrafo, "Accept invitation", opts.enlace),
   });
 }
 
 export async function correoReset(opts: { to: string; enlace: string }): Promise<void> {
   const parrafo =
-    "Recibimos una solicitud para restablecer tu contraseña. El enlace vence en 1 hora. Si no fuiste tú, ignora este correo.";
+    "We received a request to reset your password. The link expires in 1 hour. If this was not you, ignore this email.";
   await enviarCorreo({
     to: opts.to,
-    subject: "Restablece tu contraseña de Budget Plus",
-    text: `${parrafo}\n\nRestablecer: ${opts.enlace}`,
-    html: plantilla("Restablecer contraseña", parrafo, "Elegir nueva contraseña", opts.enlace),
+    subject: "Reset your Budget Plus password",
+    text: `${parrafo}\n\nReset: ${opts.enlace}`,
+    html: plantilla("Reset password", parrafo, "Choose a new password", opts.enlace),
   });
 }

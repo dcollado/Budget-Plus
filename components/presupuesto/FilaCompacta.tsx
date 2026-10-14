@@ -11,18 +11,18 @@ import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
 type Props = {
   item: CategoriaDelMes;
   month: string;
-  // Sin onGuardado = solo lectura (los fijos, que se editan en Configuración).
+  // Without onGuardado = read-only (fixed items, which are edited in Settings).
   onGuardado?: (categoryId: string, plannedAmountCents: number, fechaPago?: string) => void;
   onEliminar?: (categoryId: string) => void;
   members?: MiembroHogar[];
-  // Gastos variables: a qué cuenta va esa plata extra. Solo se muestra;
-  // no suma al cuadro de transferencias (ese es solo de fijos).
+  // Variable expenses: which account that extra money goes to. Display only;
+  // it does not count toward the transfers table (that is fixed items only).
   cuentas?: CuentaHogar[];
   onCuenta?: (categoryId: string, cuentaId: string) => void;
 };
 
-// Una sola línea: fecha · nombre · monto. Pensada para listas largas en
-// mobile — el nombre se trunca en vez de empujar el monto a otra línea.
+// A single line: date · name · amount. Designed for long lists on
+// mobile — the name truncates instead of pushing the amount to another line.
 export default function FilaCompacta({
   item,
   month,
@@ -72,7 +72,7 @@ export default function FilaCompacta({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo guardar.");
+        throw new Error(data.message || "Could not save.");
       }
 
       if (conCuenta && cuentaId !== item.category.cuentaId) {
@@ -83,7 +83,7 @@ export default function FilaCompacta({
         });
         const dataCuenta = await resCuenta.json();
         if (!resCuenta.ok || !dataCuenta.success) {
-          throw new Error(dataCuenta.message || "No se pudo guardar la cuenta.");
+          throw new Error(dataCuenta.message || "Could not save the account.");
         }
         onCuenta?.(item.category.id, cuentaId);
       }
@@ -91,14 +91,14 @@ export default function FilaCompacta({
       onGuardado?.(item.category.id, Math.round(Number(monto || 0) * 100), fecha);
       setEditando(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando.");
+      setError(err instanceof Error ? err.message : "Error saving.");
     } finally {
       setGuardando(false);
     }
   }
 
   async function eliminar() {
-    const confirmado = window.confirm(`¿Eliminar "${item.category.name}"?`);
+    const confirmado = window.confirm(`Delete "${item.category.name}"?`);
     if (!confirmado) return;
 
     try {
@@ -109,12 +109,12 @@ export default function FilaCompacta({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo eliminar.");
+        throw new Error(data.message || "Could not delete.");
       }
 
       onEliminar?.(item.category.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error eliminando.");
+      setError(err instanceof Error ? err.message : "Error deleting.");
     }
   }
 
@@ -149,7 +149,7 @@ export default function FilaCompacta({
               type="button"
               onClick={() => (editando ? setEditando(false) : abrir())}
               className="rounded-md p-1 text-text-muted transition hover:text-gold"
-              aria-label={`Editar ${item.category.name}`}
+              aria-label={`Edit ${item.category.name}`}
             >
               <Pencil size={13} />
             </button>
@@ -159,7 +159,7 @@ export default function FilaCompacta({
               type="button"
               onClick={eliminar}
               className="rounded-md p-1 text-text-muted transition hover:text-rust"
-              aria-label={`Eliminar ${item.category.name}`}
+              aria-label={`Delete ${item.category.name}`}
             >
               <Trash2 size={13} />
             </button>
@@ -184,17 +184,17 @@ export default function FilaCompacta({
             min={`${month}-01`}
             max={`${month}-${String(ultimoDia).padStart(2, "0")}`}
             onChange={(e) => setFecha(e.target.value)}
-            aria-label="Fecha de pago"
+            aria-label="Payment date"
             className={`${fieldBaseClass} ${fieldNormalClass} w-36 flex-1 py-1.5`}
           />
           {conCuenta ? (
             <select
               value={cuentas.some((c) => c.id === cuentaId) ? cuentaId : ""}
               onChange={(e) => setCuentaId(e.target.value)}
-              aria-label="A qué cuenta va"
+              aria-label="Which account it goes to"
               className={`${fieldBaseClass} ${fieldNormalClass} w-full py-1.5 text-sm`}
             >
-              <option value="">Sin cuenta</option>
+              <option value="">No account</option>
               {cuentas.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -208,7 +208,7 @@ export default function FilaCompacta({
             disabled={guardando}
             className="rounded-lg bg-gold px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
           >
-            {guardando ? "..." : "Guardar"}
+            {guardando ? "..." : "Save"}
           </button>
         </div>
       ) : null}

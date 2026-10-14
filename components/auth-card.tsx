@@ -7,7 +7,7 @@ export const authInputClass =
 export const authButtonClass =
   "flex h-12 w-full items-center justify-center rounded-xl bg-rust px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
 
-// Marco compartido por invitación, olvidé y restablecer (páginas públicas).
+// Shared frame for invitation, forgot and reset pages (public pages).
 export function AuthCard({
   titulo,
   subtitulo,
@@ -34,7 +34,7 @@ export function AuthCard({
         </div>
         <p className="mt-5 text-center text-sm">
           <Link href="/login" className="text-text-muted underline hover:text-text">
-            Volver a iniciar sesión
+            Back to sign in
           </Link>
         </p>
       </div>

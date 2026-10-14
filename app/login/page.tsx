@@ -38,7 +38,7 @@ export default function LoginPage() {
       };
 
       if (!response.ok) {
-        setError(data.message || "No se pudo iniciar sesión.");
+        setError(data.message || "Could not sign in.");
         return;
       }
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
       router.replace(safeNextPath);
       router.refresh();
     } catch {
-      setError("Ocurrió un error al conectar con Budget Plus.");
+      setError("An error occurred while connecting to Budget Plus.");
     } finally {
       setLoading(false);
     }
@@ -77,31 +77,31 @@ export default function LoginPage() {
                 Budget Plus
               </p>
               <p className="text-sm text-text-muted">
-                Finanzas personales
+                Personal finance
               </p>
             </div>
           </div>
 
           <div className="max-w-xl">
             <p className="mb-4 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-sage">
-              Panel financiero personal
+              Personal finance dashboard
             </p>
 
             <h1 className="font-display text-5xl font-semibold leading-[1.08] tracking-[-0.04em]">
-              Todo lo importante de tus finanzas, en un solo lugar.
+              Everything that matters about your finances, in one place.
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-8 text-text-muted">
-              Consulta tus facturas, movimientos, gastos fijos, deudas y reportes
-              desde un panel simple y privado.
+              Check your bills, transactions, fixed expenses, debts and reports
+              from a simple, private dashboard.
             </p>
           </div>
 
           <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
             {[
-              { label: "Facturas", value: "Organizadas", tone: "text-rust" },
-              { label: "Movimientos", value: "Al día", tone: "text-sage" },
-              { label: "Reportes", value: "Claros", tone: "text-gold" },
+              { label: "Bills", value: "Organized", tone: "text-rust" },
+              { label: "Transactions", value: "Up to date", tone: "text-sage" },
+              { label: "Reports", value: "Clear", tone: "text-gold" },
             ].map((item) => (
               <div
                 key={item.label}
@@ -126,7 +126,7 @@ export default function LoginPage() {
 
             <div>
               <p className="font-display text-xl font-semibold">Budget Plus</p>
-              <p className="text-xs text-text-muted">Finanzas personales</p>
+              <p className="text-xs text-text-muted">Personal finance</p>
             </div>
           </div>
 
@@ -137,15 +137,15 @@ export default function LoginPage() {
               </div>
 
               <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-                Acceso privado
+                Private access
               </p>
 
               <h2 className="font-display text-3xl font-semibold tracking-[-0.03em]">
-                Bienvenido de vuelta
+                Welcome back
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-text-muted">
-                Ingresa tus credenciales para abrir tu panel financiero.
+                Enter your credentials to open your financial dashboard.
               </p>
             </div>
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
                   htmlFor="username"
                   className="mb-2 block text-sm font-medium text-text"
                 >
-                  Correo o usuario
+                  Email or username
                 </label>
 
                 <input
@@ -165,7 +165,7 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Tu correo o usuario"
+                  placeholder="Your email or username"
                   required
                   disabled={loading}
                   className="h-12 w-full rounded-xl border border-line bg-surface-raised px-4 text-sm text-text outline-none transition placeholder:text-text-muted/60 focus:border-sage focus:ring-4 focus:ring-sage/10 disabled:opacity-60"
@@ -177,7 +177,7 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-text"
                 >
-                  Contraseña
+                  Password
                 </label>
 
                 <div className="relative">
@@ -188,7 +188,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Tu contraseña"
+                    placeholder="Your password"
                     required
                     disabled={loading}
                     className="h-12 w-full rounded-xl border border-line bg-surface-raised px-4 pr-12 text-sm text-text outline-none transition placeholder:text-text-muted/60 focus:border-sage focus:ring-4 focus:ring-sage/10 disabled:opacity-60"
@@ -197,7 +197,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     disabled={loading}
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-text-muted transition hover:bg-line hover:text-text disabled:opacity-60"
                   >
@@ -220,7 +220,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="flex h-12 w-full items-center justify-center rounded-xl bg-rust px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+                {loading ? "Signing in..." : "Sign in"}
               </button>
 
               <p className="text-center text-sm">
@@ -228,7 +228,7 @@ export default function LoginPage() {
                   href="/olvide"
                   className="text-text-muted underline hover:text-text"
                 >
-                  ¿Olvidaste tu contraseña?
+                  Forgot your password?
                 </Link>
               </p>
             </form>

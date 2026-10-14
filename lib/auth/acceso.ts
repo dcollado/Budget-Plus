@@ -71,10 +71,10 @@ function denegar(status: 401 | 403, message: string): Resultado {
 
 async function cargar(req: NextRequest): Promise<Resultado> {
   const usuarioId = getUsuarioId(req);
-  if (!usuarioId) return denegar(401, "No autorizado.");
+  if (!usuarioId) return denegar(401, "Unauthorized.");
 
   const acceso = await obtenerAcceso(usuarioId);
-  if (!acceso) return denegar(401, "No autorizado.");
+  if (!acceso) return denegar(401, "Unauthorized.");
 
   return { ok: true, acceso };
 }
@@ -83,7 +83,7 @@ async function cargar(req: NextRequest): Promise<Resultado> {
 export async function requerirSuperadmin(req: NextRequest): Promise<Resultado> {
   const r = await cargar(req);
   if (!r.ok) return r;
-  if (!r.acceso.esSuperadmin) return denegar(403, "No tienes permiso para esto.");
+  if (!r.acceso.esSuperadmin) return denegar(403, "You do not have permission for this.");
   return r;
 }
 
@@ -93,7 +93,7 @@ export async function requerirAdminHogar(req: NextRequest): Promise<Resultado> {
   const r = await cargar(req);
   if (!r.ok) return r;
   if (r.acceso.rol !== "admin" || !r.acceso.householdId) {
-    return denegar(403, "Solo un administrador del hogar puede hacer esto.");
+    return denegar(403, "Only a household administrator can do this.");
   }
   return r;
 }

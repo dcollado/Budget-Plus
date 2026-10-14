@@ -41,7 +41,7 @@ async function main() {
   const password = process.argv[2];
 
   if (!password) {
-    console.error('Uso: node scripts/generar-hash.mjs "tuContraseña"');
+    console.error('Usage: node scripts/generar-hash.mjs "yourPassword"');
     process.exit(1);
   }
 
@@ -49,7 +49,7 @@ async function main() {
   const hash = await derivarHash(password, salt);
   const resultado = `${bytesToBase64Url(salt)}:${bytesToBase64Url(hash)}`;
 
-  console.log("\nPegá esto en la columna passwordHash de la hoja Usuarios:\n");
+  console.log("\nPaste this into the passwordHash column of the Usuarios sheet:\n");
   console.log(resultado);
   console.log();
 }

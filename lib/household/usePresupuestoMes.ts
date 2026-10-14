@@ -59,7 +59,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          throw new Error(data.message || "No se pudo cargar el presupuesto.");
+          throw new Error(data.message || "Could not load the budget.");
         }
 
         setItems(data.data.items);
@@ -70,7 +70,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
         setCargando(false);
       } catch (err) {
         if (controlador.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
+        setError(err instanceof Error ? err.message : "Error loading the budget.");
         setCargando(false);
       }
     }

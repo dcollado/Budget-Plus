@@ -6,15 +6,15 @@ import type { CuadroTransferencias as Cuadro } from "@/lib/household/transferenc
 import { quincena } from "@/lib/household/transferencias";
 import { formatearCentavos } from "@/lib/household/formato";
 
-// Tabla "cuenta · mensual · quincenal" + total, salario y remanente. Cada
-// cuenta se puede abrir para ver qué fijos la componen.
+// "account · monthly · biweekly" table + total, salary and remainder. Each
+// account can be opened to see which fixed items make it up.
 export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
   const [abierta, setAbierta] = useState<string | null>(null);
 
   if (cuadro.filas.length === 0) {
     return (
       <p className="px-4 py-3 text-sm text-text-muted">
-        No tenés gastos fijos a tu nombre todavía.
+        You have no fixed expenses under your name yet.
       </p>
     );
   }
@@ -22,9 +22,9 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
   return (
     <div className="text-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-b border-line px-4 py-2 text-[11px] uppercase tracking-wide text-text-muted">
-        <span>Cuenta</span>
-        <span className="w-20 text-right">Mensual</span>
-        <span className="w-20 text-right">Quincenal</span>
+        <span>Account</span>
+        <span className="w-20 text-right">Monthly</span>
+        <span className="w-20 text-right">Biweekly</span>
       </div>
 
       {cuadro.filas.map((fila) => {
@@ -48,8 +48,8 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
                   size={13}
                   className={`shrink-0 text-text-muted transition ${estaAbierta ? "" : "-rotate-90"}`}
                 />
-                {/* Sin truncar: "Cuenta Quincena" vs "Cuenta Chippu" tienen
-                    que distinguirse en el celular, aunque salte de línea. */}
+                {/* Do not truncate: "Biweekly account" vs "Joint account" must
+                    be distinguishable on mobile, even if it wraps. */}
                 <span className="break-words">{fila.nombre}</span>
               </span>
               <span className="w-20 text-right font-medium text-text">
@@ -87,7 +87,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
 
         {cuadro.salarioCents > 0 ? (
           <>
-            <span className="text-text-muted">Salario</span>
+            <span className="text-text-muted">Salary</span>
             <span className="w-20 text-right text-text-muted">
               {formatearCentavos(cuadro.salarioCents)}
             </span>
@@ -95,7 +95,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
               {formatearCentavos(quincena(cuadro.salarioCents))}
             </span>
 
-            <span className="font-semibold text-text">Remanente</span>
+            <span className="font-semibold text-text">Remainder</span>
             <span
               className={`w-20 text-right font-semibold ${
                 cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"

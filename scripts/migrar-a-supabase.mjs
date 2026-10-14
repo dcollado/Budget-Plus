@@ -52,7 +52,7 @@ function ref(valor, existentes, que) {
   const id = txt(valor);
   if (!id) return null;
   if (existentes.has(id)) return id;
-  avisos.push(`${que}: "${id}" no existe, queda vacío`);
+  avisos.push(`${que}: "${id}" does not exist, left empty`);
   return null;
 }
 const fecha = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(txt(v)) ? txt(v) : null);
@@ -71,7 +71,7 @@ const idsUsuario = new Set(usuarios.map((u) => u.id));
 const members = hoja.members
   .filter((f) => {
     const ok = idsHogar.has(txt(f[1])) && idsUsuario.has(txt(f[2]));
-    if (!ok) avisos.push(`member ${txt(f[0])} sin hogar o usuario válido, se omite`);
+    if (!ok) avisos.push(`member ${txt(f[0])} without a valid household or user, skipped`);
     return ok;
   })
   .map((f) => ({
@@ -88,7 +88,7 @@ const accounts = hoja.accounts.map((f) => ({
   household_id: txt(f[1]),
   name: txt(f[2]),
   type: ["cash", "bank", "card", "loan"].includes(txt(f[3])) ? txt(f[3]) : "cash",
-  owner_member_id: ref(f[4], idsMember, `account ${txt(f[0])} dueño`),
+  owner_member_id: ref(f[4], idsMember, `account ${txt(f[0])} owner`),
   opening_balance_cents: num(f[5]),
   archived: bool(f[6]),
 }));
@@ -112,8 +112,8 @@ const categories = hoja.categories.map((f) => {
     archived: bool(f[4]),
     fixed: bool(f[5]),
     due_day: Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null,
-    owner_member_id: ref(f[7], idsMember, `categoría ${txt(f[2])} dueño`),
-    cuenta_id: ref(f[8], idsCuenta, `categoría ${txt(f[2])} cuenta`),
+    owner_member_id: ref(f[7], idsMember, `category ${txt(f[2])} owner`),
+    cuenta_id: ref(f[8], idsCuenta, `category ${txt(f[2])} account`),
   };
 });
 const idsCategoria = new Set(categories.map((c) => c.id));
@@ -124,11 +124,11 @@ const idsCategoria = new Set(categories.map((c) => c.id));
 const porClave = new Map();
 for (const f of hoja.budgets) {
   if (!idsCategoria.has(txt(f[2]))) {
-    avisos.push(`budget ${txt(f[0])} de una categoría que no existe, se omite`);
+    avisos.push(`budget ${txt(f[0])} of a category that does not exist, skipped`);
     continue;
   }
   const clave = `${txt(f[2])}|${txt(f[3])}`;
-  if (porClave.has(clave)) avisos.push(`budget repetido ${clave}, queda el último`);
+  if (porClave.has(clave)) avisos.push(`duplicate budget ${clave}, the last one is kept`);
   porClave.set(clave, {
     id: txt(f[0]),
     household_id: txt(f[1]),
@@ -143,16 +143,16 @@ const budgets = [...porClave.values()];
 const transactions = hoja.transactions.map((f) => ({
   id: txt(f[0]),
   household_id: txt(f[1]),
-  account_id: ref(f[2], idsAccount, `transacción ${txt(f[0])} cuenta`),
-  transfer_account_id: ref(f[3], idsAccount, `transacción ${txt(f[0])} cuenta destino`),
-  category_id: ref(f[4], idsCategoria, `transacción ${txt(f[0])} categoría`),
+  account_id: ref(f[2], idsAccount, `transaction ${txt(f[0])} account`),
+  transfer_account_id: ref(f[3], idsAccount, `transaction ${txt(f[0])} destination account`),
+  category_id: ref(f[4], idsCategoria, `transaction ${txt(f[0])} category`),
   type: ["expense", "income", "transfer"].includes(txt(f[5])) ? txt(f[5]) : "expense",
   amount_cents: Math.abs(num(f[6])),
   date: fecha(f[7]) ?? "1970-01-01",
   payee: txt(f[8]),
   note: txt(f[9]),
-  created_by_member_id: ref(f[10], idsMember, `transacción ${txt(f[0])} creador`),
-  owner_member_id: ref(f[11], idsMember, `transacción ${txt(f[0])} dueño`),
+  created_by_member_id: ref(f[10], idsMember, `transaction ${txt(f[0])} creator`),
+  owner_member_id: ref(f[11], idsMember, `transaction ${txt(f[0])} owner`),
   source: ["manual", "import", "chat", "qr"].includes(txt(f[12])) ? txt(f[12]) : "manual",
   external_id: txt(f[13]),
   created_at: txt(f[14]) || new Date().toISOString(),

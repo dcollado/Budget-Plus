@@ -1,42 +1,42 @@
 # Budget Plus
 
-Presupuesto compartido para un hogar (planeado vs. gastado por mes, fijos que se
-heredan, transferencias entre cuentas y reporte anual). Next.js + Postgres
-(Supabase), con sincronización de pagos a Google Calendar.
+Shared household budget (planned vs. spent per month, fixed items that carry
+over, transfers between accounts and an annual report). Next.js + Postgres
+(Supabase), with payment sync to Google Calendar.
 
-> Antes de tocar código de Next.js, lee `AGENTS.md`: esta versión tiene cambios
-> que rompen lo que se conoce de versiones anteriores.
+> Before touching Next.js code, read `AGENTS.md`: this version has breaking
+> changes compared to earlier versions.
 
-## Comandos
+## Commands
 
 ```bash
-npm run dev         # servidor de desarrollo
+npm run dev         # development server
 npm run lint        # eslint
 npm run typecheck   # tsc --noEmit
-npm test            # vitest (lógica de presupuesto, reporte, validación, hash)
-npm run build       # build de producción
+npm test            # vitest (budget logic, report, validation, hash)
+npm run build       # production build
 ```
 
-## Variables de entorno
+## Environment variables
 
-| Variable | Para qué |
+| Variable | Purpose |
 |---|---|
-| `DATA_BACKEND` | `postgres` (Supabase). Sin definir usa la hoja de Google (modo heredado, sin roles ni revocación de sesión). |
-| `DATABASE_URL` | Conexión a Postgres (pooler de Supabase). |
-| `SESSION_SECRET` | Clave para firmar la cookie de sesión. |
-| `APP_URL` | URL pública, para los enlaces de los correos. |
-| `CRON_SECRET` | Autoriza la llamada diaria de Vercel a `/api/cron/calendario`. |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Correos de invitación y recuperación. Sin SMTP en desarrollo se imprimen en consola. |
-| `GOOGLE_CALENDAR_ID` | Calendario compartido de pagos (vacío = no sincroniza). |
-| `GOOGLE_SHEETS_CLIENT_EMAIL`, `GOOGLE_SHEETS_PRIVATE_KEY`, `GOOGLE_SHEET_ID` | Cuenta de servicio de Google (Calendar, y la hoja en modo heredado). |
-| `DEV_AUTO_LOGIN_ID`, `DEV_AUTO_LOGIN_USER` | Solo con `next dev`: entra solo como ese usuario. |
+| `DATA_BACKEND` | `postgres` (Supabase). If unset, uses the Google sheet (legacy mode, no roles or session revocation). |
+| `DATABASE_URL` | Postgres connection (Supabase pooler). |
+| `SESSION_SECRET` | Key used to sign the session cookie. |
+| `APP_URL` | Public URL, for the links in emails. |
+| `CRON_SECRET` | Authorizes Vercel's daily call to `/api/cron/calendario`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Invitation and recovery emails. Without SMTP in development they are printed to the console. |
+| `GOOGLE_CALENDAR_ID` | Shared payments calendar (empty = no sync). |
+| `GOOGLE_SHEETS_CLIENT_EMAIL`, `GOOGLE_SHEETS_PRIVATE_KEY`, `GOOGLE_SHEET_ID` | Google service account (Calendar, and the sheet in legacy mode). |
+| `DEV_AUTO_LOGIN_ID`, `DEV_AUTO_LOGIN_USER` | Only with `next dev`: signs in automatically as that user. |
 
-## Estructura
+## Structure
 
-- `app/` — páginas y rutas de API (`app/api/hogar/*` son los datos del hogar).
-- `proxy.ts` — verifica la sesión y deja la identidad en headers para las rutas.
-- `lib/household/` — modelo y lógica del presupuesto (`presupuesto.ts`, `reporte.ts`,
-  `calendario.ts`); `datos.ts` elige entre `backend-postgres.ts` y `backend-sheets.ts`.
-- `lib/auth/` — acceso por rol, invitaciones, recuperación, freno de login, auditoría.
-- `supabase/migrations/` — esquema de la base.
-- `docs/SPEC.md` — especificación del producto.
+- `app/` — pages and API routes (`app/api/hogar/*` is the household data).
+- `proxy.ts` — verifies the session and passes the identity to routes via headers.
+- `lib/household/` — budget model and logic (`presupuesto.ts`, `reporte.ts`,
+  `calendario.ts`); `datos.ts` chooses between `backend-postgres.ts` and `backend-sheets.ts`.
+- `lib/auth/` — role-based access, invitations, recovery, login throttling, audit.
+- `supabase/migrations/` — database schema.
+- `docs/SPEC.md` — product specification.

@@ -31,8 +31,8 @@ export async function GET(req: NextRequest) {
 
     return exito(transacciones);
   } catch (error) {
-    console.error("Error obteniendo transacciones:", error);
-    return fallo("No se pudieron obtener las transacciones.", 500);
+    console.error("Error getting transactions:", error);
+    return fallo("Could not get the transactions.", 500);
   }
 }
 
@@ -50,26 +50,26 @@ export async function POST(req: NextRequest) {
     const amountCents = centavosDe(body.amount);
 
     if (!TIPOS.includes(type as TransactionType)) {
-      return fallo("Tipo de transacción inválido.", 400);
+      return fallo("Invalid transaction type.", 400);
     }
 
     if (!accountId) {
-      return fallo("Falta la cuenta.", 400);
+      return fallo("Account is missing.", 400);
     }
 
     if (!fechaValida(date)) {
-      return fallo("Fecha inválida.", 400);
+      return fallo("Invalid date.", 400);
     }
 
     if (amountCents === null || amountCents <= 0) {
-      return fallo("El monto debe ser mayor a 0.", 400);
+      return fallo("The amount must be greater than 0.", 400);
     }
 
     const transferAccountId =
       type === "transfer" ? String(body.transferAccountId ?? "").trim() : "";
 
     if (type === "transfer" && !transferAccountId) {
-      return fallo("Falta la cuenta destino de la transferencia.", 400);
+      return fallo("The transfer destination account is missing.", 400);
     }
 
     const ownerMemberIdRaw = String(body.ownerMemberId ?? "").trim();
@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
 
     return exito(transaction);
   } catch (error) {
-    console.error("Error guardando transacción:", error);
-    return fallo("No se pudo guardar la transacción.", 500);
+    console.error("Error saving transaction:", error);
+    return fallo("Could not save the transaction.", 500);
   }
 }
 
@@ -121,21 +121,21 @@ export async function DELETE(req: NextRequest) {
     const id = req.nextUrl.searchParams.get("id")?.trim();
 
     if (!id) {
-      return fallo("Falta el id de la transacción.", 400);
+      return fallo("Transaction id is missing.", 400);
     }
 
     const eliminada = await eliminarTransaction(id, r.contexto.householdId);
 
     if (!eliminada) {
-      return fallo("Transacción no encontrada.", 404);
+      return fallo("Transaction not found.", 404);
     }
 
     return Response.json({
       success: true,
-      message: "Transacción eliminada correctamente.",
+      message: "Transaction deleted successfully.",
     });
   } catch (error) {
-    console.error("Error eliminando transacción:", error);
-    return fallo("No se pudo eliminar la transacción.", 500);
+    console.error("Error deleting transaction:", error);
+    return fallo("Could not delete the transaction.", 500);
   }
 }

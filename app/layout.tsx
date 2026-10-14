@@ -21,7 +21,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Budget Plus",
-  description: "App personal para organizar facturas",
+  description: "Personal app to organize your bills and budget",
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="en"
       className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}
     >
       <body className="bg-ink font-body text-text">

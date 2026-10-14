@@ -51,9 +51,9 @@ export default function MesPanel({ month, datos }: Props) {
   );
   const ingresosFijos = items.filter((i) => i.category.kind === "income" && i.category.fixed);
 
-  // Variables: solo lo que se cargó para este mes (gastos e ingresos
-  // juntos, ordenados por fecha). Las categorías variables viejas en $0
-  // (Restaurantes, etc.) no se listan.
+  // Variables: only what was entered for this month (expenses and income
+  // together, sorted by date). Old variable categories at $0
+  // (Restaurants, etc.) are not listed.
   const variables = ordenarPorFecha(
     items.filter((i) => !i.category.fixed && i.plannedAmountCents > 0)
   );
@@ -78,11 +78,11 @@ export default function MesPanel({ month, datos }: Props) {
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-2">
-        <Widget label="Ingresos" valor={ingresos} color="text-sage" />
-        <Widget label="Gastos fijos" valor={totalFijos} color="text-text" />
-        <Widget label="Gastos variables" valor={totalVariables} color="text-rust" />
+        <Widget label="Income" valor={ingresos} color="text-sage" />
+        <Widget label="Fixed expenses" valor={totalFijos} color="text-text" />
+        <Widget label="Variable expenses" valor={totalVariables} color="text-rust" />
         <Widget
-          label="Por gastar"
+          label="Left to spend"
           valor={porGastar}
           color={porGastar < 0 ? "text-rust" : "text-sage"}
         />
@@ -90,14 +90,14 @@ export default function MesPanel({ month, datos }: Props) {
 
       <div className={`${sectionCardClass} p-0`}>
         <h3 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          Variables del mes
+          Variable items this month
         </h3>
 
         {cargando ? (
-          <p className="px-4 py-4 text-center text-sm text-text-muted">Cargando...</p>
+          <p className="px-4 py-4 text-center text-sm text-text-muted">Loading...</p>
         ) : variables.length === 0 ? (
           <p className="px-4 py-4 text-center text-sm text-text-muted">
-            Nada cargado todavía para este mes.
+            Nothing entered yet for this month.
           </p>
         ) : (
           variables.map((item) => (

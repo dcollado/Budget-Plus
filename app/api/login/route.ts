@@ -21,8 +21,8 @@ import {
 } from "@/lib/auth/login-limite";
 
 const MENSAJE_BLOQUEO =
-  "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
-const MENSAJE_INVALIDO = "Usuario o contraseña incorrectos.";
+  "Too many attempts. Wait a few minutes and try again.";
+const MENSAJE_INVALIDO = "Incorrect username or password.";
 
 export async function POST(request: Request) {
   try {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const acceso = await obtenerAcceso(usuario.id);
 
     if (acceso?.hogarArchivado) {
-      return fallo("Tu hogar está archivado. Contacta al administrador de Budget Plus.", 403);
+      return fallo("Your household is archived. Contact the Budget Plus administrator.", 403);
     }
 
     const token = await createSessionToken(
@@ -95,8 +95,8 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Error iniciando sesión:", error);
+    console.error("Error signing in:", error);
 
-    return fallo("No se pudo iniciar sesión.", 500);
+    return fallo("Could not sign in.", 500);
   }
 }

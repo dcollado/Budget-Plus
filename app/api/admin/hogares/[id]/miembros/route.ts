@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: Contexto) {
     if (!r.ok) return r.response;
     return await accionPost(req, (await params).id, r.acceso);
   } catch (error) {
-    return manejarError(error, "No se pudo completar la acción.");
+    return manejarError(error, "Could not complete the action.");
   }
 }
 
@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: Contexto) {
     if (!r.ok) return r.response;
     return await accionPatch(req, (await params).id, r.acceso);
   } catch (error) {
-    return manejarError(error, "No se pudo actualizar al miembro.");
+    return manejarError(error, "Could not update the member.");
   }
 }
 
@@ -37,6 +37,6 @@ export async function DELETE(req: NextRequest, { params }: Contexto) {
     if (!r.ok) return r.response;
     return await accionDelete(req, (await params).id, r.acceso);
   } catch (error) {
-    return manejarError(error, "No se pudo cancelar la invitación.");
+    return manejarError(error, "Could not cancel the invitation.");
   }
 }

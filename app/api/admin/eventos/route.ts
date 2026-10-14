@@ -10,9 +10,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: await listarEventos(100) });
   } catch (error) {
-    console.error("Error leyendo eventos:", error);
+    console.error("Error reading events:", error);
     return NextResponse.json(
-      { success: false, message: "No se pudo cargar la actividad." },
+      { success: false, message: "Could not load activity." },
       { status: 500 }
     );
   }

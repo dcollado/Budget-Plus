@@ -39,7 +39,7 @@ function Invitacion() {
     setError("");
 
     if (password !== confirmar) {
-      setError("Las contraseñas no coinciden.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -52,12 +52,12 @@ function Invitacion() {
       });
       const json = (await res.json()) as { message?: string };
       if (!res.ok) {
-        setError(json.message ?? "No se pudo aceptar la invitación.");
+        setError(json.message ?? "Could not accept the invitation.");
         return;
       }
       router.replace("/login");
     } catch {
-      setError("No se pudo conectar. Intenta de nuevo.");
+      setError("Could not connect. Please try again.");
     } finally {
       setEnviando(false);
     }
@@ -66,8 +66,8 @@ function Invitacion() {
   if (invalida) {
     return (
       <AuthCard
-        titulo="Invitación no válida"
-        subtitulo="El enlace venció o ya se usó. Pide al administrador que te envíe una nueva."
+        titulo="Invalid invitation"
+        subtitulo="The link has expired or was already used. Ask the administrator to send you a new one."
       >
         <></>
       </AuthCard>
@@ -75,19 +75,19 @@ function Invitacion() {
   }
 
   if (!info) {
-    return <AuthCard titulo="Cargando invitación…">{null}</AuthCard>;
+    return <AuthCard titulo="Loading invitation…">{null}</AuthCard>;
   }
 
   return (
     <AuthCard
-      titulo={`Únete a ${info.hogar}`}
-      subtitulo={`Crea tu cuenta para ${info.email}. Ese correo será tu usuario para iniciar sesión.`}
+      titulo={`Join ${info.hogar}`}
+      subtitulo={`Create your account for ${info.email}. That email will be your username to sign in.`}
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="text"
           autoComplete="name"
-          placeholder="Tu nombre (como te verán en el hogar)"
+          placeholder="Your name (as others in the household will see it)"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
@@ -97,7 +97,7 @@ function Invitacion() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Contraseña (mínimo 8 caracteres)"
+          placeholder="Password (minimum 8 characters)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -108,7 +108,7 @@ function Invitacion() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Repite la contraseña"
+          placeholder="Repeat the password"
           value={confirmar}
           onChange={(e) => setConfirmar(e.target.value)}
           required
@@ -118,7 +118,7 @@ function Invitacion() {
         />
         {error ? <AuthError>{error}</AuthError> : null}
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Creando cuenta..." : "Crear cuenta"}
+          {enviando ? "Creating account..." : "Create account"}
         </button>
       </form>
     </AuthCard>

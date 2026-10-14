@@ -13,9 +13,9 @@ export async function GET(req: NextRequest) {
       data: { hogares: await listarHogares(), yo: r.acceso.usuarioId },
     });
   } catch (error) {
-    console.error("Error listando hogares:", error);
+    console.error("Error listing households:", error);
     return NextResponse.json(
-      { success: false, message: "No se pudieron cargar los hogares." },
+      { success: false, message: "Could not load households." },
       { status: 500 }
     );
   }
@@ -53,9 +53,9 @@ export async function POST(req: NextRequest) {
     if (error instanceof ErrorCuenta) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
-    console.error("Error creando hogar:", error);
+    console.error("Error creating household:", error);
     return NextResponse.json(
-      { success: false, message: "No se pudo crear el hogar." },
+      { success: false, message: "Could not create the household." },
       { status: 500 }
     );
   }

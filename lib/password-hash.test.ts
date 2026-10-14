@@ -7,7 +7,7 @@ import {
 } from "./password-hash";
 
 describe("password-hash", () => {
-  it("verifica la contraseña correcta y rechaza la incorrecta", async () => {
+  it("verifies the correct password and rejects the wrong one", async () => {
     const hash = await hashPassword("clave-segura-123");
 
     expect(hash.startsWith("pbkdf2-sha256$600000$")).toBe(true);
@@ -31,7 +31,7 @@ describe("password-hash", () => {
     expect(passwordNecesitaRehash(await hashPassword("x"))).toBe(false);
   });
 
-  it("el hash falso del login tiene formato válido y no lanza", async () => {
+  it("the login fake hash has a valid format and does not throw", async () => {
     await expect(gastarTiempoDeVerificacion("cualquiera")).resolves.toBeUndefined();
   });
 });

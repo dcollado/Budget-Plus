@@ -7,7 +7,7 @@ const global = globalThis as unknown as { __sql?: postgres.Sql; __avisoBackend?:
 export function getSql(): postgres.Sql {
   if (!global.__sql) {
     const url = process.env.DATABASE_URL;
-    if (!url) throw new Error("Falta DATABASE_URL en las variables de entorno.");
+    if (!url) throw new Error("DATABASE_URL is missing from the environment variables.");
     global.__sql = postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
   }
   return global.__sql;
@@ -23,7 +23,7 @@ export function usaPostgres(): boolean {
   if (!backend && process.env.NODE_ENV === "production" && !global.__avisoBackend) {
     global.__avisoBackend = true;
     console.warn(
-      "DATA_BACKEND no está definido: se usa la hoja de Google (sin roles ni revocación de sesión). Define DATA_BACKEND=postgres."
+      "DATA_BACKEND is not defined: the Google sheet is used (no roles or session revocation). Set DATA_BACKEND=postgres."
     );
   }
 

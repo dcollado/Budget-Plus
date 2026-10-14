@@ -6,23 +6,23 @@ export function formatearCentavos(cents: number): string {
 }
 
 const MESES_CORTOS = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 const MESES_LARGOS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
 
-// "2026-09-15" -> "15 sep". "" -> "".
+// "2026-09-15" -> "15 Sep". "" -> "".
 export function formatearFechaCorta(fecha: string): string {
   const [, mes, dia] = fecha.split("-");
   if (!mes || !dia) return "";
   return `${Number(dia)} ${MESES_CORTOS[Number(mes) - 1] ?? ""}`;
 }
 
-// "2026-09" -> "septiembre 2026".
+// "2026-09" -> "September 2026".
 export function formatearMes(month: string): string {
   const [anio, mes] = month.split("-");
   return `${MESES_LARGOS[Number(mes) - 1] ?? mes} ${anio}`;

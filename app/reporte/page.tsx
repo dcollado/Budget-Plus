@@ -10,7 +10,7 @@ import type { ReporteAnual } from "@/lib/household/reporte";
 
 function nombreMes(month: string): string {
   const [anio, mes] = month.split("-").map(Number);
-  const texto = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString("es", {
+  const texto = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString("en", {
     month: "long",
     timeZone: "UTC",
   });
@@ -19,7 +19,7 @@ function nombreMes(month: string): string {
 
 function fechaCorta(fecha: string): string {
   const [anio, mes, dia] = fecha.split("-").map(Number);
-  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString("es", {
+  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString("en", {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
@@ -49,12 +49,12 @@ export default function ReportePage() {
       .then(async (res) => {
         const json = (await res.json()) as { data?: ReporteAnual; message?: string };
         if (!vigente) return;
-        if (!res.ok || !json.data) throw new Error(json.message ?? "No se pudo cargar el reporte.");
+        if (!res.ok || !json.data) throw new Error(json.message ?? "Could not load the report.");
         setReporte(json.data);
         setError("");
       })
       .catch((e) => {
-        if (vigente) setError(e instanceof Error ? e.message : "No se pudo cargar el reporte.");
+        if (vigente) setError(e instanceof Error ? e.message : "Could not load the report.");
       });
 
     return () => {
@@ -65,7 +65,7 @@ export default function ReportePage() {
   const actual = mesActual();
   const cargando = reporte === null || reporte.year !== year;
 
-  // Para reutilizar la paleta de colores por persona.
+  // To reuse the per-person color palette.
   const miembros = (reporte?.personas ?? [])
     .filter((p) => p.memberId)
     .map((p) => ({ id: p.memberId, displayName: p.nombre, color: p.color }));
@@ -79,10 +79,10 @@ export default function ReportePage() {
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-gold">Reporte</p>
-          <h1 className="font-serif text-3xl font-semibold text-text">Resumen del año</h1>
+          <p className="text-sm font-medium text-gold">Report</p>
+          <h1 className="font-serif text-3xl font-semibold text-text">Year summary</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Sale del plan del hogar: lo que está presupuestado, no lo gastado de verdad.
+            Comes from the household plan: what is budgeted, not what was actually spent.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export default function ReportePage() {
           <button
             type="button"
             onClick={() => setYear((y) => y - 1)}
-            aria-label="Año anterior"
+            aria-label="Previous year"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface hover:text-text"
           >
             <ChevronLeft size={18} />
@@ -99,7 +99,7 @@ export default function ReportePage() {
           <button
             type="button"
             onClick={() => setYear((y) => y + 1)}
-            aria-label="Año siguiente"
+            aria-label="Next year"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface hover:text-text"
           >
             <ChevronRight size={18} />
@@ -114,7 +114,7 @@ export default function ReportePage() {
       ) : null}
 
       {cargando && !error ? (
-        <p className="py-8 text-center text-sm text-text-muted">Cargando…</p>
+        <p className="py-8 text-center text-sm text-text-muted">Loading…</p>
       ) : null}
 
       {reporte && !cargando ? (
@@ -123,23 +123,23 @@ export default function ReportePage() {
             <div className={`${sectionCardClass} flex items-start gap-3`}>
               <PiggyBank size={20} className="mt-0.5 shrink-0 text-sage" />
               <p className="text-sm text-text-muted">
-                Todavía no marcaste qué gastos fijos son <span className="text-text">ahorro</span>.
-                En{" "}
+                You have not marked which fixed expenses are <span className="text-text">savings</span> yet.
+                In{" "}
                 <Link href="/configuracion" className="text-gold underline">
-                  Cuentas y gastos fijos
+                  Accounts and fixed expenses
                 </Link>{" "}
-                toca la alcancía de cada uno (Ahorros, Emergencias…) y aquí verás cuánto apartan.
+                tap the piggy bank on each one (Savings, Emergencies…) and you will see here how much they set aside.
               </p>
             </div>
           ) : null}
 
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            <Tarjeta label="Ingresos" valor={reporte.totales.ingresosCents} color="text-sage" />
-            <Tarjeta label="Gastos fijos" valor={reporte.totales.fijosCents} color="text-text" />
-            <Tarjeta label="Variables" valor={reporte.totales.variablesCents} color="text-rust" />
-            <Tarjeta label="Ahorro" valor={reporte.totales.ahorroCents} color="text-sage" />
+            <Tarjeta label="Income" valor={reporte.totales.ingresosCents} color="text-sage" />
+            <Tarjeta label="Fixed expenses" valor={reporte.totales.fijosCents} color="text-text" />
+            <Tarjeta label="Variable" valor={reporte.totales.variablesCents} color="text-rust" />
+            <Tarjeta label="Savings" valor={reporte.totales.ahorroCents} color="text-sage" />
             <Tarjeta
-              label="Sobrante"
+              label="Left over"
               valor={reporte.totales.sobranteCents}
               color={reporte.totales.sobranteCents < 0 ? "text-rust" : "text-sage"}
             />
@@ -147,18 +147,18 @@ export default function ReportePage() {
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Mes por mes
+              Month by month
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[34rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
-                    <th className="px-4 py-2 text-left font-medium">Mes</th>
-                    <th className="px-3 py-2 text-right font-medium">Ingresos</th>
-                    <th className="px-3 py-2 text-right font-medium">Fijos</th>
-                    <th className="px-3 py-2 text-right font-medium">Variables</th>
-                    <th className="px-3 py-2 text-right font-medium">Ahorro</th>
-                    <th className="px-4 py-2 text-right font-medium">Sobrante</th>
+                    <th className="px-4 py-2 text-left font-medium">Month</th>
+                    <th className="px-3 py-2 text-right font-medium">Income</th>
+                    <th className="px-3 py-2 text-right font-medium">Fixed</th>
+                    <th className="px-3 py-2 text-right font-medium">Variable</th>
+                    <th className="px-3 py-2 text-right font-medium">Savings</th>
+                    <th className="px-4 py-2 text-right font-medium">Left over</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -178,7 +178,7 @@ export default function ReportePage() {
                           {nombreMes(m.month)}
                           {esActual ? (
                             <span className="ml-2 text-[10px] font-semibold uppercase text-gold">
-                              hoy
+                              today
                             </span>
                           ) : null}
                         </td>
@@ -205,17 +205,17 @@ export default function ReportePage() {
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Por persona (año)
+              By person (year)
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[30rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
-                    <th className="px-4 py-2 text-left font-medium">Persona</th>
-                    <th className="px-3 py-2 text-right font-medium">Ingresos</th>
-                    <th className="px-3 py-2 text-right font-medium">Gastos</th>
-                    <th className="px-3 py-2 text-right font-medium">Ahorro</th>
-                    <th className="px-4 py-2 text-right font-medium">Sobrante</th>
+                    <th className="px-4 py-2 text-left font-medium">Person</th>
+                    <th className="px-3 py-2 text-right font-medium">Income</th>
+                    <th className="px-3 py-2 text-right font-medium">Expenses</th>
+                    <th className="px-3 py-2 text-right font-medium">Savings</th>
+                    <th className="px-4 py-2 text-right font-medium">Left over</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,20 +246,20 @@ export default function ReportePage() {
               </table>
             </div>
             <p className="border-t border-line px-4 py-2 text-xs text-text-muted">
-              «Conjunto» son los gastos e ingresos sin dueño asignado; se restan del total del hogar,
-              por eso no tienen sobrante propio.
+              &quot;Joint&quot; are the expenses and income with no assigned owner; they are subtracted from the household total,
+              so they have no left over of their own.
             </p>
           </section>
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="flex items-center justify-between border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Gastos extraordinarios
+              Extraordinary expenses
               <span className="text-rust">{formatearCentavos(totalExtraordinarios)}</span>
             </h2>
 
             {reporte.extraordinarios.length === 0 ? (
               <p className="px-4 py-4 text-center text-sm text-text-muted">
-                No hay gastos variables cargados en {year}.
+                No variable expenses recorded in {year}.
               </p>
             ) : (
               <ul>

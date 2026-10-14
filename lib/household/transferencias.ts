@@ -38,7 +38,7 @@ export function armarCuadro(
     const clave = cuenta ? cuenta.id : "";
     const fila = grupos.get(clave) ?? {
       cuentaId: clave,
-      nombre: cuenta ? cuenta.name : "Sin cuenta asignada",
+      nombre: cuenta ? cuenta.name : "No account assigned",
       totalCents: 0,
       items: [],
     };

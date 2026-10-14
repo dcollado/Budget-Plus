@@ -1,14 +1,14 @@
 import { sectionCardClass } from "@/lib/ui";
 
-// Cuenta válida pero sin hogar asignado todavía (ej. alguien a quien se le
-// quitó el hogar, o una cuenta recién creada a mano).
+// Valid account but no household assigned yet (e.g. someone whose household
+// was removed, or an account just created by hand).
 export default function SinHogar() {
   return (
     <div className={sectionCardClass}>
-      <p className="text-sm font-medium text-text">Tu cuenta todavía no tiene un hogar.</p>
+      <p className="text-sm font-medium text-text">Your account does not have a household yet.</p>
       <p className="mt-1 text-sm text-text-muted">
-        Pídele a quien administra tu hogar que te invite con tu correo, o escribe al
-        administrador de Budget Plus.
+        Ask whoever manages your household to invite you with your email, or write to
+        the Budget Plus administrator.
       </p>
     </div>
   );

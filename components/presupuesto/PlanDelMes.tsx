@@ -59,12 +59,12 @@ function FilaCategoria({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo guardar.");
+        throw new Error(data.message || "Could not save.");
       }
 
       onGuardado(item.category.id, Math.round(Number(valor || 0) * 100));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando.");
+      setError(err instanceof Error ? err.message : "Error saving.");
     } finally {
       setGuardando(false);
     }
@@ -81,7 +81,7 @@ function FilaCategoria({
             </span>
           ) : null}
           {item.inherited ? (
-            <span className="text-xs text-text-muted">(heredado del mes anterior)</span>
+            <span className="text-xs text-text-muted">(inherited from the previous month)</span>
           ) : null}
         </div>
 
@@ -105,7 +105,7 @@ function FilaCategoria({
             disabled={!dirty || guardando}
             className="rounded-lg bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {guardando ? "..." : "Guardar"}
+            {guardando ? "..." : "Save"}
           </button>
         </div>
       </div>
@@ -142,13 +142,13 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "No se pudo cargar el presupuesto.");
+        throw new Error(data.message || "Could not load the budget.");
       }
 
       setItems(data.data.items);
       setTotales(data.data.totales);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando el presupuesto.");
+      setError(err instanceof Error ? err.message : "Error loading the budget.");
     } finally {
       setCargando(false);
     }
@@ -196,19 +196,19 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       {totales ? (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Planeado</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">Planned</p>
             <p className="mt-1 text-lg font-semibold text-text">
               {formatearCentavos(totales.plannedExpenseCents)}
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Gastado</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">Spent</p>
             <p className="mt-1 text-lg font-semibold text-rust">
               {formatearCentavos(totales.actualExpenseCents)}
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Por gastar</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">Left to spend</p>
             <p
               className={`mt-1 text-lg font-semibold ${
                 restante < 0 ? "text-rust" : "text-sage"
@@ -218,7 +218,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
             </p>
           </div>
           <div className={sectionCardClass}>
-            <p className="text-xs uppercase tracking-wide text-text-muted">Ingresos</p>
+            <p className="text-xs uppercase tracking-wide text-text-muted">Income</p>
             <p className="mt-1 text-lg font-semibold text-sage">
               {formatearCentavos(totales.actualIncomeCents)}
             </p>
@@ -228,14 +228,14 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
 
       <div className={`${sectionCardClass} p-0`}>
         <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          Categorías de gasto
+          Expense categories
         </h2>
 
         {cargando ? (
-          <p className="px-4 py-6 text-center text-sm text-text-muted">Cargando...</p>
+          <p className="px-4 py-6 text-center text-sm text-text-muted">Loading...</p>
         ) : gastos.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-text-muted">
-            No hay categorías de gasto todavía.
+            No expense categories yet.
           </p>
         ) : (
           gastos.map((item) => (
@@ -252,7 +252,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
       {ingresos.length > 0 ? (
         <div className={`${sectionCardClass} mt-4 p-0`}>
           <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-            Categorías de ingreso
+            Income categories
           </h2>
 
           {ingresos.map((item) => (
