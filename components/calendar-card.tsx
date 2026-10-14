@@ -74,10 +74,12 @@ export function CalendarCard({ endpoint, bare = false }: { endpoint: string; bar
 
   function conectar(e: React.FormEvent) {
     e.preventDefault();
+    const cambiando = estado?.conectado === true;
+    if (cambiando && !window.confirm(t("calendar.confirmChange"))) return;
     void llamar(
       endpoint,
       { method: "PUT", body: JSON.stringify({ calendarId }) },
-      t("calendar.connectedOk")
+      cambiando ? t("calendar.changedOk") : t("calendar.connectedOk")
     );
   }
 
@@ -143,7 +145,7 @@ export function CalendarCard({ endpoint, bare = false }: { endpoint: string; bar
             </div>
           ) : null}
 
-          {estado.heredado ? null : (
+          {(
             <>
               <ol className="space-y-2 text-sm text-text-muted">
                 <li>{t("calendar.step1")}</li>
