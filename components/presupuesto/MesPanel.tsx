@@ -90,7 +90,7 @@ export default function MesPanel({ month, datos }: Props) {
 
       <div className={`${sectionCardClass} p-0`}>
         <h3 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          Variable items this month
+          Extra expenses this month
         </h3>
 
         {cargando ? (
