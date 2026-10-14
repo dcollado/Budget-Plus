@@ -19,6 +19,8 @@ const PUBLIC_ROUTES = [
   "/olvide",
   "/restablecer",
   "/api/password",
+  // Registro público de cambios de UI (contenido estático, sin datos).
+  "/cambios",
 ];
 
 

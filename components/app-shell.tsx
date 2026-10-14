@@ -60,6 +60,7 @@ export function AppShell({
     "/invitacion",
     "/olvide",
     "/restablecer",
+    "/cambios",
   ].includes(pathname);
 
   // Menú hamburguesa (celular) y menú de usuario (escritorio).
