@@ -11,32 +11,36 @@ import { formatearCentavos, formatearMes, mesSiguiente } from "./formato";
 // ponen acá — cada uno los configura como notificaciones por defecto del
 // calendario, que es lo que funciona para calendarios compartidos.
 //
-// GOOGLE_CALENDAR_ID sin configurar = no hace nada (ej. en local, para no
+// Cada hogar usa su propio calendario (households.calendar_id, que su admin
+// conecta desde Perfil). El hogar original, sin calendar_id, sigue con
+// GOOGLE_CALENDAR_ID. Sin calendario = no hace nada (ej. en local, para no
 // llenar el calendario real con datos de la hoja de pruebas).
 
 type Calendar = calendar_v3.Calendar;
 type Evento = calendar_v3.Schema$Event;
 
-const APP_TAG = "budgetplus";
+export const APP_TAG = "budgetplus";
 
-function getCalendarId(): string | null {
-  return process.env.GOOGLE_CALENDAR_ID?.trim() || null;
-}
+// El calendario donde escribe este hogar, o null si no sincroniza.
+export async function calendarioDelHogar(householdId: string): Promise<string | null> {
+  const delEntorno = process.env.GOOGLE_CALENDAR_ID?.trim() || null;
 
-// Con Postgres, solo los hogares con sincroniza_calendario escriben en el
-// calendario compartido (hoy, solo el original). Con la hoja no hay hogares
-// ajenos: siempre sincroniza.
-async function hogarSincroniza(householdId: string): Promise<boolean> {
-  if (!usaPostgres()) return true;
+  // Con la hoja no hay hogares ajenos: siempre el del entorno.
+  if (!usaPostgres()) return delEntorno;
 
-  const [fila] = await getSql()<{ sincroniza_calendario: boolean; archivado_en: Date | null }[]>`
-    select sincroniza_calendario, archivado_en from households where id = ${householdId}`;
+  const [fila] = await getSql()<
+    { calendar_id: string | null; sincroniza_calendario: boolean; archivado_en: Date | null }[]
+  >`
+    select calendar_id, sincroniza_calendario, archivado_en
+    from households where id = ${householdId}`;
 
-  return fila?.sincroniza_calendario === true && fila.archivado_en === null;
+  if (!fila || fila.archivado_en !== null) return null;
+  if (fila.calendar_id) return fila.calendar_id;
+  return fila.sincroniza_calendario ? delEntorno : null;
 }
 
 // googleapis pesa mucho: se carga solo cuando de verdad hay que sincronizar.
-async function getCalendarClient(): Promise<Calendar> {
+export async function getCalendarClient(): Promise<Calendar> {
   const { google } = await import("googleapis");
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -224,9 +228,8 @@ async function sincronizarMes(
 // El mes dado y el siguiente — lo que muestra Presupuesto, y lo mínimo
 // para que un cambio en una fija (que se hereda) llegue al mes que viene.
 export async function sincronizarDosMeses(householdId: string, month: string) {
-  const calendarId = getCalendarId();
+  const calendarId = await calendarioDelHogar(householdId);
   if (!calendarId) return;
-  if (!(await hogarSincroniza(householdId))) return;
 
   const calendar = await getCalendarClient();
   const datos = await leerDatosHogar(householdId, [month, mesSiguiente(month)]);
@@ -237,9 +240,8 @@ export async function sincronizarDosMeses(householdId: string, month: string) {
 
 // Al borrar (archivar) una categoría, saca todos sus eventos, de cualquier mes.
 export async function borrarEventosDeCategoria(householdId: string, categoryId: string) {
-  const calendarId = getCalendarId();
+  const calendarId = await calendarioDelHogar(householdId);
   if (!calendarId) return;
-  if (!(await hogarSincroniza(householdId))) return;
 
   const calendar = await getCalendarClient();
   const res = await calendar.events.list({

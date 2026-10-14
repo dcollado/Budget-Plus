@@ -182,6 +182,7 @@ export default function AdminPage() {
             hogar={h}
             yo={yo}
             ocupado={ocupado}
+            calendarioEndpoint={`/api/admin/hogares/${h.id}/calendario`}
             onInvitar={(email, role) =>
               accion(h.id, { accion: "invitar", email, role }, t("members.inviteSent", { email }))
             }
