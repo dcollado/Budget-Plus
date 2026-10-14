@@ -1,86 +1,42 @@
-# Sincronización de ítems fijos con el dashboard
+# Budget Plus
 
-## Cambio en Google Sheets
+Presupuesto compartido para un hogar (planeado vs. gastado por mes, fijos que se
+heredan, transferencias entre cuentas y reporte anual). Next.js + Postgres
+(Supabase), con sincronización de pagos a Google Calendar.
 
-En la hoja `Movimientos`, agrega una nueva columna al final:
+> Antes de tocar código de Next.js, lee `AGENTS.md`: esta versión tiene cambios
+> que rompen lo que se conoce de versiones anteriores.
 
-| Columna | Encabezado |
-|---|---|
-| M | `itemFijoId` |
-
-No muevas ni renombres las columnas A-L.
-
-La estructura queda:
-
-```text
-A id
-B fecha
-C tipo
-D origen
-E monto
-F categoria
-G descripcion
-H mes
-I anio
-J numeroFactura
-K ruc
-L notas
-M itemFijoId
-```
-
-## Archivos que debes reemplazar
-
-```text
-lib/movimientos-store.ts
-app/api/movimientos/route.ts
-app/api/items-fijos/route.ts
-```
-
-## Comportamiento nuevo
-
-- Crear un ítem fijo activo:
-  - se guarda en `ItemsFijos`;
-  - si el mes actual ya fue generado, crea inmediatamente su movimiento;
-  - el dashboard lo mostrará al volver o refrescar.
-
-- Editar un ítem fijo:
-  - actualiza el movimiento del mes actual.
-
-- Desactivar un ítem fijo:
-  - elimina su movimiento del mes actual;
-  - no toca movimientos históricos.
-
-- Reactivar un ítem fijo:
-  - vuelve a crear su movimiento del mes actual.
-
-- Eliminar un ítem fijo:
-  - elimina el movimiento asociado del mes actual;
-  - conserva meses anteriores.
-
-## Importante sobre movimientos ya existentes
-
-Los movimientos fijos generados antes de este cambio tendrán vacía la columna
-`itemFijoId`. No se dañan y siguen apareciendo en el dashboard, pero no quedan
-vinculados retroactivamente.
-
-Para probar la nueva vinculación, crea un ítem fijo nuevo después de instalar
-estos archivos. Ese movimiento sí tendrá su ID en la columna M.
-
-## Pruebas
+## Comandos
 
 ```bash
-npm run build
-npm run dev
+npm run dev         # servidor de desarrollo
+npm run lint        # eslint
+npm run typecheck   # tsc --noEmit
+npm test            # vitest (lógica de presupuesto, reporte, validación, hash)
+npm run build       # build de producción
 ```
 
-Prueba:
+## Variables de entorno
 
-1. Abre el dashboard para asegurar que el mes actual esté generado.
-2. Crea un ítem fijo activo.
-3. Regresa al dashboard y refresca.
-4. Edita su monto.
-5. Verifica que el movimiento cambie y no se duplique.
-6. Desactívalo.
-7. Verifica que desaparezca del mes actual.
-8. Reactívalo.
-9. Verifica que reaparezca una sola vez.
+| Variable | Para qué |
+|---|---|
+| `DATA_BACKEND` | `postgres` (Supabase). Sin definir usa la hoja de Google (modo heredado, sin roles ni revocación de sesión). |
+| `DATABASE_URL` | Conexión a Postgres (pooler de Supabase). |
+| `SESSION_SECRET` | Clave para firmar la cookie de sesión. |
+| `APP_URL` | URL pública, para los enlaces de los correos. |
+| `CRON_SECRET` | Autoriza la llamada diaria de Vercel a `/api/cron/calendario`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Correos de invitación y recuperación. Sin SMTP en desarrollo se imprimen en consola. |
+| `GOOGLE_CALENDAR_ID` | Calendario compartido de pagos (vacío = no sincroniza). |
+| `GOOGLE_SHEETS_CLIENT_EMAIL`, `GOOGLE_SHEETS_PRIVATE_KEY`, `GOOGLE_SHEET_ID` | Cuenta de servicio de Google (Calendar, y la hoja en modo heredado). |
+| `DEV_AUTO_LOGIN_ID`, `DEV_AUTO_LOGIN_USER` | Solo con `next dev`: entra solo como ese usuario. |
+
+## Estructura
+
+- `app/` — páginas y rutas de API (`app/api/hogar/*` son los datos del hogar).
+- `proxy.ts` — verifica la sesión y deja la identidad en headers para las rutas.
+- `lib/household/` — modelo y lógica del presupuesto (`presupuesto.ts`, `reporte.ts`,
+  `calendario.ts`); `datos.ts` elige entre `backend-postgres.ts` y `backend-sheets.ts`.
+- `lib/auth/` — acceso por rol, invitaciones, recuperación, freno de login, auditoría.
+- `supabase/migrations/` — esquema de la base.
+- `docs/SPEC.md` — especificación del producto.
