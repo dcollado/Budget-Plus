@@ -20,6 +20,7 @@ import {
   sectionCardClass,
 } from "@/lib/ui";
 import type { HogarResumen } from "@/lib/admin/hogares";
+import { useT } from "@/lib/i18n/client";
 
 const botonAccion =
   "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-60";
@@ -57,6 +58,7 @@ export function TarjetaHogar({
   onRestaurar?: () => void;
   onEliminar?: () => void;
 }) {
+  const t = useT();
   const [abierto, setAbierto] = useState(true);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
@@ -97,14 +99,14 @@ export function TarjetaHogar({
             {hogar.name}
             {hogar.archivadoEn ? (
               <span className="ml-2 rounded-md bg-surface-raised px-2 py-0.5 align-middle text-xs font-medium text-text-muted">
-                Archived
+                {t("household.archivedBadge")}
               </span>
             ) : null}
           </span>
           <span className="block text-xs text-text-muted">
-            {activos} {activos === 1 ? "person" : "people"}
+            {activos} {activos === 1 ? t("household.person") : t("household.people")}
             {hogar.invitaciones.length > 0
-              ? ` · ${hogar.invitaciones.length} pending invitation${hogar.invitaciones.length === 1 ? "" : "s"}`
+              ? ` · ${t(hogar.invitaciones.length === 1 ? "household.pendingOne" : "household.pendingMany", { n: hogar.invitaciones.length })}`
               : ""}
           </span>
         </span>
@@ -129,7 +131,7 @@ export function TarjetaHogar({
                       className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
                     >
                       <div>
-                        <label className={labelClass} htmlFor={`n-${m.userId}`}>Name</label>
+                        <label className={labelClass} htmlFor={`n-${m.userId}`}>{t("household.name")}</label>
                         <input
                           id={`n-${m.userId}`}
                           value={borrador.nombre}
@@ -139,7 +141,7 @@ export function TarjetaHogar({
                         />
                       </div>
                       <div>
-                        <label className={labelClass} htmlFor={`e-${m.userId}`}>Email</label>
+                        <label className={labelClass} htmlFor={`e-${m.userId}`}>{t("household.email")}</label>
                         <input
                           id={`e-${m.userId}`}
                           type="email"
@@ -150,7 +152,7 @@ export function TarjetaHogar({
                         />
                       </div>
                       <div>
-                        <label className={labelClass} htmlFor={`r-${m.userId}`}>Role</label>
+                        <label className={labelClass} htmlFor={`r-${m.userId}`}>{t("household.role")}</label>
                         <select
                           id={`r-${m.userId}`}
                           value={borrador.role}
@@ -159,8 +161,8 @@ export function TarjetaHogar({
                           }
                           className={`${fieldBaseClass} ${fieldNormalClass}`}
                         >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
+                          <option value="member">{t("household.roleMember")}</option>
+                          <option value="admin">{t("household.roleAdmin")}</option>
                         </select>
                       </div>
                       <div className="flex gap-2 sm:col-span-3">
@@ -169,20 +171,20 @@ export function TarjetaHogar({
                           disabled={ocupado}
                           className="rounded-xl bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
                         >
-                          Save
+                          {t("common.save")}
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditando(null)}
                           className="rounded-xl px-4 py-2 text-sm text-text-muted transition hover:bg-surface-raised hover:text-text"
                         >
-                          Cancel
+                          {t("common.cancel")}
                         </button>
                       </div>
                     </form>
                     {m.email ? (
                       <p className={helperTextClass}>
-                        If you change the email, the person signs in with the new one.
+                        {t("household.emailChangeHint")}
                       </p>
                     ) : null}
                   </li>
@@ -194,11 +196,11 @@ export function TarjetaHogar({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-text">
                       {etiqueta}
-                      {soyYo ? " (you)" : ""}
+                      {soyYo ? t("household.you") : ""}
                     </p>
                     <p className="truncate text-xs text-text-muted">
-                      {m.email ?? "no email"} · {m.role === "admin" ? "admin" : "member"}
-                      {m.activo ? "" : " · no access"}
+                      {m.email ?? t("household.noEmail")} · {m.role === "admin" ? t("household.roleAdmin") : t("household.roleMember")}
+                      {m.activo ? "" : t("household.noAccess")}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -215,7 +217,7 @@ export function TarjetaHogar({
                       }}
                       className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
                     >
-                      <Pencil size={14} /> Edit
+                      <Pencil size={14} /> {t("household.edit")}
                     </button>
                     {m.activo && m.email ? (
                       <button
@@ -223,9 +225,9 @@ export function TarjetaHogar({
                         disabled={ocupado}
                         onClick={() => onReset(m.userId, m.email!)}
                         className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
-                        title="Send a link so they can change their password"
+                        title={t("household.resetTitle")}
                       >
-                        <Mail size={14} /> Reset password
+                        <Mail size={14} /> {t("household.resetPassword")}
                       </button>
                     ) : null}
                     {soyYo ? null : m.activo ? (
@@ -233,13 +235,13 @@ export function TarjetaHogar({
                         type="button"
                         disabled={ocupado}
                         onClick={() => {
-                          if (window.confirm(`Remove ${etiqueta}? They will no longer be able to sign in to the app.`)) {
+                          if (window.confirm(t("household.confirmRemove", { name: etiqueta }))) {
                             onEstado(m.userId, false, etiqueta);
                           }
                         }}
                         className={`${botonAccion} text-rust hover:bg-rust/10`}
                       >
-                        <UserMinus size={14} /> Remove
+                        <UserMinus size={14} /> {t("household.remove")}
                       </button>
                     ) : (
                       <button
@@ -248,7 +250,7 @@ export function TarjetaHogar({
                         onClick={() => onEstado(m.userId, true, etiqueta)}
                         className={`${botonAccion} text-sage hover:bg-sage/10`}
                       >
-                        <RotateCcw size={14} /> Reactivate
+                        <RotateCcw size={14} /> {t("household.reactivate")}
                       </button>
                     )}
                   </div>
@@ -260,7 +262,7 @@ export function TarjetaHogar({
           {hogar.invitaciones.length > 0 ? (
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">
-                Pending invitations
+                {t("household.pendingInvitations")}
               </h3>
               <ul className="divide-y divide-line">
                 {hogar.invitaciones.map((i) => (
@@ -268,8 +270,8 @@ export function TarjetaHogar({
                     <div className="min-w-0">
                       <p className="truncate text-sm text-text">{i.email}</p>
                       <p className="text-xs text-text-muted">
-                        {i.role === "admin" ? "admin" : "member"} · expires on{" "}
-                        {new Date(i.venceEn).toLocaleDateString("en")}
+                        {i.role === "admin" ? t("household.roleAdmin") : t("household.roleMember")}{t("household.expiresOn")}{" "}
+                        {new Date(i.venceEn).toLocaleDateString(t.locale)}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -279,7 +281,7 @@ export function TarjetaHogar({
                         onClick={() => onReenviar(i.id, i.email)}
                         className={`${botonAccion} text-gold hover:bg-gold/10`}
                       >
-                        <Send size={14} /> Resend
+                        <Send size={14} /> {t("household.resend")}
                       </button>
                       <button
                         type="button"
@@ -287,7 +289,7 @@ export function TarjetaHogar({
                         onClick={() => onCancelar(i.id, i.email)}
                         className={`${botonAccion} text-rust hover:bg-rust/10`}
                       >
-                        <X size={14} /> Cancel
+                        <X size={14} /> {t("common.cancel")}
                       </button>
                     </div>
                   </li>
@@ -300,28 +302,28 @@ export function TarjetaHogar({
           <form onSubmit={invitar} className="flex flex-wrap items-end gap-3">
             <div className="min-w-[14rem] flex-1">
               <label className={labelClass} htmlFor={`inv-${hogar.id}`}>
-                Add person by email
+                {t("household.addByEmail")}
               </label>
               <input
                 id={`inv-${hogar.id}`}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="person@example.com"
+                placeholder={t("household.emailPlaceholder")}
                 className={`${fieldBaseClass} ${fieldNormalClass}`}
                 required
               />
             </div>
             <div>
-              <label className={labelClass} htmlFor={`rol-${hogar.id}`}>Role</label>
+              <label className={labelClass} htmlFor={`rol-${hogar.id}`}>{t("household.role")}</label>
               <select
                 id={`rol-${hogar.id}`}
                 value={role}
                 onChange={(e) => setRole(e.target.value as "admin" | "member")}
                 className={`${fieldBaseClass} ${fieldNormalClass}`}
               >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
+                <option value="member">{t("household.roleMember")}</option>
+                <option value="admin">{t("household.roleAdmin")}</option>
               </select>
             </div>
             <button
@@ -329,7 +331,7 @@ export function TarjetaHogar({
               disabled={ocupado}
               className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
             >
-              Invite
+              {t("household.invite")}
             </button>
           </form>
           )}
@@ -344,7 +346,7 @@ export function TarjetaHogar({
                     onClick={onRestaurar}
                     className={`${botonAccion} text-sage hover:bg-sage/10`}
                   >
-                    <RotateCcw size={14} /> Restore household
+                    <RotateCcw size={14} /> {t("household.restore")}
                   </button>
                   <button
                     type="button"
@@ -352,7 +354,7 @@ export function TarjetaHogar({
                     onClick={onEliminar}
                     className={`${botonAccion} text-rust hover:bg-rust/10`}
                   >
-                    <Trash2 size={14} /> Delete permanently
+                    <Trash2 size={14} /> {t("household.deletePermanently")}
                   </button>
                 </>
               ) : (
@@ -362,7 +364,7 @@ export function TarjetaHogar({
                   onClick={onArchivar}
                   className={`${botonAccion} text-text-muted hover:bg-surface-raised hover:text-text`}
                 >
-                  <Archive size={14} /> Archive household
+                  <Archive size={14} /> {t("household.archive")}
                 </button>
               )}
             </div>

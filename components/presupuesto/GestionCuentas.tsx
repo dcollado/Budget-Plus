@@ -8,6 +8,7 @@ import { armarCuadro } from "@/lib/household/transferencias";
 import { formatearCentavos } from "@/lib/household/formato";
 import CuadroTransferencias from "@/components/presupuesto/CuadroTransferencias";
 import { fieldBaseClass, fieldNormalClass, sectionCardClass } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   items: CategoriaDelMes[];
@@ -30,6 +31,7 @@ async function pedir(url: string, init: RequestInit) {
 // "My accounts": the destination accounts (household, shared) and which one
 // each fixed item of the logged-in person goes to. Each person only assigns their own.
 export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignarCuenta }: Props) {
+  const t = useT();
   const [nueva, setNueva] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
   const [nombreEditado, setNombreEditado] = useState("");
@@ -58,7 +60,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
       setCuentas((actuales) => [...actuales, { id: cuenta.id, name: cuenta.name }]);
       setNueva("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creating the account.");
+      setError(err instanceof Error ? t.msg(err.message, "accounts.createError") : t("accounts.createError"));
     }
   }
 
@@ -75,13 +77,13 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
       );
       setEditando(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error renaming.");
+      setError(err instanceof Error ? t.msg(err.message, "accounts.renameError") : t("accounts.renameError"));
     }
   }
 
   async function borrar(cuenta: CuentaHogar) {
     const confirmado = window.confirm(
-      `Delete the account "${cuenta.name}"? The fixed items that went there (from both) are left without an account.`
+      t("accounts.confirmDelete", { name: cuenta.name })
     );
     if (!confirmado) return;
     setError("");
@@ -89,7 +91,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
       await pedir(`/api/hogar/cuentas?id=${encodeURIComponent(cuenta.id)}`, { method: "DELETE" });
       setCuentas((actuales) => actuales.filter((c) => c.id !== cuenta.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error deleting.");
+      setError(err instanceof Error ? t.msg(err.message, "common.deletingError") : t("common.deletingError"));
     }
   }
 
@@ -103,7 +105,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
       });
       asignarCuenta(item.category.id, cuentaId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error assigning.");
+      setError(err instanceof Error ? t.msg(err.message, "accounts.assignError") : t("accounts.assignError"));
     } finally {
       setGuardandoId(null);
     }
@@ -115,10 +117,10 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
 
       <div className="border-t border-line px-4 py-3">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-          Accounts
+          {t("accounts.title")}
         </p>
         <p className="-mt-1 mb-2 text-xs text-text-muted">
-          Both of you can see them (e.g. a joint one), but each person only assigns their own.
+          {t("accounts.sharedHint")}
         </p>
 
         <ul className="flex flex-col gap-1">
@@ -131,7 +133,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                       value={nombreEditado}
                       onChange={(e) => setNombreEditado(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && renombrar(cuenta.id)}
-                      aria-label="Account name"
+                      aria-label={t("accounts.nameLabel")}
                       className={`${fieldBaseClass} ${fieldNormalClass} py-1`}
                       autoFocus
                     />
@@ -141,14 +143,14 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                     onClick={() => renombrar(cuenta.id)}
                     className="rounded-lg bg-gold px-2.5 py-1 text-xs font-medium text-ink"
                   >
-                    Save
+                    {t("common.save")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditando(null)}
                     className="text-xs text-text-muted hover:text-text"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </>
               ) : (
@@ -161,7 +163,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                       setNombreEditado(cuenta.name);
                     }}
                     className="rounded-md p-1 text-text-muted hover:text-gold"
-                    aria-label={`Rename ${cuenta.name}`}
+                    aria-label={t("accounts.rename", { name: cuenta.name })}
                   >
                     <Pencil size={13} />
                   </button>
@@ -169,7 +171,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                     type="button"
                     onClick={() => borrar(cuenta)}
                     className="rounded-md p-1 text-text-muted hover:text-rust"
-                    aria-label={`Delete ${cuenta.name}`}
+                    aria-label={t("accounts.delete", { name: cuenta.name })}
                   >
                     <Trash2 size={13} />
                   </button>
@@ -185,8 +187,8 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
               value={nueva}
               onChange={(e) => setNueva(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && crear()}
-              placeholder="New account (e.g. Joint account)"
-              aria-label="New account name"
+              placeholder={t("accounts.newPlaceholder")}
+              aria-label={t("accounts.newName")}
               className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
             />
           </span>
@@ -195,18 +197,18 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
             onClick={crear}
             className="flex items-center gap-1 rounded-lg bg-surface-raised px-3 py-1.5 text-xs font-medium text-gold transition hover:brightness-110"
           >
-            <Plus size={13} /> Add
+            <Plus size={13} /> {t("common.add")}
           </button>
         </div>
       </div>
 
       <div className="border-t border-line px-4 py-3">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-          Your fixed items → account
+          {t("accounts.yourFixed")}
         </p>
 
         {misFijos.length === 0 ? (
-          <p className="text-sm text-text-muted">You have no fixed expenses under your name.</p>
+          <p className="text-sm text-text-muted">{t("accounts.noFixed")}</p>
         ) : (
           <ul className="flex flex-col">
             {misFijos.map((item) => (
@@ -225,10 +227,10 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                     value={idsCuentas.has(item.category.cuentaId) ? item.category.cuentaId : ""}
                     onChange={(e) => asignar(item, e.target.value)}
                     disabled={guardandoId === item.category.id}
-                    aria-label={`Account for ${item.category.name}`}
+                    aria-label={t("accounts.accountFor", { name: item.category.name })}
                     className={`${fieldBaseClass} ${fieldNormalClass} appearance-none py-1.5 pr-7 text-xs disabled:opacity-50`}
                   >
-                    <option value="">No account</option>
+                    <option value="">{t("row.noAccount")}</option>
                     {cuentas.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}

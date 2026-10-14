@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import type { HogarResumen } from "@/lib/admin/hogares";
+import { useT } from "@/lib/i18n/client";
 
 type Mensaje = { tipo: "ok" | "error"; texto: string };
 
@@ -12,6 +13,7 @@ const URL_MIEMBROS = "/api/hogar/miembros";
 // password, remove/reactivate and manage invitations. The household is set
 // by the server from their session.
 export default function MiembrosPage() {
+  const t = useT();
   const [hogar, setHogar] = useState<HogarResumen | null>(null);
   const [yo, setYo] = useState("");
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
@@ -24,12 +26,12 @@ export default function MiembrosPage() {
       message?: string;
     };
     if (!res.ok || !json.data) {
-      setMensaje({ tipo: "error", texto: json.message ?? "Could not load members." });
+      setMensaje({ tipo: "error", texto: t.msg(json.message, "members.loadError") });
       return;
     }
     setHogar(json.data.hogar);
     setYo(json.data.yo);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void cargar();
@@ -45,15 +47,15 @@ export default function MiembrosPage() {
       });
       const json = (await res.json()) as { message?: string; data?: { enlaceDev?: string } };
       if (!res.ok) {
-        setMensaje({ tipo: "error", texto: json.message ?? "Could not complete the action." });
+        setMensaje({ tipo: "error", texto: t.msg(json.message, "common.actionError") });
         return false;
       }
-      const extra = json.data?.enlaceDev ? ` · Development only: ${json.data.enlaceDev}` : "";
+      const extra = json.data?.enlaceDev ? ` · ${t("common.devOnly")}: ${json.data.enlaceDev}` : "";
       setMensaje({ tipo: "ok", texto: exito + extra });
       await cargar();
       return true;
     } catch {
-      setMensaje({ tipo: "error", texto: "Could not connect. Please try again." });
+      setMensaje({ tipo: "error", texto: t("common.connectError") });
       return false;
     } finally {
       setOcupado(false);
@@ -66,8 +68,8 @@ export default function MiembrosPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
       <div>
-        <p className="text-sm font-medium text-gold">My household</p>
-        <h1 className="font-display text-2xl font-semibold text-text">People</h1>
+        <p className="text-sm font-medium text-gold">{t("members.kicker")}</p>
+        <h1 className="font-display text-2xl font-semibold text-text">{t("members.title")}</h1>
       </div>
 
       {mensaje ? (
@@ -84,43 +86,43 @@ export default function MiembrosPage() {
       ) : null}
 
       {hogar === null ? (
-        mensaje ? null : <p className="text-sm text-text-muted">Loading…</p>
+        mensaje ? null : <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
       ) : (
         <TarjetaHogar
           hogar={hogar}
           yo={yo}
           ocupado={ocupado}
           onInvitar={(email, role) =>
-            post({ accion: "invitar", email, role }, `Invitation sent to ${email}.`)
+            post({ accion: "invitar", email, role }, t("members.inviteSent", { email }))
           }
           onReenviar={(invitacionId, email) =>
-            post({ accion: "reenviar", invitacionId }, `Invitation resent to ${email}.`)
+            post({ accion: "reenviar", invitacionId }, t("members.inviteResent", { email }))
           }
           onReset={(userId, email) =>
             post(
               { accion: "reset", userId },
-              `Password change link sent to ${email}.`
+              t("members.resetSent", { email })
             )
           }
           onEditar={(userId, datos) =>
             ejecutar(
               URL_MIEMBROS,
               { method: "PATCH", body: JSON.stringify({ userId, ...datos }) },
-              "Changes saved."
+              t("common.changesSaved")
             )
           }
           onEstado={(userId, activo, etiqueta) =>
             ejecutar(
               URL_MIEMBROS,
               { method: "PATCH", body: JSON.stringify({ userId, activo }) },
-              activo ? `${etiqueta} reactivated.` : `${etiqueta} no longer has access.`
+              activo ? t("members.reactivated", { name: etiqueta }) : t("members.removed", { name: etiqueta })
             )
           }
           onCancelar={(invitacionId, email) =>
             ejecutar(
               `${URL_MIEMBROS}?id=${encodeURIComponent(invitacionId)}`,
               { method: "DELETE" },
-              `Invitation to ${email} cancelled.`
+              t("members.inviteCancelled", { email })
             )
           }
         />

@@ -1,4 +1,5 @@
 import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
+import { useT } from "@/lib/i18n/client";
 
 export function nombreMiembro(members: MiembroHogar[], id: string): string {
   const nombre = members.find((m) => m.id === id)?.displayName ?? "";
@@ -36,6 +37,7 @@ export default function EtiquetaDueno({
   ownerMemberId: string;
   members: MiembroHogar[];
 }) {
+  const t = useT();
   const nombre = ownerMemberId ? nombreMiembro(members, ownerMemberId) : "";
   if (!nombre) return null;
   const color = colorMiembro(members, ownerMemberId);
@@ -43,7 +45,7 @@ export default function EtiquetaDueno({
   return (
     <span
       title={nombre}
-      aria-label={`${nombre}'s`}
+      aria-label={t("owner.of", { name: nombre })}
       className={`flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${color.fondo} ${color.texto}`}
     >
       {nombre.charAt(0)}

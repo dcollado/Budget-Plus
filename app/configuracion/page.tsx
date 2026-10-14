@@ -10,12 +10,14 @@ import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
 import { formatearCentavos, mesActual } from "@/lib/household/formato";
 import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 type Tab = "fijos" | "cuentas";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "fijos", label: "Fixed" },
-  { id: "cuentas", label: "My accounts" },
+const TABS: { id: Tab; label: MessageKey }[] = [
+  { id: "fijos", label: "settings.tabFixed" },
+  { id: "cuentas", label: "settings.tabAccounts" },
 ];
 
 // useSearchParams needs a Suspense around it so the page can still be
@@ -29,6 +31,7 @@ export default function ConfiguracionPage() {
 }
 
 function Configuracion() {
+  const t = useT();
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const router = useRouter();
 
@@ -77,7 +80,7 @@ function Configuracion() {
   ]
     .map((id) => ({
       id,
-      nombre: id ? nombreMiembro(members, id) : "both",
+      nombre: id ? nombreMiembro(members, id) : t("settings.both"),
       color: colorMiembro(members, id),
       items: gastosFijos.filter((i) =>
         id ? i.category.ownerMemberId === id : !members.some((m) => m.id === i.category.ownerMemberId)
@@ -90,36 +93,36 @@ function Configuracion() {
       className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? "max-w-5xl" : "max-w-3xl"}`}
     >
       <div className="mb-5">
-        <p className="text-sm font-medium text-gold">Accounts and fixed expenses</p>
+        <p className="text-sm font-medium text-gold">{t("nav.accounts")}</p>
         <h1 className="font-serif text-3xl font-semibold text-text">
-          {tab === "fijos" ? "Fixed expenses and income" : "My accounts"}
+          {tab === "fijos" ? t("settings.titleFixed") : t("settings.titleAccounts")}
         </h1>
         <p className="mt-1 text-sm text-text-muted">
           {tab === "fijos"
-            ? "Enter them once here and they carry over month to month on their own. Edit them when they change (e.g. rent goes up) — no need to touch them every month."
-            : "Which account each of your fixed items goes to. This builds your transfers table in Budget."}
+            ? t("settings.hintFixed")
+            : t("settings.hintAccounts")}
         </p>
       </div>
 
       <div
         role="tablist"
-        aria-label="Settings sections"
+        aria-label={t("settings.sections")}
         className="mb-5 flex overflow-hidden rounded-xl border border-line"
       >
-        {TABS.map((t) => (
+        {TABS.map((tabItem) => (
           <button
-            key={t.id}
+            key={tabItem.id}
             type="button"
             role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => elegirTab(t.id)}
+            aria-selected={tab === tabItem.id}
+            onClick={() => elegirTab(tabItem.id)}
             className={`flex-1 px-3 py-2 text-sm font-medium transition ${
-              tab === t.id
+              tab === tabItem.id
                 ? "bg-gold-soft text-gold"
                 : "text-text-muted hover:text-text"
             }`}
           >
-            {t.label}
+            {t(tabItem.label)}
           </button>
         ))}
       </div>
@@ -134,7 +137,7 @@ function Configuracion() {
 
       {hogarConfigurado && tab === "cuentas" ? (
         cargando || !yo ? (
-          <p className="py-6 text-center text-sm text-text-muted">Loading...</p>
+          <p className="py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
         ) : (
           <GestionCuentas
             items={items}
@@ -150,12 +153,12 @@ function Configuracion() {
         <>
           <div className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold text-text">
-              Fixed income
+              {t("settings.fixedIncome")}
               <span className="text-sage">{formatearCentavos(suma(ingresosFijos))}</span>
             </h2>
 
             {cargando ? (
-              <p className="px-4 py-6 text-center text-sm text-text-muted">Loading...</p>
+              <p className="px-4 py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
             ) : (
               ingresosFijos.map((item) => (
                 <FilaPresupuesto
@@ -177,7 +180,7 @@ function Configuracion() {
               (David blue, Caro red). Side by side on wide screens. */}
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {cargando ? (
-              <p className="py-6 text-center text-sm text-text-muted">Loading...</p>
+              <p className="py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
             ) : (
               gruposFijos.map((grupo) => (
                 <div
@@ -185,14 +188,14 @@ function Configuracion() {
                   className={`${sectionCardClass} border-t-4 p-0! ${grupo.color.borde}`}
                 >
                   <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold">
-                    <span className={grupo.color.texto}>Fixed items of {grupo.nombre}</span>
+                    <span className={grupo.color.texto}>{t("settings.fixedOf", { name: grupo.nombre })}</span>
                     <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
                   </h2>
                   <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem_1.75rem]">
                     <span />
-                    <span className="text-right">Amount</span>
-                    <span className="text-center">Day</span>
-                    <span className="text-center" title="Counts as savings">Savings</span>
+                    <span className="text-right">{t("settings.amount")}</span>
+                    <span className="text-center">{t("settings.day")}</span>
+                    <span className="text-center" title={t("settings.countsAsSavings")}>{t("settings.savings")}</span>
                   </div>
                   {grupo.items.map((item) => (
                     <FilaPresupuesto

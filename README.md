@@ -37,6 +37,7 @@ npm run build       # production build
 - `proxy.ts` — verifies the session and passes the identity to routes via headers.
 - `lib/household/` — budget model and logic (`presupuesto.ts`, `reporte.ts`,
   `calendario.ts`); `datos.ts` chooses between `backend-postgres.ts` and `backend-sheets.ts`.
+- `lib/i18n/` — languages (en, es): `messages/en.ts` is canonical; add a language by appending to `LOCALES` and creating `messages/<code>.ts`.
 - `lib/auth/` — role-based access, invitations, recovery, login throttling, audit.
 - `supabase/migrations/` — database schema.
 - `docs/SPEC.md` — product specification.

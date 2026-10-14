@@ -2,8 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { AuthCard, authButtonClass, authInputClass } from "@/components/auth-card";
+import { useT } from "@/lib/i18n/client";
 
 export default function OlvidePage() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
@@ -27,8 +29,8 @@ export default function OlvidePage() {
   if (enviado) {
     return (
       <AuthCard
-        titulo="Check your email"
-        subtitulo="If that email has an account, we sent you a link to choose a new password. It expires in 1 hour."
+        titulo={t("forgot.checkEmail")}
+        subtitulo={t("forgot.sentBody")}
       >
         <></>
       </AuthCard>
@@ -37,14 +39,14 @@ export default function OlvidePage() {
 
   return (
     <AuthCard
-      titulo="Reset password"
-      subtitulo="Enter your account email and we'll send you a link."
+      titulo={t("forgot.title")}
+      subtitulo={t("forgot.subtitle")}
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder={t("forgot.emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -52,7 +54,7 @@ export default function OlvidePage() {
           className={authInputClass}
         />
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Sending..." : "Send link"}
+          {enviando ? t("forgot.sending") : t("forgot.send")}
         </button>
       </form>
     </AuthCard>

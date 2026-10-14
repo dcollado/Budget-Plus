@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard, AuthError, authButtonClass, authInputClass } from "@/components/auth-card";
+import { useT } from "@/lib/i18n/client";
 
 export default function InvitacionPage() {
   return (
@@ -14,6 +15,7 @@ export default function InvitacionPage() {
 
 function Invitacion() {
   const router = useRouter();
+  const t = useT();
   const token = useSearchParams().get("token") ?? "";
 
   const [info, setInfo] = useState<{ email: string; hogar: string } | null>(null);
@@ -39,7 +41,7 @@ function Invitacion() {
     setError("");
 
     if (password !== confirmar) {
-      setError("Passwords do not match.");
+      setError(t("common.passwordsMismatch"));
       return;
     }
 
@@ -52,12 +54,12 @@ function Invitacion() {
       });
       const json = (await res.json()) as { message?: string };
       if (!res.ok) {
-        setError(json.message ?? "Could not accept the invitation.");
+        setError(t.msg(json.message, "invite.errorGeneric"));
         return;
       }
       router.replace("/login");
     } catch {
-      setError("Could not connect. Please try again.");
+      setError(t("common.connectError"));
     } finally {
       setEnviando(false);
     }
@@ -66,8 +68,8 @@ function Invitacion() {
   if (invalida) {
     return (
       <AuthCard
-        titulo="Invalid invitation"
-        subtitulo="The link has expired or was already used. Ask the administrator to send you a new one."
+        titulo={t("invite.invalidTitle")}
+        subtitulo={t("invite.invalidBody")}
       >
         <></>
       </AuthCard>
@@ -75,19 +77,19 @@ function Invitacion() {
   }
 
   if (!info) {
-    return <AuthCard titulo="Loading invitation…">{null}</AuthCard>;
+    return <AuthCard titulo={t("invite.loading")}>{null}</AuthCard>;
   }
 
   return (
     <AuthCard
-      titulo={`Join ${info.hogar}`}
-      subtitulo={`Create your account for ${info.email}. That email will be your username to sign in.`}
+      titulo={t("invite.joinTitle", { household: info.hogar })}
+      subtitulo={t("invite.joinSubtitle", { email: info.email })}
     >
       <form onSubmit={enviar} className="space-y-4">
         <input
           type="text"
           autoComplete="name"
-          placeholder="Your name (as others in the household will see it)"
+          placeholder={t("invite.namePlaceholder")}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
@@ -97,7 +99,7 @@ function Invitacion() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Password (minimum 8 characters)"
+          placeholder={t("invite.passwordPlaceholder")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -108,7 +110,7 @@ function Invitacion() {
         <input
           type="password"
           autoComplete="new-password"
-          placeholder="Repeat the password"
+          placeholder={t("common.repeatPassword")}
           value={confirmar}
           onChange={(e) => setConfirmar(e.target.value)}
           required
@@ -118,7 +120,7 @@ function Invitacion() {
         />
         {error ? <AuthError>{error}</AuthError> : null}
         <button type="submit" disabled={enviando} className={authButtonClass}>
-          {enviando ? "Creating account..." : "Create account"}
+          {enviando ? t("invite.creating") : t("invite.create")}
         </button>
       </form>
     </AuthCard>

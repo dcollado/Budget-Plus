@@ -9,6 +9,7 @@ import {
   labelClass,
   sectionCardClass,
 } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 type Perfil = {
   nombre: string;
@@ -22,6 +23,7 @@ type Perfil = {
 const mayuscula = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
 
 export default function PerfilPage() {
+  const t = useT();
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [nombre, setNombre] = useState("");
   const [guardandoNombre, setGuardandoNombre] = useState(false);
@@ -60,18 +62,18 @@ export default function PerfilPage() {
       const json = (await res.json()) as { message?: string; data?: { nombre: string } };
 
       if (!res.ok || !json.data) {
-        setMensajeNombre({ tipo: "error", texto: json.message ?? "Could not save the name." });
+        setMensajeNombre({ tipo: "error", texto: t.msg(json.message, "profile.nameError") });
         return;
       }
 
       const guardado = json.data.nombre;
       setPerfil((p) => (p ? { ...p, nombre: guardado } : p));
       setNombre(guardado);
-      setMensajeNombre({ tipo: "ok", texto: "Name saved." });
+      setMensajeNombre({ tipo: "ok", texto: t("profile.nameSaved") });
       // Let the header reflect it without reloading.
       window.dispatchEvent(new Event(EVENTO_PERFIL));
     } catch {
-      setMensajeNombre({ tipo: "error", texto: "Could not connect. Please try again." });
+      setMensajeNombre({ tipo: "error", texto: t("common.connectError") });
     } finally {
       setGuardandoNombre(false);
     }
@@ -82,7 +84,7 @@ export default function PerfilPage() {
     setMensaje(null);
 
     if (nueva !== confirmar) {
-      setMensaje({ tipo: "error", texto: "The new passwords do not match." });
+      setMensaje({ tipo: "error", texto: t("profile.newMismatch") });
       return;
     }
 
@@ -96,7 +98,7 @@ export default function PerfilPage() {
       const json = (await res.json()) as { message?: string };
 
       if (!res.ok) {
-        setMensaje({ tipo: "error", texto: json.message ?? "Could not change the password." });
+        setMensaje({ tipo: "error", texto: t.msg(json.message, "profile.passwordError") });
         return;
       }
 
@@ -105,48 +107,48 @@ export default function PerfilPage() {
       setConfirmar("");
       setMensaje({
         tipo: "ok",
-        texto: "Password changed. Your other open sessions were signed out.",
+        texto: t("profile.passwordChanged"),
       });
     } catch {
-      setMensaje({ tipo: "error", texto: "Could not connect. Please try again." });
+      setMensaje({ tipo: "error", texto: t("common.connectError") });
     } finally {
       setEnviando(false);
     }
   }
 
   const rolTexto = perfil?.esSuperadmin
-    ? "Super-admin"
+    ? t("profile.roleSuper")
     : perfil?.rol === "admin"
-      ? "Household administrator"
-      : "Member";
+      ? t("profile.roleAdmin")
+      : t("profile.roleMember");
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
       <div>
-        <p className="text-sm font-medium text-gold">My account</p>
-        <h1 className="font-display text-2xl font-semibold text-text">Profile and security</h1>
+        <p className="text-sm font-medium text-gold">{t("nav.myAccount")}</p>
+        <h1 className="font-display text-2xl font-semibold text-text">{t("nav.profile")}</h1>
       </div>
 
       <section className={sectionCardClass}>
         {perfil === null ? (
-          <p className="text-sm text-text-muted">Loading…</p>
+          <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
         ) : (
           <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-3 text-sm">
-            <dt className="text-text-muted">Email</dt>
-            <dd className="break-all text-text">{perfil.email ?? "No email on file"}</dd>
+            <dt className="text-text-muted">{t("profile.email")}</dt>
+            <dd className="break-all text-text">{perfil.email ?? t("profile.noEmail")}</dd>
 
-            <dt className="text-text-muted">To sign in</dt>
+            <dt className="text-text-muted">{t("profile.toSignIn")}</dt>
             <dd className="break-all text-text">
               {perfil.email ?? perfil.usuario}
               {perfil.email && perfil.usuario.toLowerCase() !== perfil.email.toLowerCase()
-                ? ` (or your username "${perfil.usuario}")`
+                ? ` (${t("profile.orUsername", { user: perfil.usuario })})`
                 : ""}
             </dd>
 
-            <dt className="text-text-muted">Household</dt>
-            <dd className="text-text">{perfil.hogar ?? "No household"}</dd>
+            <dt className="text-text-muted">{t("profile.household")}</dt>
+            <dd className="text-text">{perfil.hogar ?? t("profile.noHousehold")}</dd>
 
-            <dt className="text-text-muted">Role</dt>
+            <dt className="text-text-muted">{t("profile.role")}</dt>
             <dd className="text-text">{rolTexto}</dd>
           </dl>
         )}
@@ -154,7 +156,7 @@ export default function PerfilPage() {
 
       {perfil ? (
         <form onSubmit={guardarNombre} className={`${sectionCardClass} space-y-4`}>
-          <h2 className="text-base font-semibold text-text">Your name</h2>
+          <h2 className="text-base font-semibold text-text">{t("profile.yourName")}</h2>
 
           {mensajeNombre ? (
             <div
@@ -170,7 +172,7 @@ export default function PerfilPage() {
           ) : null}
 
           <div>
-            <label className={labelClass} htmlFor="nombre">How you appear in the budget</label>
+            <label className={labelClass} htmlFor="nombre">{t("profile.howAppear")}</label>
             <input
               id="nombre"
               value={nombre}
@@ -187,13 +189,13 @@ export default function PerfilPage() {
             disabled={guardandoNombre || nombre.trim() === "" || nombre.trim() === mayuscula(perfil.nombre)}
             className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
           >
-            {guardandoNombre ? "Saving..." : "Save name"}
+            {guardandoNombre ? t("common.saving") : t("profile.saveName")}
           </button>
         </form>
       ) : null}
 
       <form onSubmit={cambiar} className={`${sectionCardClass} space-y-4`}>
-        <h2 className="text-base font-semibold text-text">Change password</h2>
+        <h2 className="text-base font-semibold text-text">{t("profile.changePasswordTitle")}</h2>
 
         {mensaje ? (
           <div
@@ -209,7 +211,7 @@ export default function PerfilPage() {
         ) : null}
 
         <div>
-          <label className={labelClass} htmlFor="actual">Current password</label>
+          <label className={labelClass} htmlFor="actual">{t("profile.currentPassword")}</label>
           <input
             id="actual"
             type="password"
@@ -224,7 +226,7 @@ export default function PerfilPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass} htmlFor="nueva">New password</label>
+            <label className={labelClass} htmlFor="nueva">{t("profile.newPassword")}</label>
             <input
               id="nueva"
               type="password"
@@ -236,10 +238,10 @@ export default function PerfilPage() {
               minLength={8}
               disabled={enviando}
             />
-            <p className={helperTextClass}>Minimum 8 characters.</p>
+            <p className={helperTextClass}>{t("profile.minChars")}</p>
           </div>
           <div>
-            <label className={labelClass} htmlFor="confirmar">Repeat the new one</label>
+            <label className={labelClass} htmlFor="confirmar">{t("profile.repeatNew")}</label>
             <input
               id="confirmar"
               type="password"
@@ -259,7 +261,7 @@ export default function PerfilPage() {
           disabled={enviando}
           className="rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:opacity-60"
         >
-          {enviando ? "Saving..." : "Change password"}
+          {enviando ? t("common.saving") : t("profile.changePassword")}
         </button>
       </form>
     </main>

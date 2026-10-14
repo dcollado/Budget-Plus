@@ -7,6 +7,7 @@ import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 import type { MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   item: CategoriaDelMes;
@@ -45,6 +46,7 @@ export default function FilaPresupuesto({
   compacta = false,
   onAhorro,
 }: Props) {
+  const t = useT();
   const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
   // Saved day (to know whether the field changed) and the one being edited.
   const [diaGuardado, setDiaGuardado] = useState(
@@ -72,12 +74,12 @@ export default function FilaPresupuesto({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Could not save.");
+        throw new Error(t.msg(data.message, "common.saveError"));
       }
 
       onAhorro(item.category.id, nuevo);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setGuardandoAhorro(false);
     }
@@ -99,7 +101,7 @@ export default function FilaPresupuesto({
     const diaNum = dia ? Number(dia) : null;
 
     if (diaCambio && dia && !(Number.isInteger(diaNum) && diaNum! >= 1 && diaNum! <= 31)) {
-      setError("The day must be between 1 and 31.");
+      setError(t("row.dayRange"));
       return;
     }
 
@@ -121,7 +123,7 @@ export default function FilaPresupuesto({
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          throw new Error(data.message || "Could not save.");
+          throw new Error(t.msg(data.message, "common.saveError"));
         }
       }
 
@@ -135,7 +137,7 @@ export default function FilaPresupuesto({
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          throw new Error(data.message || "Could not save the day.");
+          throw new Error(t.msg(data.message, "row.saveDayError"));
         }
 
         setDiaGuardado(dia);
@@ -147,7 +149,7 @@ export default function FilaPresupuesto({
         diaCambio ? fechaDelDia(month, diaNum) : undefined
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error saving.");
+      setError(err instanceof Error ? err.message : t("common.savingError"));
     } finally {
       setGuardando(false);
     }
@@ -155,7 +157,7 @@ export default function FilaPresupuesto({
 
   async function eliminar() {
     const confirmado = window.confirm(
-      `Delete "${item.category.name}"? This cannot be undone from here (the history of previous months is kept, but the category is no longer available).`
+      t("row.confirmDeleteFixed", { name: item.category.name })
     );
 
     if (!confirmado) return;
@@ -172,12 +174,12 @@ export default function FilaPresupuesto({
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Could not delete.");
+        throw new Error(t.msg(data.message, "common.deleteError"));
       }
 
       onEliminar?.(item.category.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error deleting.");
+      setError(err instanceof Error ? err.message : t("common.deletingError"));
       setEliminando(false);
     }
   }
@@ -200,7 +202,7 @@ export default function FilaPresupuesto({
             inputMode="decimal"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
-            aria-label={`Amount of ${item.category.name}`}
+            aria-label={t("row.amountOf", { name: item.category.name })}
             className={`${fieldBaseClass} ${fieldNormalClass} px-2! py-1! text-right text-sm`}
           />
           {editarDia ? (
@@ -212,7 +214,7 @@ export default function FilaPresupuesto({
               value={dia}
               onChange={(e) => setDia(e.target.value)}
               placeholder="—"
-              aria-label={`Payment day of ${item.category.name}`}
+              aria-label={t("row.paymentDayOf", { name: item.category.name })}
               className={`${fieldBaseClass} ${fieldNormalClass} px-1! py-1! text-center text-sm`}
             />
           ) : (
@@ -224,8 +226,8 @@ export default function FilaPresupuesto({
               onClick={alternarAhorro}
               disabled={guardandoAhorro}
               aria-pressed={item.category.ahorro}
-              title={item.category.ahorro ? "Counts as savings" : "Mark as savings"}
-              aria-label={`${item.category.ahorro ? "Remove from" : "Mark as"} savings: ${item.category.name}`}
+              title={item.category.ahorro ? t("settings.countsAsSavings") : t("row.markAsSavings")}
+              aria-label={t(item.category.ahorro ? "row.unmarkSavings" : "row.markSavings", { name: item.category.name })}
               className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-50 ${
                 item.category.ahorro
                   ? "bg-sage/20 text-sage"
@@ -240,7 +242,7 @@ export default function FilaPresupuesto({
             onClick={guardar}
             disabled={!dirty || guardando}
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold text-ink transition disabled:invisible"
-            aria-label={`Save ${item.category.name}`}
+            aria-label={t("row.save", { name: item.category.name })}
           >
             {guardando ? "…" : <Check size={14} />}
           </button>
@@ -250,7 +252,7 @@ export default function FilaPresupuesto({
               onClick={eliminar}
               disabled={eliminando}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-rust/10 hover:text-rust disabled:opacity-50"
-              aria-label={`Delete ${item.category.name}`}
+              aria-label={t("row.delete", { name: item.category.name })}
             >
               <Trash2 size={14} />
             </button>
@@ -274,14 +276,14 @@ export default function FilaPresupuesto({
           {item.category.fixed ? (
             <span
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-soft text-gold"
-              title="Fixed"
-              aria-label="Fixed"
+              title={t("row.fixed")}
+              aria-label={t("row.fixed")}
             >
               <Lock size={11} />
             </span>
           ) : null}
           {item.inherited ? (
-            <span className="text-xs text-text-muted">(inherited from the previous month)</span>
+            <span className="text-xs text-text-muted">{t("row.inherited")}</span>
           ) : null}
         </div>
 
@@ -298,7 +300,7 @@ export default function FilaPresupuesto({
           ) : (
             <>
               <label className="flex items-center gap-1.5 text-xs text-text-muted">
-                Amount
+                {t("row.amount")}
                 <span className="w-24">
                   <input
                     type="number"
@@ -313,7 +315,7 @@ export default function FilaPresupuesto({
               </label>
               {editarDia ? (
                 <label className="flex items-center gap-1.5 text-xs text-text-muted">
-                  Day
+                  {t("row.day")}
                   <span className="w-16">
                     <input
                       type="number"
@@ -323,7 +325,7 @@ export default function FilaPresupuesto({
                       value={dia}
                       onChange={(e) => setDia(e.target.value)}
                       placeholder="—"
-                      aria-label={`Payment day of ${item.category.name}`}
+                      aria-label={t("row.paymentDayOf", { name: item.category.name })}
                       className={`${fieldBaseClass} ${fieldNormalClass} py-1.5 text-right`}
                     />
                   </span>
@@ -335,7 +337,7 @@ export default function FilaPresupuesto({
                 disabled={!dirty || guardando}
                 className="rounded-lg bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted transition hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {guardando ? "..." : "Save"}
+                {guardando ? "..." : t("common.save")}
               </button>
             </>
           )}
@@ -345,7 +347,7 @@ export default function FilaPresupuesto({
               onClick={eliminar}
               disabled={eliminando}
               className="rounded-lg p-1.5 text-text-muted transition hover:bg-rust/10 hover:text-rust disabled:opacity-50"
-              aria-label={`Delete ${item.category.name}`}
+              aria-label={t("row.delete", { name: item.category.name })}
             >
               <Trash2 size={15} />
             </button>

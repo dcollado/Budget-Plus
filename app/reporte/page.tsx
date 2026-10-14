@@ -7,19 +7,20 @@ import { formatearCentavos, mesActual } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
 import { colorMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import type { ReporteAnual } from "@/lib/household/reporte";
+import { useT } from "@/lib/i18n/client";
 
-function nombreMes(month: string): string {
+function nombreMes(month: string, locale: string): string {
   const [anio, mes] = month.split("-").map(Number);
-  const texto = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString("en", {
+  const texto = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString(locale, {
     month: "long",
     timeZone: "UTC",
   });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-function fechaCorta(fecha: string): string {
+function fechaCorta(fecha: string, locale: string): string {
   const [anio, mes, dia] = fecha.split("-").map(Number);
-  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString("en", {
+  return new Date(Date.UTC(anio, mes - 1, dia)).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
@@ -38,6 +39,7 @@ function Tarjeta({ label, valor, color }: { label: string; valor: number; color:
 }
 
 export default function ReportePage() {
+  const t = useT();
   const [year, setYear] = useState(() => Number(mesActual().slice(0, 4)));
   const [reporte, setReporte] = useState<ReporteAnual | null>(null);
   const [error, setError] = useState("");
@@ -49,18 +51,18 @@ export default function ReportePage() {
       .then(async (res) => {
         const json = (await res.json()) as { data?: ReporteAnual; message?: string };
         if (!vigente) return;
-        if (!res.ok || !json.data) throw new Error(json.message ?? "Could not load the report.");
+        if (!res.ok || !json.data) throw new Error(t.msg(json.message, "report.loadError"));
         setReporte(json.data);
         setError("");
       })
       .catch((e) => {
-        if (vigente) setError(e instanceof Error ? e.message : "Could not load the report.");
+        if (vigente) setError(e instanceof Error ? e.message : t("report.loadError"));
       });
 
     return () => {
       vigente = false;
     };
-  }, [year]);
+  }, [year, t]);
 
   const actual = mesActual();
   const cargando = reporte === null || reporte.year !== year;
@@ -79,10 +81,10 @@ export default function ReportePage() {
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-gold">Report</p>
-          <h1 className="font-serif text-3xl font-semibold text-text">Year summary</h1>
+          <p className="text-sm font-medium text-gold">{t("nav.report")}</p>
+          <h1 className="font-serif text-3xl font-semibold text-text">{t("report.title")}</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Comes from the household plan: what is budgeted, not what was actually spent.
+            {t("report.subtitle")}
           </p>
         </div>
 
@@ -90,7 +92,7 @@ export default function ReportePage() {
           <button
             type="button"
             onClick={() => setYear((y) => y - 1)}
-            aria-label="Previous year"
+            aria-label={t("report.prevYear")}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface hover:text-text"
           >
             <ChevronLeft size={18} />
@@ -99,7 +101,7 @@ export default function ReportePage() {
           <button
             type="button"
             onClick={() => setYear((y) => y + 1)}
-            aria-label="Next year"
+            aria-label={t("report.nextYear")}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface hover:text-text"
           >
             <ChevronRight size={18} />
@@ -114,7 +116,7 @@ export default function ReportePage() {
       ) : null}
 
       {cargando && !error ? (
-        <p className="py-8 text-center text-sm text-text-muted">Loading…</p>
+        <p className="py-8 text-center text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
       ) : null}
 
       {reporte && !cargando ? (
@@ -123,23 +125,22 @@ export default function ReportePage() {
             <div className={`${sectionCardClass} flex items-start gap-3`}>
               <PiggyBank size={20} className="mt-0.5 shrink-0 text-sage" />
               <p className="text-sm text-text-muted">
-                You have not marked which fixed expenses are <span className="text-text">savings</span> yet.
-                In{" "}
+                {t("report.savingsHint1")}{" "}
                 <Link href="/configuracion" className="text-gold underline">
-                  Accounts and fixed expenses
+                  {t("nav.accounts")}
                 </Link>{" "}
-                tap the piggy bank on each one (Savings, Emergencies…) and you will see here how much they set aside.
+                {t("report.savingsHint2")}
               </p>
             </div>
           ) : null}
 
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            <Tarjeta label="Income" valor={reporte.totales.ingresosCents} color="text-sage" />
-            <Tarjeta label="Fixed expenses" valor={reporte.totales.fijosCents} color="text-text" />
-            <Tarjeta label="Variable" valor={reporte.totales.variablesCents} color="text-rust" />
-            <Tarjeta label="Savings" valor={reporte.totales.ahorroCents} color="text-sage" />
+            <Tarjeta label={t("report.income")} valor={reporte.totales.ingresosCents} color="text-sage" />
+            <Tarjeta label={t("report.fixedExpenses")} valor={reporte.totales.fijosCents} color="text-text" />
+            <Tarjeta label={t("report.variable")} valor={reporte.totales.variablesCents} color="text-rust" />
+            <Tarjeta label={t("report.savings")} valor={reporte.totales.ahorroCents} color="text-sage" />
             <Tarjeta
-              label="Left over"
+              label={t("report.leftOver")}
               valor={reporte.totales.sobranteCents}
               color={reporte.totales.sobranteCents < 0 ? "text-rust" : "text-sage"}
             />
@@ -147,18 +148,18 @@ export default function ReportePage() {
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Month by month
+              {t("report.monthByMonth")}
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[34rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
-                    <th className="px-4 py-2 text-left font-medium">Month</th>
-                    <th className="px-3 py-2 text-right font-medium">Income</th>
-                    <th className="px-3 py-2 text-right font-medium">Fixed</th>
-                    <th className="px-3 py-2 text-right font-medium">Variable</th>
-                    <th className="px-3 py-2 text-right font-medium">Savings</th>
-                    <th className="px-4 py-2 text-right font-medium">Left over</th>
+                    <th className="px-4 py-2 text-left font-medium">{t("report.month")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.income")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.fixed")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.variable")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.savings")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("report.leftOver")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,10 +176,10 @@ export default function ReportePage() {
                         }`}
                       >
                         <td className="px-4 py-2 font-medium">
-                          {nombreMes(m.month)}
+                          {nombreMes(m.month, t.locale)}
                           {esActual ? (
                             <span className="ml-2 text-[10px] font-semibold uppercase text-gold">
-                              today
+                              {t("report.today")}
                             </span>
                           ) : null}
                         </td>
@@ -205,17 +206,17 @@ export default function ReportePage() {
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              By person (year)
+              {t("report.byPerson")}
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[30rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
-                    <th className="px-4 py-2 text-left font-medium">Person</th>
-                    <th className="px-3 py-2 text-right font-medium">Income</th>
-                    <th className="px-3 py-2 text-right font-medium">Expenses</th>
-                    <th className="px-3 py-2 text-right font-medium">Savings</th>
-                    <th className="px-4 py-2 text-right font-medium">Left over</th>
+                    <th className="px-4 py-2 text-left font-medium">{t("report.person")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.income")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.expenses")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("report.savings")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("report.leftOver")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -226,7 +227,7 @@ export default function ReportePage() {
                           p.memberId ? colorMiembro(miembros, p.memberId).texto : "text-text-muted"
                         }`}
                       >
-                        {p.nombre}
+                        {p.memberId ? p.nombre : t("report.joint")}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">{dinero(p.ingresosCents)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{dinero(p.gastosCents)}</td>
@@ -246,20 +247,19 @@ export default function ReportePage() {
               </table>
             </div>
             <p className="border-t border-line px-4 py-2 text-xs text-text-muted">
-              &quot;Joint&quot; are the expenses and income with no assigned owner; they are subtracted from the household total,
-              so they have no left over of their own.
+              {t("report.jointNote")}
             </p>
           </section>
 
           <section className={`${sectionCardClass} p-0`}>
             <h2 className="flex items-center justify-between border-b border-line px-4 py-3 text-sm font-semibold text-text">
-              Extraordinary expenses
+              {t("report.extraordinary")}
               <span className="text-rust">{formatearCentavos(totalExtraordinarios)}</span>
             </h2>
 
             {reporte.extraordinarios.length === 0 ? (
               <p className="px-4 py-4 text-center text-sm text-text-muted">
-                No variable expenses recorded in {year}.
+                {t("report.noVariable", { year })}
               </p>
             ) : (
               <ul>
@@ -270,7 +270,7 @@ export default function ReportePage() {
                   >
                     <div className="flex min-w-0 items-baseline gap-3">
                       <span className="w-14 shrink-0 text-xs text-text-muted">
-                        {fechaCorta(e.fecha)}
+                        {fechaCorta(e.fecha, t.locale)}
                       </span>
                       <span className="truncate text-sm text-text">{e.nombre}</span>
                     </div>

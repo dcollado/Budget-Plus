@@ -7,6 +7,7 @@ import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   kind: CategoryKind;
@@ -33,6 +34,7 @@ export default function AgregarCategoria({
   members,
   cuentas,
 }: Props) {
+  const t = useT();
   const [abierto, setAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
@@ -59,7 +61,7 @@ export default function AgregarCategoria({
 
   async function agregar() {
     if (!nombre.trim()) {
-      setError("Give it a name.");
+      setError(t("cat.giveName"));
       return;
     }
 
@@ -68,14 +70,14 @@ export default function AgregarCategoria({
     // A variable item with no amount does not appear in the list (only those
     // with something that month are listed), so creating it empty makes no sense.
     if (!fixed && plannedAmountCents <= 0) {
-      setError("Enter an amount greater than 0.");
+      setError(t("cat.amountPositive"));
       return;
     }
 
     const dueDay = fixed && dia ? Number(dia) : null;
 
     if (fixed && dia && !(Number.isInteger(dueDay) && dueDay! >= 1 && dueDay! <= 31)) {
-      setError("The day must be between 1 and 31.");
+      setError(t("cat.dayRange"));
       return;
     }
 
@@ -98,7 +100,7 @@ export default function AgregarCategoria({
       const dataCategoria = await resCategoria.json();
 
       if (!resCategoria.ok || !dataCategoria.success) {
-        throw new Error(dataCategoria.message || "Could not create the category.");
+        throw new Error(t.msg(dataCategoria.message, "cat.createError"));
       }
 
       let category = dataCategoria.data;
@@ -111,7 +113,7 @@ export default function AgregarCategoria({
         });
         const dataCuenta = await resCuenta.json();
         if (!resCuenta.ok || !dataCuenta.success) {
-          throw new Error(dataCuenta.message || "Could not save the account.");
+          throw new Error(t.msg(dataCuenta.message, "common.saveAccountError"));
         }
         category = { ...category, cuentaId };
       }
@@ -131,7 +133,7 @@ export default function AgregarCategoria({
         const dataMonto = await resMonto.json();
 
         if (!resMonto.ok || !dataMonto.success) {
-          throw new Error(dataMonto.message || "Could not save the amount.");
+          throw new Error(t.msg(dataMonto.message, "cat.saveAmountError"));
         }
       }
 
@@ -145,7 +147,7 @@ export default function AgregarCategoria({
 
       cerrar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error adding.");
+      setError(err instanceof Error ? err.message : t("cat.addError"));
     } finally {
       setGuardando(false);
     }
@@ -153,11 +155,11 @@ export default function AgregarCategoria({
 
   const etiqueta = fixed
     ? kind === "income"
-      ? "Add fixed income"
-      : "Add fixed expense"
+      ? t("cat.addFixedIncome")
+      : t("cat.addFixedExpense")
     : kind === "income"
-    ? "Variable income"
-    : "Variable expense";
+    ? t("cat.variableIncome")
+    : t("cat.variableExpense");
 
   if (!abierto) {
     return variant === "boton" ? (
@@ -199,7 +201,7 @@ export default function AgregarCategoria({
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          placeholder={fixed ? "Name (e.g. Gym)" : "Name (e.g. Birthday gift)"}
+          placeholder={fixed ? t("cat.namePlaceholderFixed") : t("cat.namePlaceholderVariable")}
           className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           autoFocus
         />
@@ -211,7 +213,7 @@ export default function AgregarCategoria({
             inputMode="decimal"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
-            placeholder="Amount"
+            placeholder={t("row.amount")}
             className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5 text-right`}
           />
           {fixed ? (
@@ -222,8 +224,8 @@ export default function AgregarCategoria({
               inputMode="numeric"
               value={dia}
               onChange={(e) => setDia(e.target.value)}
-              placeholder="Day"
-              aria-label="Day of the month it is paid"
+              placeholder={t("row.day")}
+              aria-label={t("cat.dayTitle")}
               className={`${fieldBaseClass} ${fieldNormalClass} w-20 py-1.5 text-right`}
             />
           ) : (
@@ -233,7 +235,7 @@ export default function AgregarCategoria({
               min={`${month}-01`}
               max={`${month}-${String(ultimoDia).padStart(2, "0")}`}
               onChange={(e) => setFecha(e.target.value)}
-              aria-label="Payment date"
+              aria-label={t("row.paymentDate")}
               className={`${fieldBaseClass} ${fieldNormalClass} flex-1 py-1.5`}
             />
           )}
@@ -242,10 +244,10 @@ export default function AgregarCategoria({
           <select
             value={cuentaId}
             onChange={(e) => setCuentaId(e.target.value)}
-            aria-label="Which account it goes to"
+            aria-label={t("row.whichAccount")}
             className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           >
-            <option value="">Which account does it go to? (optional)</option>
+            <option value="">{t("cat.whichAccountOptional")}</option>
             {cuentas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -257,10 +259,10 @@ export default function AgregarCategoria({
           <select
             value={dueno}
             onChange={(e) => setDueno(e.target.value)}
-            aria-label="Whose it is"
+            aria-label={t("cat.whose")}
             className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
           >
-            <option value="">Joint</option>
+            <option value="">{t("cat.joint")}</option>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {nombreMiembro(members, m.id)}
@@ -274,7 +276,7 @@ export default function AgregarCategoria({
             onClick={cerrar}
             className="text-xs text-text-muted hover:text-text"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -282,7 +284,7 @@ export default function AgregarCategoria({
             disabled={guardando}
             className="rounded-lg bg-gold px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {guardando ? "..." : "Add"}
+            {guardando ? "..." : t("common.add")}
           </button>
         </div>
       </div>

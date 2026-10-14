@@ -17,17 +17,20 @@ import {
   usePathname,
   useRouter,
 } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/messages";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 // Daily-use items. What is set up once and rarely changes (accounts, fixed
 // expenses, members, profile) lives in the user menu.
-const navLinks = [
+const navLinks: { href: string; label: MessageKey }[] = [
   {
     href: "/presupuesto",
-    label: "Budget",
+    label: "nav.budget",
   },
   {
     href: "/reporte",
-    label: "Report",
+    label: "nav.report",
   },
 ];
 
@@ -54,6 +57,7 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useT();
 
   const isLoginPage = [
     "/login",
@@ -116,16 +120,16 @@ export function AppShell({
   // Household data (set up once, rarely changes). The super-admin manages
   // everything, their household included, from Admin, so doesn't need "Members".
   const hogarLinks = [
-    { href: "/configuracion", label: "Accounts and fixed expenses", Icono: Wallet },
+    { href: "/configuracion", label: t("nav.accounts"), Icono: Wallet },
     ...(esAdminHogar && !esSuperadmin
-      ? [{ href: "/miembros", label: "Members", Icono: Users }]
+      ? [{ href: "/miembros", label: t("nav.members"), Icono: Users }]
       : []),
   ];
 
   // Mine: profile and, if applicable, platform administration.
   const cuentaLinks = [
-    { href: "/perfil", label: "Profile and security", Icono: UserCog },
-    ...(esSuperadmin ? [{ href: "/admin", label: "Admin", Icono: ShieldCheck }] : []),
+    { href: "/perfil", label: t("nav.profile"), Icono: UserCog },
+    ...(esSuperadmin ? [{ href: "/admin", label: t("nav.admin"), Icono: ShieldCheck }] : []),
   ];
 
   const menuLinks = [...hogarLinks, ...cuentaLinks];
@@ -182,7 +186,7 @@ export function AppShell({
                   linkActivo(link.href)
                 )}`}
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             ))}
           </nav>
@@ -199,7 +203,7 @@ export function AppShell({
               )}`}
             >
               <User size={16} className="shrink-0" />
-              <span className="truncate capitalize">{perfil?.nombre || "My account"}</span>
+              <span className="truncate capitalize">{perfil?.nombre || t("nav.myAccount")}</span>
               <ChevronDown
                 size={14}
                 className={`shrink-0 transition ${userMenuOpen ? "rotate-180" : ""}`}
@@ -213,7 +217,7 @@ export function AppShell({
               >
                 <div className="border-b border-line px-4 py-3">
                   <p className="truncate text-sm font-medium capitalize text-text">
-                    {perfil?.nombre || "My account"}
+                    {perfil?.nombre || t("nav.myAccount")}
                   </p>
                   {perfil?.email ? (
                     <p className="truncate text-xs text-text-muted">{perfil.email}</p>
@@ -242,6 +246,10 @@ export function AppShell({
                   </div>
                 ))}
 
+                <div className="border-t border-line px-3 py-2">
+                  <LanguageSwitcher />
+                </div>
+
                 <div className="border-t border-line p-1.5">
                   <button
                     type="button"
@@ -254,7 +262,7 @@ export function AppShell({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rust transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogOut size={16} className="shrink-0" />
-                    {loggingOut ? "Signing out..." : "Sign out"}
+                    {loggingOut ? t("userMenu.signingOut") : t("userMenu.signOut")}
                   </button>
                 </div>
               </div>
@@ -268,8 +276,8 @@ export function AppShell({
             }
             aria-label={
               menuOpen
-                ? "Close menu"
-                : "Open menu"
+                ? t("nav.closeMenu")
+                : t("nav.openMenu")
             }
             aria-expanded={menuOpen}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text md:hidden"
@@ -294,13 +302,17 @@ export function AppShell({
                     linkActivo(link.href)
                   )}`}
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               ))}
 
+              <div className="mt-2 border-t border-line px-2 pt-3">
+                <LanguageSwitcher />
+              </div>
+
               <div className="mt-2 border-t border-line pt-3">
                 <p className="truncate px-2 text-sm font-medium capitalize text-text">
-                  {perfil?.nombre || "My account"}
+                  {perfil?.nombre || t("nav.myAccount")}
                 </p>
                 {perfil?.email ? (
                   <p className="truncate px-2 pb-1 text-xs text-text-muted">{perfil.email}</p>
@@ -333,8 +345,8 @@ export function AppShell({
                 <LogOut size={18} />
 
                 {loggingOut
-                  ? "Signing out..."
-                  : "Sign out"}
+                  ? t("userMenu.signingOut")
+                  : t("userMenu.signOut")}
               </button>
             </div>
           </nav>

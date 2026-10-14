@@ -6,6 +6,7 @@ import type { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { ordenarPorFecha } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearMes } from "@/lib/household/formato";
 import { sectionCardClass } from "@/lib/ui";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   month: string;
@@ -32,6 +33,7 @@ function Widget({
 }
 
 export default function MesPanel({ month, datos }: Props) {
+  const t = useT();
   const {
     items,
     cuentas,
@@ -68,7 +70,7 @@ export default function MesPanel({ month, datos }: Props) {
   return (
     <section className="min-w-0">
       <h2 className="mb-3 font-serif text-xl font-semibold capitalize text-text">
-        {formatearMes(month)}
+        {formatearMes(month, t.locale)}
       </h2>
 
       {error ? (
@@ -78,11 +80,11 @@ export default function MesPanel({ month, datos }: Props) {
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-2">
-        <Widget label="Income" valor={ingresos} color="text-sage" />
-        <Widget label="Fixed expenses" valor={totalFijos} color="text-text" />
-        <Widget label="Variable expenses" valor={totalVariables} color="text-rust" />
+        <Widget label={t("report.income")} valor={ingresos} color="text-sage" />
+        <Widget label={t("report.fixedExpenses")} valor={totalFijos} color="text-text" />
+        <Widget label={t("month.variableExpenses")} valor={totalVariables} color="text-rust" />
         <Widget
-          label="Left to spend"
+          label={t("month.leftToSpend")}
           valor={porGastar}
           color={porGastar < 0 ? "text-rust" : "text-sage"}
         />
@@ -90,14 +92,14 @@ export default function MesPanel({ month, datos }: Props) {
 
       <div className={`${sectionCardClass} p-0`}>
         <h3 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          Extra expenses this month
+          {t("month.extra")}
         </h3>
 
         {cargando ? (
-          <p className="px-4 py-4 text-center text-sm text-text-muted">Loading...</p>
+          <p className="px-4 py-4 text-center text-sm text-text-muted">{t("common.loading")}</p>
         ) : variables.length === 0 ? (
           <p className="px-4 py-4 text-center text-sm text-text-muted">
-            Nothing entered yet for this month.
+            {t("month.nothing")}
           </p>
         ) : (
           variables.map((item) => (
