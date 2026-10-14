@@ -24,15 +24,22 @@ export const CHANGELOG: EntradaChangelog[] = [
   {
     fecha: "2026-10-15",
     titulo: {
-      en: "English and Spanish",
-      es: "Inglés y español",
+      en: "English and Spanish, saved to your profile",
+      es: "Inglés y español, guardado en tu perfil",
     },
     cambios: [
       {
         tipo: "nuevo",
         texto: {
-          en: "Language switcher (EN | ES) in the user menu and on the sign-in pages. Your choice is remembered in this browser.",
-          es: "Selector de idioma (EN | ES) en el menú de usuario y en las páginas de acceso. Tu elección se recuerda en este navegador.",
+          en: "The whole app is available in English and Spanish. Switch language (EN | ES) from your Profile, or from the sign-in and changes pages.",
+          es: "Toda la app está disponible en inglés y español. Cambia el idioma (EN | ES) desde tu Perfil, o desde las páginas de acceso y de cambios.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Your language is saved to your account, so it follows you to any device and browser after you sign in.",
+          es: "Tu idioma se guarda en tu cuenta, así que te sigue a cualquier dispositivo y navegador al iniciar sesión.",
         },
       },
       {
@@ -40,6 +47,13 @@ export const CHANGELOG: EntradaChangelog[] = [
         texto: {
           en: "Invitation and password reset emails are sent in the language of the person who triggers them.",
           es: "Los correos de invitación y de recuperación de contraseña salen en el idioma de quien los dispara.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "In Budget, the variable section is now called \"Extra expenses this month\".",
+          es: "En Presupuesto, la sección de variables ahora se llama \"Gastos extra este mes\".",
         },
       },
     ],
