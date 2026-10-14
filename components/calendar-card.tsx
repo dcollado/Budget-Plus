@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, ChevronDown, Copy } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import {
   fieldBaseClass,
@@ -23,13 +23,23 @@ type Mensaje = { tipo: "ok" | "error"; texto: string };
 // Conectar el Google Calendar propio de un hogar. Lo usan Perfil (admin del
 // hogar, endpoint /api/hogar/calendario) y Admin (super-admin, un hogar
 // cualquiera, endpoint /api/admin/hogares/<id>/calendario).
-export function CalendarCard({ endpoint, bare = false }: { endpoint: string; bare?: boolean }) {
+export function CalendarCard({
+  endpoint,
+  bare = false,
+  collapsible = false,
+}: {
+  endpoint: string;
+  bare?: boolean;
+  // Cerrada por defecto, con el estado a la vista en el encabezado.
+  collapsible?: boolean;
+}) {
   const t = useT();
   const [estado, setEstado] = useState<Estado | null>(null);
   const [calendarId, setCalendarId] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [abierto, setAbierto] = useState(!collapsible);
 
   const cargar = useCallback(async () => {
     try {
@@ -100,10 +110,39 @@ export function CalendarCard({ endpoint, bare = false }: { endpoint: string; bar
 
   return (
     <div className={bare ? "space-y-4" : `${sectionCardClass} space-y-4`}>
-      <div>
-        <h2 className="text-base font-semibold text-text">{t("calendar.title")}</h2>
-        <p className={helperTextClass}>{t("calendar.intro")}</p>
-      </div>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-semibold text-text">{t("calendar.title")}</span>
+            {estado ? (
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  estado.conectado ? "bg-sage/20 text-sage" : "bg-surface-raised text-text-muted"
+                }`}
+              >
+                {estado.conectado ? t("calendar.connected") : t("calendar.notConnected")}
+              </span>
+            ) : null}
+          </span>
+          <ChevronDown
+            size={18}
+            className={`shrink-0 text-text-muted transition ${abierto ? "rotate-180" : ""}`}
+          />
+        </button>
+      ) : (
+        <div>
+          <h2 className="text-base font-semibold text-text">{t("calendar.title")}</h2>
+          <p className={helperTextClass}>{t("calendar.intro")}</p>
+        </div>
+      )}
+
+      {abierto ? (
+        <>
 
       {mensaje ? (
         <div
@@ -204,6 +243,8 @@ export function CalendarCard({ endpoint, bare = false }: { endpoint: string; bar
           )}
         </>
       )}
+        </>
+      ) : null}
     </div>
   );
 }

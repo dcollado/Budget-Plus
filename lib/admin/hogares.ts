@@ -31,6 +31,8 @@ export type HogarResumen = {
   archivadoEn: string | null;
   // Tiene al super-admin adentro: no se puede archivar ni eliminar.
   tieneSuperadmin: boolean;
+  // Calendario de Google: propio, el de la plataforma (hogar original) o ninguno.
+  calendario: "propio" | "plataforma" | "ninguno";
   miembros: { userId: string; nombre: string; email: string | null; role: string; activo: boolean }[];
   invitaciones: { id: string; email: string; role: string; venceEn: string }[];
 };
@@ -44,9 +46,16 @@ export async function listarHogares(
 ): Promise<HogarResumen[]> {
   const sql = getSql();
   const hogares = await sql<
-    { id: string; name: string; archivado_en: Date | null; tiene_superadmin: boolean }[]
+    {
+      id: string;
+      name: string;
+      archivado_en: Date | null;
+      tiene_superadmin: boolean;
+      calendar_id: string | null;
+      sincroniza_calendario: boolean;
+    }[]
   >`
-    select h.id, h.name, h.archivado_en,
+    select h.id, h.name, h.archivado_en, h.calendar_id, h.sincroniza_calendario,
            exists (
              select 1 from members m join usuarios u on u.id = m.user_id
              where m.household_id = h.id and u.es_superadmin
@@ -74,6 +83,7 @@ export async function listarHogares(
     name: h.name,
     archivadoEn: h.archivado_en ? h.archivado_en.toISOString() : null,
     tieneSuperadmin: h.tiene_superadmin,
+    calendario: h.calendar_id ? "propio" : h.sincroniza_calendario ? "plataforma" : "ninguno",
     miembros: miembros
       .filter((m) => m.household_id === h.id)
       .map((m) => ({
