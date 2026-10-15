@@ -12,7 +12,7 @@ type Mensaje = { tipo: "ok" | "error"; texto: string };
 // Bandeja de solicitudes de acceso (solo super-admin). Cada solicitud se
 // puede corregir antes de aceptarla; al aceptar se crea el hogar y se envía
 // la invitación.
-export default function SolicitudesAcceso({ onAprobada }: { onAprobada: () => void }) {
+export default function SolicitudesAcceso({ onDecidida }: { onDecidida: () => void }) {
   const t = useT();
   const [solicitudes, setSolicitudes] = useState<Solicitud[] | null>(null);
   const [borradores, setBorradores] = useState<Record<string, Borrador>>({});
@@ -44,6 +44,13 @@ export default function SolicitudesAcceso({ onAprobada }: { onAprobada: () => vo
     void cargar();
   }, [cargar]);
 
+  // El aviso de éxito se va solo a los pocos segundos.
+  useEffect(() => {
+    if (!mensaje || mensaje.tipo !== "ok") return;
+    const id = setTimeout(() => setMensaje(null), 5000);
+    return () => clearTimeout(id);
+  }, [mensaje]);
+
   async function decidir(
     s: Solicitud,
     accion: "editar" | "aprobar" | "rechazar",
@@ -71,7 +78,8 @@ export default function SolicitudesAcceso({ onAprobada }: { onAprobada: () => vo
         return copia;
       });
       await cargar();
-      if (accion === "aprobar") onAprobada();
+      // Aceptar o rechazar queda en la actividad reciente: que se refresque.
+      if (accion !== "editar") onDecidida();
     } catch {
       setMensaje({ tipo: "error", texto: t("common.connectError") });
     } finally {
@@ -80,7 +88,6 @@ export default function SolicitudesAcceso({ onAprobada }: { onAprobada: () => vo
   }
 
   const pendientes = solicitudes?.filter((s) => s.estado === "pendiente") ?? [];
-  const decididas = solicitudes?.filter((s) => s.estado !== "pendiente") ?? [];
 
   return (
     <section className={`${sectionCardClass} space-y-4`}>
@@ -214,30 +221,6 @@ export default function SolicitudesAcceso({ onAprobada }: { onAprobada: () => vo
           })}
         </ul>
       )}
-
-      {decididas.length > 0 ? (
-        <div>
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">
-            {t("requests.history")}
-          </h3>
-          <ul className="divide-y divide-line">
-            {decididas.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                <span className="min-w-0 truncate text-text">
-                  {s.nombre} <span className="text-text-muted">· {s.email}</span>
-                </span>
-                <span
-                  className={`text-xs font-medium ${
-                    s.estado === "aprobada" ? "text-sage" : "text-text-muted"
-                  }`}
-                >
-                  {s.estado === "aprobada" ? t("requests.statusAccepted") : t("requests.statusDenied")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </section>
   );
 }

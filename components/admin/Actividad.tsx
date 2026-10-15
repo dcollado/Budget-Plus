@@ -9,6 +9,8 @@ import { useT } from "@/lib/i18n/client";
 
 const ETIQUETAS: Record<string, MessageKey> = {
   crear_hogar: "activity.createHousehold",
+  aceptar_solicitud: "activity.acceptRequest",
+  rechazar_solicitud: "activity.denyRequest",
   archivar_hogar: "activity.archiveHousehold",
   restaurar_hogar: "activity.restoreHousehold",
   eliminar_hogar: "activity.deleteHousehold",

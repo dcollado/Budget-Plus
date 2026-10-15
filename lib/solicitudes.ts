@@ -3,6 +3,7 @@ import { ErrorCuenta, normalizarEmail } from "@/lib/auth/cuentas";
 import { crearHogarConAdmin } from "@/lib/admin/hogares";
 import { enviarCorreo, escaparHtml, urlApp } from "@/lib/mail";
 import { getT } from "@/lib/i18n/server";
+import { registrarEvento } from "@/lib/auth/eventos";
 
 // Solicitudes públicas de acceso. Nadie crea cuenta solo: el super-admin las
 // revisa y, al aprobarlas, se crea el hogar y se manda la invitación.
@@ -129,8 +130,8 @@ export async function listarSolicitudes(): Promise<Solicitud[]> {
   const filas = await getSql()<Fila[]>`
     select id, nombre, email, hogar, mensaje, estado, creada_en, decidida_en
     from solicitudes_acceso
-    where estado = 'pendiente' or decidida_en > now() - interval '30 days'
-    order by (estado = 'pendiente') desc, coalesce(decidida_en, creada_en) desc
+    where estado = 'pendiente'
+    order by creada_en
     limit 100`;
   return filas.map(aSolicitud);
 }
@@ -182,12 +183,27 @@ export async function aprobarSolicitud(
     set estado = 'aprobada', decidida_en = now(), decidida_por = ${actorUserId},
         household_id = ${householdId}
     where id = ${id}`;
+
+  await registrarEvento({
+    accion: "aceptar_solicitud",
+    actorUserId,
+    householdId,
+    objetivo: `${s.nombre} (${s.email})`,
+    detalle: s.hogar || s.nombre,
+  });
 }
 
 export async function rechazarSolicitud(id: string, actorUserId: string): Promise<void> {
-  await cargarPendiente(id);
+  const s = await cargarPendiente(id);
   await getSql()`
     update solicitudes_acceso
     set estado = 'rechazada', decidida_en = now(), decidida_por = ${actorUserId}
     where id = ${id}`;
+
+  await registrarEvento({
+    accion: "rechazar_solicitud",
+    actorUserId,
+    objetivo: `${s.nombre} (${s.email})`,
+    detalle: s.hogar || "",
+  });
 }

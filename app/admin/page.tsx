@@ -136,7 +136,7 @@ export default function AdminPage() {
         </div>
       ) : null}
 
-      <SolicitudesAcceso onAprobada={() => void cargar()} />
+      <SolicitudesAcceso onDecidida={() => void cargar()} />
 
       {nuevoAbierto ? (
         <form onSubmit={crearHogar} className={`${sectionCardClass} space-y-4`}>

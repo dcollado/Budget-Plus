@@ -6,6 +6,8 @@ import { getSql, usaPostgres } from "@/lib/db";
 
 export type Accion =
   | "crear_hogar"
+  | "aceptar_solicitud"
+  | "rechazar_solicitud"
   | "archivar_hogar"
   | "restaurar_hogar"
   | "eliminar_hogar"
