@@ -208,6 +208,8 @@ export async function actualizarCategoria(
   id: string,
   householdId: string,
   cambios: {
+    name?: string;
+    ownerMemberId?: string;
     dueDay?: number | null;
     quincenal?: boolean;
     dueDay2?: number | null;
@@ -217,6 +219,8 @@ export async function actualizarCategoria(
 ): Promise<boolean> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
+  if ("name" in cambios && cambios.name) set.name = cambios.name;
+  if ("ownerMemberId" in cambios) set.owner_member_id = nulo(cambios.ownerMemberId);
   if ("dueDay" in cambios) set.due_day = cambios.dueDay ?? null;
   if ("quincenal" in cambios) set.quincenal = Boolean(cambios.quincenal);
   if ("dueDay2" in cambios) set.due_day_2 = cambios.dueDay2 ?? null;

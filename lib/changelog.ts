@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "Fixed items are edited in a window: name, how often it is paid, the amount per payment and the days, with the monthly total and the split shown as you type. The table keeps just the monthly amount and the payment day.",
+          es: "Los gastos fijos se editan en una ventana: nombre, cada cuánto se paga, el monto por pago y los días, con el total del mes y el reparto a la vista mientras escribes. La tabla deja solo el monto mensual y el día de pago.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "Fixed items can be paid twice a month (for example the 15th and the end of the month). You enter the amount per payment and pick both days, and each payment gets its own calendar reminder.",
