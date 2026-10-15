@@ -72,7 +72,7 @@ export default function TablaHogares({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="border-y border-line text-[11px] uppercase tracking-wide text-text-muted">
@@ -160,6 +160,76 @@ export default function TablaHogares({
           </tbody>
         </table>
       </div>
+
+      {/* Móvil: una tarjeta por hogar, sin desplazamiento horizontal. */}
+      <ul className="divide-y divide-line border-t border-line sm:hidden">
+        {visibles.length === 0 ? (
+          <li className="px-4 py-6 text-center text-sm text-text-muted">{t("admin.noMatches")}</li>
+        ) : null}
+
+        {visibles.map((h) => {
+          const activos = h.miembros.filter((m) => m.activo).length;
+          const admin = h.miembros.find((m) => m.role === "admin" && m.activo);
+          const estaAbierto = abierto === h.id;
+
+          return (
+            <li key={h.id} className={h.archivadoEn ? "text-text-muted" : "text-text"}>
+              <button
+                type="button"
+                onClick={() => setAbierto(estaAbierto ? null : h.id)}
+                aria-expanded={estaAbierto}
+                className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">
+                    {h.name}
+                    {h.archivadoEn ? (
+                      <span className="ml-2 rounded-md bg-surface-raised px-2 py-0.5 align-middle text-xs font-medium text-text-muted">
+                        {t("household.archivedBadge")}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="block truncate text-xs text-text-muted">
+                    {admin ? admin.email || admin.nombre : "—"}
+                  </span>
+                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-text-muted">
+                    <span>
+                      {activos} {activos === 1 ? t("household.person") : t("household.people")}
+                    </span>
+                    {h.invitaciones.length > 0 ? (
+                      <span>
+                        {t(
+                          h.invitaciones.length === 1
+                            ? "household.pendingOne"
+                            : "household.pendingMany",
+                          { n: h.invitaciones.length }
+                        )}
+                      </span>
+                    ) : null}
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-medium ${claseCalendario[h.calendario]}`}
+                    >
+                      {h.calendario === "propio"
+                        ? t("admin.calOwn")
+                        : h.calendario === "plataforma"
+                          ? t("admin.calPlatform")
+                          : t("admin.calNone")}
+                    </span>
+                  </span>
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`mt-1 shrink-0 text-text-muted transition ${estaAbierto ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {estaAbierto ? (
+                <div className="border-t border-line bg-surface px-4 py-4">{renderDetalle(h)}</div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
 
       {paginas > 1 ? (
         <div className="flex items-center justify-between gap-3 px-4 pb-4 text-xs text-text-muted sm:px-5">

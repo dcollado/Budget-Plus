@@ -26,6 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Budget Plus",
     description: t("meta.description"),
+    // Sin esto, iOS Safari subraya los correos como enlaces.
+    formatDetection: { email: false, telephone: false, address: false },
   };
 }
 
