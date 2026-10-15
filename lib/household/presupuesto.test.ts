@@ -10,6 +10,8 @@ const categoria = (parcial: Partial<Category>): Category => ({
   archived: false,
   fixed: true,
   dueDay: 5,
+  quincenal: false,
+  dueDay2: null,
   ownerMemberId: "",
   cuentaId: "",
   ahorro: false,
@@ -171,5 +173,49 @@ describe("ordenarPorFecha", () => {
     );
 
     expect(ordenarPorFecha(base).map((i) => i.category.id)).toEqual(["c", "a", "b"]);
+  });
+});
+
+describe("gastos quincenales", () => {
+  it("calcula las dos fechas del mes y acota el fin de mes", () => {
+    const cat = categoria({ id: "q", dueDay: 15, quincenal: true, dueDay2: 31 });
+    const [feb] = armarVistaMes(
+      [cat],
+      [presupuesto({ categoryId: "q", month: "2026-02", plannedAmountCents: 20000 })],
+      [],
+      "2026-02"
+    );
+
+    expect(feb.fechaPago).toBe("2026-02-15");
+    expect(feb.fechaPago2).toBe("2026-02-28");
+    // El monto del mes sigue siendo el total.
+    expect(feb.plannedAmountCents).toBe(20000);
+  });
+
+  it("un gasto mensual no tiene segunda fecha", () => {
+    const cat = categoria({ id: "m", dueDay: 5, quincenal: false, dueDay2: null });
+    const [item] = armarVistaMes(
+      [cat],
+      [presupuesto({ categoryId: "m", month: "2026-03" })],
+      [],
+      "2026-03"
+    );
+
+    expect(item.fechaPago).toBe("2026-03-05");
+    expect(item.fechaPago2).toBe("");
+  });
+
+  it("hereda los dos días en un mes sin presupuesto propio", () => {
+    const cat = categoria({ id: "q", dueDay: 10, quincenal: true, dueDay2: 25 });
+    const [item] = armarVistaMes(
+      [cat],
+      [presupuesto({ categoryId: "q", month: "2026-01", plannedAmountCents: 30000 })],
+      [],
+      "2026-04"
+    );
+
+    expect(item.inherited).toBe(true);
+    expect(item.fechaPago).toBe("2026-04-10");
+    expect(item.fechaPago2).toBe("2026-04-25");
   });
 });

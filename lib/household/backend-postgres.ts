@@ -19,7 +19,7 @@ import type {
 // una columna nueva no cambia lo que viaja por la red sin querer.
 const COLS_MEMBER = ["id", "household_id", "user_id", "display_name", "role", "color"];
 const COLS_ACCOUNT = ["id", "household_id", "name", "type", "owner_member_id", "opening_balance_cents", "archived"];
-const COLS_CATEGORY = ["id", "household_id", "name", "kind", "archived", "fixed", "due_day", "owner_member_id", "cuenta_id", "es_ahorro"];
+const COLS_CATEGORY = ["id", "household_id", "name", "kind", "archived", "fixed", "due_day", "owner_member_id", "cuenta_id", "es_ahorro", "quincenal", "due_day_2"];
 const COLS_CUENTA = ["id", "household_id", "name", "archived"];
 const COLS_BUDGET = ["id", "household_id", "category_id", "month", "planned_amount_cents", "due_date", "nota", "pagado"];
 const COLS_TRANSACTION = ["id", "household_id", "account_id", "transfer_account_id", "category_id", "type", "amount_cents", "date", "payee", "note", "created_by_member_id", "owner_member_id", "source", "external_id", "created_at"];
@@ -143,6 +143,8 @@ type FilaCategory = {
   archived: boolean;
   fixed: boolean;
   due_day: number | null;
+  quincenal: boolean | null;
+  due_day_2: number | null;
   owner_member_id: string | null;
   cuenta_id: string | null;
   es_ahorro: boolean;
@@ -155,6 +157,8 @@ const aCategory = (r: FilaCategory): Category => ({
   archived: r.archived,
   fixed: r.fixed,
   dueDay: r.due_day,
+  quincenal: r.quincenal === true,
+  dueDay2: r.due_day_2,
   ownerMemberId: texto(r.owner_member_id),
   cuentaId: texto(r.cuenta_id),
   ahorro: r.es_ahorro,
@@ -167,8 +171,13 @@ export async function listCategories(householdId: string): Promise<Category[]> {
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId" | "ahorro"> & {
+  input: Omit<
+    Category,
+    "id" | "archived" | "dueDay" | "quincenal" | "dueDay2" | "ownerMemberId" | "cuentaId" | "ahorro"
+  > & {
     dueDay?: number | null;
+    quincenal?: boolean;
+    dueDay2?: number | null;
     ownerMemberId?: string;
   }
 ): Promise<Category> {
@@ -180,6 +189,8 @@ export async function crearCategory(
       kind: input.kind,
       fixed: input.fixed,
       due_day: input.dueDay ?? null,
+      quincenal: input.quincenal ?? false,
+      due_day_2: input.quincenal ? (input.dueDay2 ?? null) : null,
       owner_member_id: nulo(input.ownerMemberId),
     })}
     returning ${getSql()(COLS_CATEGORY)}`;
@@ -196,11 +207,19 @@ export async function archivarCategory(id: string, householdId: string): Promise
 export async function actualizarCategoria(
   id: string,
   householdId: string,
-  cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean }
+  cambios: {
+    dueDay?: number | null;
+    quincenal?: boolean;
+    dueDay2?: number | null;
+    cuentaId?: string;
+    ahorro?: boolean;
+  }
 ): Promise<boolean> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
   if ("dueDay" in cambios) set.due_day = cambios.dueDay ?? null;
+  if ("quincenal" in cambios) set.quincenal = Boolean(cambios.quincenal);
+  if ("dueDay2" in cambios) set.due_day_2 = cambios.dueDay2 ?? null;
   if ("cuentaId" in cambios) set.cuenta_id = nulo(cambios.cuentaId);
   if ("ahorro" in cambios) set.es_ahorro = Boolean(cambios.ahorro);
 

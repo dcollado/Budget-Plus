@@ -242,6 +242,8 @@ function buildCategory(row: string[]): Category {
     archived: boolFrom(row[4]),
     fixed: boolFrom(row[5]),
     dueDay: dayFrom(row[6]),
+    quincenal: false,
+    dueDay2: null,
     ownerMemberId: row[7] ?? "",
     cuentaId: row[8] ?? "",
     ahorro: false,
@@ -257,14 +259,22 @@ export async function listCategories(
 }
 
 export async function crearCategory(
-  input: Omit<Category, "id" | "archived" | "dueDay" | "ownerMemberId" | "cuentaId" | "ahorro"> & {
+  input: Omit<
+    Category,
+    "id" | "archived" | "dueDay" | "quincenal" | "dueDay2" | "ownerMemberId" | "cuentaId" | "ahorro"
+  > & {
     dueDay?: number | null;
+    quincenal?: boolean;
+    dueDay2?: number | null;
     ownerMemberId?: string;
   }
 ): Promise<Category> {
   const category: Category = {
     ...input,
     dueDay: input.dueDay ?? null,
+    // La hoja heredada no guarda pagos quincenales.
+    quincenal: false,
+    dueDay2: null,
     ownerMemberId: input.ownerMemberId ?? "",
     cuentaId: "",
     ahorro: false,
@@ -331,7 +341,13 @@ export async function archivarCategory(
 export async function actualizarCategoria(
   id: string,
   householdId: string,
-  cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean }
+  cambios: {
+    dueDay?: number | null;
+    quincenal?: boolean;
+    dueDay2?: number | null;
+    cuentaId?: string;
+    ahorro?: boolean;
+  }
 ): Promise<boolean> {
   const sheets = await getSheetsClient();
   const sheetId = getSheetId();
