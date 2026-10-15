@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearFechaCorta } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
@@ -13,7 +13,12 @@ type Props = {
   item: CategoriaDelMes;
   month: string;
   // Without onGuardado = read-only (fixed items, which are edited in Settings).
-  onGuardado?: (categoryId: string, plannedAmountCents: number, fechaPago?: string) => void;
+  onGuardado?: (
+    categoryId: string,
+    plannedAmountCents: number,
+    fechaPago?: string,
+    extras?: { nota?: string; pagado?: boolean }
+  ) => void;
   onEliminar?: (categoryId: string) => void;
   members?: MiembroHogar[];
   // Variable expenses: which account that extra money goes to. Display only;
@@ -38,6 +43,7 @@ export default function FilaCompacta({
   const [monto, setMonto] = useState(String(item.plannedAmountCents / 100));
   const [fecha, setFecha] = useState(item.fechaPago);
   const [cuentaId, setCuentaId] = useState(item.category.cuentaId);
+  const [nota, setNota] = useState(item.nota);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,6 +57,7 @@ export default function FilaCompacta({
     setMonto(String(item.plannedAmountCents / 100));
     setFecha(item.fechaPago);
     setCuentaId(item.category.cuentaId);
+    setNota(item.nota);
     setError("");
     setEditando(true);
   }
@@ -68,6 +75,7 @@ export default function FilaCompacta({
           month,
           amount: monto || "0",
           dueDate: fecha,
+          nota,
         }),
       });
 
@@ -90,12 +98,43 @@ export default function FilaCompacta({
         onCuenta?.(item.category.id, cuentaId);
       }
 
-      onGuardado?.(item.category.id, Math.round(Number(monto || 0) * 100), fecha);
+      onGuardado?.(item.category.id, Math.round(Number(monto || 0) * 100), fecha, {
+        nota: nota.trim(),
+      });
       setEditando(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.savingError"));
     } finally {
       setGuardando(false);
+    }
+  }
+
+  // Marca o desmarca "pagado / hecho" al instante, sin abrir la edición.
+  async function alternarPagado() {
+    const nuevo = !item.pagado;
+    setError("");
+
+    try {
+      const res = await fetch("/api/hogar/presupuesto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: item.category.id,
+          month,
+          amount: String(item.plannedAmountCents / 100),
+          pagado: nuevo,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(t.msg(data.message, "common.saveError"));
+      }
+
+      onGuardado?.(item.category.id, item.plannedAmountCents, undefined, { pagado: nuevo });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.savingError"));
     }
   }
 
@@ -122,25 +161,56 @@ export default function FilaCompacta({
 
   return (
     <div className="border-b border-line px-4 py-2 last:border-0">
-      <div className="grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-2">
+      <div
+        className={`grid items-center gap-2 ${
+          onGuardado
+            ? "grid-cols-[1.5rem_3.25rem_minmax(0,1fr)_auto]"
+            : "grid-cols-[3.25rem_minmax(0,1fr)_auto]"
+        }`}
+      >
+        {onGuardado ? (
+          <button
+            type="button"
+            onClick={() => void alternarPagado()}
+            aria-pressed={item.pagado}
+            aria-label={item.pagado ? t("row.markUndone") : t("row.markDone")}
+            title={item.pagado ? t("row.markUndone") : t("row.markDone")}
+            className={`flex h-5 w-5 items-center justify-center rounded-md border transition ${
+              item.pagado
+                ? "border-sage bg-sage/20 text-sage"
+                : "border-line text-transparent hover:border-sage hover:text-sage/60"
+            }`}
+          >
+            <Check size={13} strokeWidth={3} />
+          </button>
+        ) : null}
         <span className="text-xs text-text-muted">
           {item.fechaPago ? formatearFechaCorta(item.fechaPago, t.locale) : "—"}
         </span>
 
         <span className="min-w-0">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-sm text-text">{item.category.name}</span>
+            <span
+              className={`truncate text-sm ${
+                item.pagado ? "text-text-muted line-through" : "text-text"
+              }`}
+            >
+              {item.category.name}
+            </span>
             <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
           </span>
           {conCuenta && nombreCuenta ? (
             <span className="block truncate text-[11px] text-text-muted">→ {nombreCuenta}</span>
+          ) : null}
+          {item.nota ? (
+            <span className="block truncate text-[11px] italic text-text-muted">{item.nota}</span>
           ) : null}
         </span>
 
         <span className="flex items-center gap-1">
           <span
             className={`whitespace-nowrap text-sm font-medium ${
-              esIngreso ? "text-sage" : "text-text"
+              item.pagado ? "text-text-muted" : esIngreso ? "text-sage" : "text-text"
             }`}
           >
             {esIngreso ? "+" : ""}
@@ -188,6 +258,15 @@ export default function FilaCompacta({
             onChange={(e) => setFecha(e.target.value)}
             aria-label={t("row.paymentDate")}
             className={`${fieldBaseClass} ${fieldNormalClass} w-36 flex-1 py-1.5`}
+          />
+          <input
+            type="text"
+            value={nota}
+            maxLength={200}
+            onChange={(e) => setNota(e.target.value)}
+            placeholder={t("row.notePlaceholder")}
+            aria-label={t("row.note")}
+            className={`${fieldBaseClass} ${fieldNormalClass} w-full py-1.5 text-sm`}
           />
           {conCuenta ? (
             <select

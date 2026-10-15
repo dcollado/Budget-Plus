@@ -42,6 +42,7 @@ export default function AgregarCategoria({
   const [dia, setDia] = useState("");
   const [dueno, setDueno] = useState("");
   const [cuentaId, setCuentaId] = useState("");
+  const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -56,6 +57,7 @@ export default function AgregarCategoria({
     setDia("");
     setDueno("");
     setCuentaId("");
+    setNota("");
     setError("");
   }
 
@@ -126,7 +128,7 @@ export default function AgregarCategoria({
             categoryId: category.id,
             month,
             amount: monto,
-            ...(fixed ? {} : { dueDate: fecha }),
+            ...(fixed ? {} : { dueDate: fecha, nota }),
           }),
         });
 
@@ -143,6 +145,8 @@ export default function AgregarCategoria({
         inherited: false,
         actualCents: 0,
         fechaPago: fixed ? fechaDelDia(month, dueDay) : fecha,
+        nota: fixed ? "" : nota.trim(),
+        pagado: false,
       });
 
       cerrar();
@@ -254,6 +258,17 @@ export default function AgregarCategoria({
               </option>
             ))}
           </select>
+        ) : null}
+        {!fixed ? (
+          <input
+            type="text"
+            value={nota}
+            maxLength={200}
+            onChange={(e) => setNota(e.target.value)}
+            placeholder={t("row.notePlaceholder")}
+            aria-label={t("row.note")}
+            className={`${fieldBaseClass} ${fieldNormalClass} py-1.5`}
+          />
         ) : null}
         {members && members.length > 0 ? (
           <select

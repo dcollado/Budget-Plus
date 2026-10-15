@@ -449,6 +449,8 @@ function buildBudget(row: string[]): Budget {
     month: row[3] ?? "",
     plannedAmountCents: numFrom(row[4]),
     dueDate: row[5] ?? "",
+    nota: "",
+    pagado: false,
   };
 }
 
@@ -468,7 +470,10 @@ export async function upsertBudget(
   month: string,
   plannedAmountCents: number,
   // undefined = no tocar la fecha que ya tenga; "" = borrarla.
-  dueDate?: string
+  dueDate?: string,
+  // La hoja heredada no guarda notas ni "pagado": se aceptan y se ignoran.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _extras: { nota?: string; pagado?: boolean } = {}
 ): Promise<Budget> {
   const sheets = await getSheetsClient();
   const sheetId = getSheetId();
@@ -496,6 +501,8 @@ export async function upsertBudget(
       month,
       plannedAmountCents,
       dueDate: dueDate ?? "",
+      nota: "",
+      pagado: false,
     };
 
     await appendRow(BUDGETS_SHEET, [
@@ -522,7 +529,16 @@ export async function upsertBudget(
   });
   invalidarLecturas();
 
-  return { id, householdId, categoryId, month, plannedAmountCents, dueDate: fechaFinal };
+  return {
+    id,
+    householdId,
+    categoryId,
+    month,
+    plannedAmountCents,
+    dueDate: fechaFinal,
+    nota: "",
+    pagado: false,
+  };
 }
 
 // ---------- Transactions ----------

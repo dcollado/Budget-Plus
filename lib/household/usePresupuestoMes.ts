@@ -88,7 +88,8 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
   function handleGuardado(
     categoryId: string,
     plannedAmountCents: number,
-    fechaPago?: string
+    fechaPago?: string,
+    extras?: { nota?: string; pagado?: boolean }
   ) {
     setItems((actuales) =>
       actuales.map((item) =>
@@ -98,6 +99,8 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
               plannedAmountCents,
               inherited: false,
               fechaPago: fechaPago ?? item.fechaPago,
+              nota: extras?.nota ?? item.nota,
+              pagado: extras?.pagado ?? item.pagado,
             }
           : item
       )

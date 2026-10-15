@@ -68,6 +68,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Largo máximo de la nota de un ítem del mes.
+const MAX_NOTA = 200;
+
 export async function POST(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
@@ -82,6 +85,14 @@ export async function POST(req: NextRequest) {
     // undefined = no tocar la fecha existente; "" = sin fecha.
     const dueDate =
       body.dueDate === undefined ? undefined : String(body.dueDate ?? "").trim();
+
+    // undefined = no tocar lo que ya tenga.
+    const nota = body.nota === undefined ? undefined : String(body.nota ?? "").trim();
+    const pagado = body.pagado === undefined ? undefined : body.pagado === true;
+
+    if (nota !== undefined && nota.length > MAX_NOTA) {
+      return fallo("The note is too long.", 400);
+    }
 
     if (!categoryId) {
       return fallo("Category is missing.", 400);
@@ -110,7 +121,8 @@ export async function POST(req: NextRequest) {
       categoryId,
       month,
       plannedCents,
-      dueDate
+      dueDate,
+      { nota, pagado }
     );
 
     // Una fija se hereda al mes siguiente, así que se sincronizan los dos.

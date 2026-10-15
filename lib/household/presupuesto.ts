@@ -13,6 +13,9 @@ export type CategoriaDelMes = {
   // Fijas: Category.dueDay aplicado al mes (acotado al último día).
   // Variables: la fecha guardada en el Budget de este mes.
   fechaPago: string;
+  // Nota y marca de "pagado" de este mes (viene del Budget del mes).
+  nota: string;
+  pagado: boolean;
 };
 
 export function fechaDelDia(month: string, dueDay: number | null): string {
@@ -84,6 +87,8 @@ export function armarVistaMes(
         fechaPago: category.fixed
           ? fechaDelDia(month, category.dueDay)
           : budgetDeEsteMes.dueDate,
+        nota: budgetDeEsteMes.nota,
+        pagado: budgetDeEsteMes.pagado,
       };
     }
 
@@ -97,6 +102,8 @@ export function armarVistaMes(
           inherited: true,
           actualCents,
           fechaPago: fechaDelDia(month, category.dueDay),
+          nota: "",
+          pagado: false,
         };
       }
     }
@@ -107,6 +114,8 @@ export function armarVistaMes(
       inherited: false,
       actualCents,
       fechaPago: category.fixed ? fechaDelDia(month, category.dueDay) : "",
+      nota: "",
+      pagado: false,
     };
   });
 }

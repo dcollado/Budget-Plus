@@ -23,6 +23,8 @@ const presupuesto = (parcial: Partial<Budget>): Budget => ({
   month: "2026-01",
   plannedAmountCents: 50000,
   dueDate: "",
+  nota: "",
+  pagado: false,
   ...parcial,
 });
 
