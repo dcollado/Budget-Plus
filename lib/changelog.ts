@@ -22,6 +22,57 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-18",
+    titulo: {
+      en: "Easier to add items, and a roomier layout",
+      es: "Agregar es más fácil y el espacio se aprovecha mejor",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "Adding a fixed or extra expense now opens a window with labeled fields, and the Add buttons sit at the top of each list.",
+          es: "Agregar un gasto fijo o extra ahora abre una ventana con campos con etiqueta, y los botones de agregar están arriba de cada lista.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Admin lists households in a table with search, pages and a rows-per-page selector, and shows them as cards on a phone.",
+          es: "Admin muestra los hogares en una tabla con búsqueda, páginas y selector de filas por página, y como tarjetas en el teléfono.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Wide screens are used better: Profile and Report in two columns, and the transfers panel as a side column in Budget.",
+          es: "Las pantallas anchas se aprovechan mejor: Perfil y Reporte en dos columnas, y el panel de transferencias como columna lateral en Presupuesto.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Fixed expenses use one, two or three columns depending on how many people the household has.",
+          es: "Los gastos fijos usan una, dos o tres columnas según cuántas personas tenga el hogar.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "Accepting or denying an access request is now logged in Recent activity, and the notice clears itself.",
+          es: "Aceptar o rechazar una solicitud de acceso queda en Actividad reciente, y el aviso se quita solo.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "The Settings tab is now called \"Fixed Expenses\".",
+          es: "La pestaña de Configuración ahora se llama \"Gastos Fijos\".",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-17",
     titulo: {
       en: "Notes and a paid check on extra expenses",
