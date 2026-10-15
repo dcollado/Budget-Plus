@@ -59,6 +59,7 @@ function Configuracion() {
     eliminarItem,
     asignarCuenta,
     marcarAhorro,
+    cambiarPagos,
   } = usePresupuestoMes(month);
 
   useEffect(() => {
@@ -189,6 +190,8 @@ function Configuracion() {
                   onGuardado={handleGuardado}
                   onEliminar={eliminarItem}
                   mostrarProgreso={false}
+                  editarDia
+                  onPagos={cambiarPagos}
                   compacta
                 />
               ))
@@ -226,6 +229,7 @@ function Configuracion() {
                       onEliminar={eliminarItem}
                       mostrarProgreso={false}
                       editarDia
+                      onPagos={cambiarPagos}
                       members={members}
                       compacta
                       onAhorro={marcarAhorro}

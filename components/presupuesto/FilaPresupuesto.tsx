@@ -31,6 +31,10 @@ type Props = {
   compacta?: boolean;
   // If passed (fixed expenses only), shows the "is savings" button and notifies
   // the change so the page state updates.
+  onPagos?: (
+    categoryId: string,
+    cambios: { quincenal: boolean; dueDay?: number | null; dueDay2: number | null }
+  ) => void;
   onAhorro?: (categoryId: string, ahorro: boolean) => void;
 };
 
@@ -45,9 +49,16 @@ export default function FilaPresupuesto({
   members = [],
   compacta = false,
   onAhorro,
+  onPagos,
 }: Props) {
   const t = useT();
-  const [valor, setValor] = useState(String(item.plannedAmountCents / 100));
+  // Con dos pagos al mes el campo es el monto de CADA pago; se guarda el total.
+  const pagos = item.category.quincenal ? 2 : 1;
+  const [valor, setValor] = useState(String(item.plannedAmountCents / 100 / pagos));
+  const [dia2Guardado, setDia2Guardado] = useState(
+    item.category.dueDay2 ? String(item.category.dueDay2) : ""
+  );
+  const [dia2, setDia2] = useState(dia2Guardado);
   // Saved day (to know whether the field changed) and the one being edited.
   const [diaGuardado, setDiaGuardado] = useState(
     item.category.dueDay ? String(item.category.dueDay) : ""
@@ -85,13 +96,55 @@ export default function FilaPresupuesto({
     }
   }
 
-  useEffect(() => {
-    setValor(String(item.plannedAmountCents / 100));
-  }, [item.plannedAmountCents]);
+  // Cambia entre "una vez al mes" y "dos veces al mes". El total del mes no
+  // cambia: pasa a ser la suma de los dos pagos.
+  async function alternarFrecuencia() {
+    const dos = !item.category.quincenal;
+    const primer = item.category.dueDay ?? 15;
+    const segundo = 31;
+    setError("");
 
-  const montoCambio = Math.round(Number(valor || 0) * 100) !== item.plannedAmountCents;
+    try {
+      const res = await fetch("/api/hogar/categorias", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.category.id,
+          quincenal: dos,
+          ...(dos ? { dueDay: primer, dueDay2: segundo } : {}),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(t.msg(data.message, "common.saveError"));
+      }
+
+      setDia2Guardado(dos ? String(segundo) : "");
+      setDia2(dos ? String(segundo) : "");
+      if (dos) {
+        setDiaGuardado(String(primer));
+        setDia(String(primer));
+      }
+      onPagos?.(item.category.id, {
+        quincenal: dos,
+        dueDay: dos ? primer : undefined,
+        dueDay2: dos ? segundo : null,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.saveError"));
+    }
+  }
+
+  useEffect(() => {
+    setValor(String(item.plannedAmountCents / 100 / pagos));
+  }, [item.plannedAmountCents, pagos]);
+
+  const totalNuevo = Math.round(Number(valor || 0) * 100) * pagos;
+  const montoCambio = totalNuevo !== item.plannedAmountCents;
   const diaCambio = editarDia && dia !== diaGuardado;
-  const dirty = montoCambio || diaCambio;
+  const dia2Cambio = editarDia && pagos === 2 && dia2 !== dia2Guardado;
+  const dirty = montoCambio || diaCambio || dia2Cambio;
   const planned = item.plannedAmountCents;
   const actual = item.actualCents;
   const pct = planned > 0 ? Math.min((actual / planned) * 100, 100) : actual > 0 ? 100 : 0;
@@ -116,7 +169,7 @@ export default function FilaPresupuesto({
           body: JSON.stringify({
             categoryId: item.category.id,
             month,
-            amount: valor || "0",
+            amount: String(totalNuevo / 100),
           }),
         });
 
@@ -127,11 +180,21 @@ export default function FilaPresupuesto({
         }
       }
 
-      if (diaCambio) {
+      if (diaCambio || dia2Cambio) {
+        const dia2Num = dia2 ? Number(dia2) : null;
+
+        if (dia2Cambio && !(Number.isInteger(dia2Num) && dia2Num! >= 1 && dia2Num! <= 31)) {
+          throw new Error(t("row.dayRange"));
+        }
+
         const res = await fetch("/api/hogar/categorias", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: item.category.id, dueDay: diaNum }),
+          body: JSON.stringify({
+            id: item.category.id,
+            ...(diaCambio ? { dueDay: diaNum } : {}),
+            ...(dia2Cambio ? { dueDay2: dia2Num } : {}),
+          }),
         });
 
         const data = await res.json();
@@ -140,12 +203,20 @@ export default function FilaPresupuesto({
           throw new Error(t.msg(data.message, "row.saveDayError"));
         }
 
-        setDiaGuardado(dia);
+        if (diaCambio) setDiaGuardado(dia);
+        if (dia2Cambio) setDia2Guardado(dia2);
+        if (dia2Cambio) {
+          onPagos?.(item.category.id, {
+            quincenal: true,
+            dueDay: diaCambio ? diaNum : undefined,
+            dueDay2: dia2Num,
+          });
+        }
       }
 
       onGuardado(
         item.category.id,
-        Math.round(Number(valor || 0) * 100),
+        totalNuevo,
         diaCambio ? fechaDelDia(month, diaNum) : undefined
       );
     } catch (err) {
@@ -194,7 +265,38 @@ export default function FilaPresupuesto({
               : "grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem]"
           }
         >
-          <span className="break-words text-sm text-text">{item.category.name}</span>
+          <span className="min-w-0">
+            <span className="block break-words text-sm text-text">{item.category.name}</span>
+            {editarDia && onPagos ? (
+              <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted">
+                {pagos === 2 ? (
+                  <>
+                    <span className="text-gold">{t("row.twiceBadge")}</span>
+                    <label className="flex items-center gap-1">
+                      {t("row.secondDay")}
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        inputMode="numeric"
+                        value={dia2}
+                        onChange={(e) => setDia2(e.target.value)}
+                        aria-label={t("row.secondDayOf", { name: item.category.name })}
+                        className="w-11 rounded-md border border-line bg-surface-raised px-1 py-0.5 text-center text-[11px] text-text outline-none focus:border-gold"
+                      />
+                    </label>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void alternarFrecuencia()}
+                  className="underline transition hover:text-text"
+                >
+                  {pagos === 2 ? t("row.makeMonthly") : t("row.makeTwice")}
+                </button>
+              </span>
+            ) : null}
+          </span>
           <input
             type="number"
             step="0.01"
