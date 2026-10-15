@@ -249,6 +249,11 @@ export default function LoginPage() {
           <p className="mt-5 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
             Budget Plus
           </p>
+          <p className="mt-2 text-center text-xs">
+            <Link href="/cambios" className="text-text-muted underline hover:text-text">
+              {t("changes.title")}
+            </Link>
+          </p>
         </section>
       </div>
     </main>
