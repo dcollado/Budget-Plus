@@ -29,6 +29,20 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "nuevo",
+        texto: {
+          en: "You can now find this page from the user menu (\"What's new\") and from the home, sign-in and request-access pages.",
+          es: "Ahora puedes llegar a esta página desde el menú de usuario (\"Novedades\") y desde las páginas de inicio, de acceso y de solicitud de acceso.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "In Settings, each person's list takes only the height of its own items instead of stretching to match the other.",
+          es: "En Configuración, la lista de cada persona ocupa solo el alto de sus propios items, en vez de estirarse para igualar a la otra.",
+        },
+      },
+      {
         tipo: "ajuste",
         texto: {
           en: "In Settings, each fixed list shows its column titles in the header and the month's total at the bottom, aligned under the amounts.",
@@ -59,13 +73,6 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "mejora",
         texto: {
-          en: "Admin lists households in a table with search, pages and a rows-per-page selector, and shows them as cards on a phone.",
-          es: "Admin muestra los hogares en una tabla con búsqueda, páginas y selector de filas por página, y como tarjetas en el teléfono.",
-        },
-      },
-      {
-        tipo: "mejora",
-        texto: {
           en: "Wide screens are used better: Profile and Report in two columns, and the transfers panel as a side column in Budget.",
           es: "Las pantallas anchas se aprovechan mejor: Perfil y Reporte en dos columnas, y el panel de transferencias como columna lateral en Presupuesto.",
         },
@@ -75,13 +82,6 @@ export const CHANGELOG: EntradaChangelog[] = [
         texto: {
           en: "Fixed expenses use one, two or three columns depending on how many people the household has.",
           es: "Los gastos fijos usan una, dos o tres columnas según cuántas personas tenga el hogar.",
-        },
-      },
-      {
-        tipo: "ajuste",
-        texto: {
-          en: "Accepting or denying an access request is now logged in Recent activity, and the notice clears itself.",
-          es: "Aceptar o rechazar una solicitud de acceso queda en Actividad reciente, y el aviso se quita solo.",
         },
       },
       {
@@ -133,8 +133,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
-          en: "Anyone can request access from the home page. Requests are reviewed by an administrator, who can correct the details and accept or deny before the invitation is sent.",
-          es: "Cualquier persona puede pedir acceso desde la página de inicio. Un administrador revisa las solicitudes, puede corregir los datos y aceptar o rechazar antes de enviar la invitación.",
+          en: "Anyone can request access from the home page. Each request is reviewed before an invitation is sent.",
+          es: "Cualquier persona puede pedir acceso desde la página de inicio. Cada solicitud se revisa antes de enviar la invitación.",
         },
       },
     ],
@@ -237,8 +237,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "mejora",
         texto: {
-          en: "Dropdown user menu (profile, members/admin, sign out).",
-          es: "Menú de usuario desplegable (perfil, miembros/admin, cerrar sesión).",
+          en: "Dropdown user menu (profile, members, sign out).",
+          es: "Menú de usuario desplegable (perfil, miembros, cerrar sesión).",
         },
       },
       {
@@ -253,36 +253,15 @@ export const CHANGELOG: EntradaChangelog[] = [
   {
     fecha: "2026-10-12",
     titulo: {
-      en: "Multiple households and admin panel",
-      es: "Varios hogares y panel de administración",
+      en: "Multiple households",
+      es: "Varios hogares",
     },
     cambios: [
       {
         tipo: "nuevo",
         texto: {
-          en: "Admin panel to create and manage households and members on a single screen.",
-          es: "Panel Admin para crear y gestionar hogares y miembros en una sola pantalla.",
-        },
-      },
-      {
-        tipo: "nuevo",
-        texto: {
           en: "Email invitations and password recovery (\"Forgot password\").",
           es: "Invitaciones por correo y recuperación de contraseña (\"Olvidé mi contraseña\").",
-        },
-      },
-      {
-        tipo: "nuevo",
-        texto: {
-          en: "Archive, restore and delete households, confirmed by typing the name.",
-          es: "Archivar, restaurar y eliminar hogares con confirmación escribiendo el nombre.",
-        },
-      },
-      {
-        tipo: "nuevo",
-        texto: {
-          en: "Log of administration actions visible to the super-admin.",
-          es: "Registro de acciones de administración visible para el super-admin.",
         },
       },
       {

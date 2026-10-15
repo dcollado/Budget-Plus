@@ -6,6 +6,7 @@ import {
   LogOut,
   Menu,
   ShieldCheck,
+  Sparkles,
   User,
   UserCog,
   Users,
@@ -143,6 +144,7 @@ export function AppShell({
   // Mine: profile and, if applicable, platform administration.
   const cuentaLinks = [
     { href: "/perfil", label: t("nav.profile"), Icono: UserCog },
+    { href: "/cambios", label: t("nav.changes"), Icono: Sparkles },
     ...(esSuperadmin ? [{ href: "/admin", label: t("nav.admin"), Icono: ShieldCheck }] : []),
   ];
 

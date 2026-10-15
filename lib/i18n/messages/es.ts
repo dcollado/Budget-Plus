@@ -316,6 +316,7 @@ export const es: Record<MessageKey, string> = {
   "nav.accounts": "Cuentas y gastos fijos",
   "nav.admin": "Admin",
   "nav.budget": "Presupuesto",
+  "nav.changes": "Novedades",
   "nav.closeMenu": "Cerrar menú",
   "nav.members": "Miembros",
   "nav.myAccount": "Mi cuenta",

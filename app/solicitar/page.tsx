@@ -163,6 +163,12 @@ export default function SolicitarPage() {
                 </button>
               </form>
 
+              <p className="mt-5 text-center text-xs">
+                <Link href="/cambios" className="text-text-muted underline hover:text-text">
+                  {t("changes.title")}
+                </Link>
+              </p>
+
               <p className="mt-5 text-center text-sm text-text-muted">
                 {t("access.haveAccount")}{" "}
                 <Link href="/login" className="underline hover:text-text">

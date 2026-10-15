@@ -315,6 +315,7 @@ export const en = {
   "nav.accounts": "Accounts and fixed expenses",
   "nav.admin": "Admin",
   "nav.budget": "Budget",
+  "nav.changes": "What's new",
   "nav.closeMenu": "Close menu",
   "nav.members": "Members",
   "nav.myAccount": "My account",

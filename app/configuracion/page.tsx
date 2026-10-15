@@ -209,7 +209,7 @@ function Configuracion() {
 
           {/* Fixed expenses grouped by person, each group with its color
               (David blue, Caro red). Side by side on wide screens. */}
-          <div className={`mt-4 grid grid-cols-1 gap-4 ${columnasFijos}`}>
+          <div className={`mt-4 grid grid-cols-1 items-start gap-4 ${columnasFijos}`}>
             {cargando ? (
               <p className="py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
             ) : (
