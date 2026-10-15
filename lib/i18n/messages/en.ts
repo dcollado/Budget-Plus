@@ -77,6 +77,7 @@ export const en = {
   "admin.noMatches": "No households match your search.",
   "admin.prev": "Previous page",
   "admin.restored": "Household \"{name}\" restored.",
+  "admin.rowsPerPage": "Rows per page",
   "admin.searchPlaceholder": "Search households or people...",
   "admin.sendingInvite": "Sending invitation...",
   "admin.showing": "{from}–{to} of {total}",

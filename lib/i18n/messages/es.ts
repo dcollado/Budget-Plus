@@ -78,6 +78,7 @@ export const es: Record<MessageKey, string> = {
   "admin.noMatches": "Ningún hogar coincide con tu búsqueda.",
   "admin.prev": "Página anterior",
   "admin.restored": "Hogar «{name}» restaurado.",
+  "admin.rowsPerPage": "Filas por página",
   "admin.searchPlaceholder": "Buscar hogares o personas...",
   "admin.sendingInvite": "Enviando invitación...",
   "admin.showing": "{from}–{to} de {total}",
