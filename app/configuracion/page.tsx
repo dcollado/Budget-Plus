@@ -160,6 +160,18 @@ function Configuracion() {
 
       {hogarConfigurado && tab === "fijos" ? (
         <>
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} fixed />
+            <AgregarCategoria
+              kind="expense"
+              month={month}
+              onAgregado={agregarItem}
+              fixed
+              members={members}
+              defaultOwner={yo}
+            />
+          </div>
+
           <div className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between border-b border-line px-3 py-2.5 text-sm font-semibold text-text">
               {t("settings.fixedIncome")}
@@ -182,7 +194,6 @@ function Configuracion() {
               ))
             )}
 
-            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} fixed />
           </div>
 
           {/* Fixed expenses grouped by person, each group with its color
@@ -223,16 +234,6 @@ function Configuracion() {
                 </div>
               ))
             )}
-          </div>
-
-          <div className={`${sectionCardClass} mt-4 p-0`}>
-            <AgregarCategoria
-              kind="expense"
-              month={month}
-              onAgregado={agregarItem}
-              fixed
-              members={members}
-            />
           </div>
         </>
       ) : null}

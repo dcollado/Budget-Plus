@@ -91,9 +91,19 @@ export default function MesPanel({ month, datos }: Props) {
       </div>
 
       <div className={`${sectionCardClass} p-0!`}>
-        <h3 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
-          {t("month.extra")}
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+          <h3 className="text-sm font-semibold text-text">{t("month.extra")}</h3>
+          <div className="flex flex-wrap gap-2">
+            <AgregarCategoria
+              kind="expense"
+              month={month}
+              onAgregado={agregarItem}
+              variant="boton"
+              cuentas={cuentas}
+            />
+            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} variant="boton" />
+          </div>
+        </div>
 
         {cargando ? (
           <p className="px-4 py-4 text-center text-sm text-text-muted">{t("common.loading")}</p>
@@ -114,17 +124,6 @@ export default function MesPanel({ month, datos }: Props) {
             />
           ))
         )}
-
-        <div className="flex flex-wrap gap-2 border-t border-line p-3">
-          <AgregarCategoria
-            kind="expense"
-            month={month}
-            onAgregado={agregarItem}
-            variant="boton"
-            cuentas={cuentas}
-          />
-          <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} variant="boton" />
-        </div>
       </div>
     </section>
   );

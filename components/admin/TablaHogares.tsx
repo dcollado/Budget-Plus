@@ -6,7 +6,22 @@ import { useT } from "@/lib/i18n/client";
 import { fieldBaseClass, fieldNormalClass, sectionCardClass } from "@/lib/ui";
 import type { HogarResumen } from "@/lib/admin/hogares";
 
-const POR_PAGINA = 10;
+const OPCIONES_POR_PAGINA = [10, 20, 50, 100] as const;
+const POR_PAGINA_INICIAL = 10;
+const CLAVE_POR_PAGINA = "admin.hogares.porPagina";
+
+// Recuerda la elección en este navegador (si el almacenamiento no está
+// disponible, simplemente vuelve a 10).
+function leerPorPagina(): number {
+  try {
+    const guardado = Number(localStorage.getItem(CLAVE_POR_PAGINA));
+    return (OPCIONES_POR_PAGINA as readonly number[]).includes(guardado)
+      ? guardado
+      : POR_PAGINA_INICIAL;
+  } catch {
+    return POR_PAGINA_INICIAL;
+  }
+}
 
 // Todos los hogares en una tabla compacta: buscar, paginar y abrir una fila
 // para ver/editar sus personas, invitaciones y calendario.
@@ -21,6 +36,7 @@ export default function TablaHogares({
   const [busqueda, setBusqueda] = useState("");
   const [pagina, setPagina] = useState(0);
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [porPagina, setPorPagina] = useState<number>(leerPorPagina);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -34,10 +50,10 @@ export default function TablaHogares({
     );
   }, [hogares, busqueda]);
 
-  const paginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const paginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaActual = Math.min(pagina, paginas - 1);
-  const desde = paginaActual * POR_PAGINA;
-  const visibles = filtrados.slice(desde, desde + POR_PAGINA);
+  const desde = paginaActual * porPagina;
+  const visibles = filtrados.slice(desde, desde + porPagina);
 
   const claseCalendario = {
     propio: "bg-sage/20 text-sage",
@@ -231,15 +247,40 @@ export default function TablaHogares({
         })}
       </ul>
 
-      {paginas > 1 ? (
-        <div className="flex items-center justify-between gap-3 px-4 pb-4 text-xs text-text-muted sm:px-5">
-          <span>
+      {filtrados.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 border-t border-line px-4 py-3 text-xs text-text-muted sm:px-5">
+          <label className="flex items-center gap-2">
+            <span>{t("admin.rowsPerPage")}</span>
+            <select
+              value={porPagina}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                setPorPagina(n);
+                setPagina(0);
+                try {
+                  localStorage.setItem(CLAVE_POR_PAGINA, String(n));
+                } catch {
+                  /* sin almacenamiento: vale para esta visita */
+                }
+              }}
+              className="rounded-lg border border-line bg-surface-raised px-2 py-1 text-xs text-text outline-none focus:border-gold"
+            >
+              {OPCIONES_POR_PAGINA.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <span className="tabular-nums">
             {t("admin.showing", {
               from: desde + 1,
-              to: Math.min(desde + POR_PAGINA, filtrados.length),
+              to: Math.min(desde + porPagina, filtrados.length),
               total: filtrados.length,
             })}
           </span>
+
           <span className="flex items-center gap-1">
             <button
               type="button"
