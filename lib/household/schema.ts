@@ -76,6 +76,9 @@ export type Budget = {
   // Fecha exacta de pago (YYYY-MM-DD), para los ítems variables del mes.
   // "" = sin fecha. Las fijas usan Category.dueDay en su lugar.
   dueDate: string;
+  // Nota libre y marca de "ya se pagó / ya se hizo" (gastos extra del mes).
+  nota: string;
+  pagado: boolean;
 };
 
 export type Transaction = {

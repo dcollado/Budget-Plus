@@ -22,6 +22,22 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-17",
+    titulo: {
+      en: "Notes and a paid check on extra expenses",
+      es: "Notas y marca de pagado en los gastos extra",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "Extra expenses can have a note, and a check mark to say they were already paid or done.",
+          es: "Los gastos extra pueden tener una nota y una marca para indicar que ya se pagaron o se hicieron.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-16",
     titulo: {
       en: "New home page and access requests",

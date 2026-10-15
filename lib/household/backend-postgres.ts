@@ -21,7 +21,7 @@ const COLS_MEMBER = ["id", "household_id", "user_id", "display_name", "role", "c
 const COLS_ACCOUNT = ["id", "household_id", "name", "type", "owner_member_id", "opening_balance_cents", "archived"];
 const COLS_CATEGORY = ["id", "household_id", "name", "kind", "archived", "fixed", "due_day", "owner_member_id", "cuenta_id", "es_ahorro"];
 const COLS_CUENTA = ["id", "household_id", "name", "archived"];
-const COLS_BUDGET = ["id", "household_id", "category_id", "month", "planned_amount_cents", "due_date"];
+const COLS_BUDGET = ["id", "household_id", "category_id", "month", "planned_amount_cents", "due_date", "nota", "pagado"];
 const COLS_TRANSACTION = ["id", "household_id", "account_id", "transfer_account_id", "category_id", "type", "amount_cents", "date", "payee", "note", "created_by_member_id", "owner_member_id", "source", "external_id", "created_at"];
 
 const nulo = (v: string | undefined | null) => (v ? v : null);
@@ -258,6 +258,8 @@ type FilaBudget = {
   month: string;
   planned_amount_cents: string | number;
   due_date: Date | string | null;
+  nota: string | null;
+  pagado: boolean | null;
 };
 const aBudget = (r: FilaBudget): Budget => ({
   id: r.id,
@@ -266,6 +268,8 @@ const aBudget = (r: FilaBudget): Budget => ({
   month: r.month,
   plannedAmountCents: Number(r.planned_amount_cents),
   dueDate: fecha(r.due_date),
+  nota: r.nota ?? "",
+  pagado: r.pagado === true,
 });
 
 export async function listBudgets(householdId: string): Promise<Budget[]> {
@@ -276,21 +280,28 @@ export async function listBudgets(householdId: string): Promise<Budget[]> {
 
 // Un monto por categoría y mes (lo garantiza la base con unique).
 // dueDate: undefined = no tocar la fecha que ya tenga; "" = borrarla.
+// extras.nota / extras.pagado: undefined = no tocar lo que ya tenga.
 export async function upsertBudget(
   householdId: string,
   categoryId: string,
   month: string,
   plannedAmountCents: number,
-  dueDate?: string
+  dueDate?: string,
+  extras: { nota?: string; pagado?: boolean } = {}
 ): Promise<Budget> {
   const sql = getSql();
   const fechaNueva = dueDate === undefined ? null : nulo(dueDate);
   const [fila] = await sql<FilaBudget[]>`
-    insert into budgets (household_id, category_id, month, planned_amount_cents, due_date)
-    values (${householdId}, ${categoryId}, ${month}, ${plannedAmountCents}, ${fechaNueva})
+    insert into budgets
+      (household_id, category_id, month, planned_amount_cents, due_date, nota, pagado)
+    values
+      (${householdId}, ${categoryId}, ${month}, ${plannedAmountCents}, ${fechaNueva},
+       ${extras.nota ?? ""}, ${extras.pagado ?? false})
     on conflict (category_id, month) do update set
       planned_amount_cents = excluded.planned_amount_cents,
-      due_date = ${dueDate === undefined ? sql`budgets.due_date` : sql`excluded.due_date`}
+      due_date = ${dueDate === undefined ? sql`budgets.due_date` : sql`excluded.due_date`},
+      nota = ${extras.nota === undefined ? sql`budgets.nota` : sql`excluded.nota`},
+      pagado = ${extras.pagado === undefined ? sql`budgets.pagado` : sql`excluded.pagado`}
     returning ${getSql()(COLS_BUDGET)}`;
   return aBudget(fila);
 }
