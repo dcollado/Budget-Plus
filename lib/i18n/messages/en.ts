@@ -419,6 +419,7 @@ export const en = {
   "settings.fixedOf": "Fixed items of {name}",
   "settings.hintAccounts": "Which account each of your fixed items goes to. This builds your transfers table in Budget.",
   "settings.hintFixed": "Enter them once here and they carry over month to month on their own. Edit them when they change (e.g. rent goes up) — no need to touch them every month.",
+  "settings.noFixedYet": "No fixed expenses yet.",
   "settings.savings": "Savings",
   "settings.sections": "Settings sections",
   "settings.tabAccounts": "My accounts",

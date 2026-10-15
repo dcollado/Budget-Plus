@@ -420,6 +420,7 @@ export const es: Record<MessageKey, string> = {
   "settings.fixedOf": "Fijos de {name}",
   "settings.hintAccounts": "A qué cuenta va cada uno de tus fijos. Con esto se arma tu cuadro de transferencias de Presupuesto.",
   "settings.hintFixed": "Se cargan una sola vez acá y se heredan solos mes a mes. Editalos cuando cambien (ej. sube la renta) — no hace falta tocarlos todos los meses.",
+  "settings.noFixedYet": "Aún no hay gastos fijos.",
   "settings.savings": "Ahorro",
   "settings.sections": "Secciones de configuración",
   "settings.tabAccounts": "Mis cuentas",
