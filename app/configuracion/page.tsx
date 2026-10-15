@@ -88,9 +88,19 @@ function Configuracion() {
     }))
     .filter((g) => g.items.length > 0);
 
+  const gruposVisibles = gruposFijos.length;
+  const columnasFijos =
+    gruposVisibles >= 3
+      ? "lg:grid-cols-2 xl:grid-cols-3"
+      : gruposVisibles === 2
+        ? "lg:grid-cols-2"
+        : "";
+  // Con tres o más grupos la página se ensancha para que las filas respiren.
+  const anchoFijos = gruposVisibles >= 3 ? "max-w-7xl" : "max-w-5xl";
+
   return (
     <main
-      className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? "max-w-5xl" : "max-w-3xl"}`}
+      className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? anchoFijos : "max-w-3xl"}`}
     >
       <div className="mb-5">
         <p className="text-sm font-medium text-gold">{t("nav.accounts")}</p>
@@ -178,7 +188,7 @@ function Configuracion() {
 
           {/* Fixed expenses grouped by person, each group with its color
               (David blue, Caro red). Side by side on wide screens. */}
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className={`mt-4 grid grid-cols-1 gap-4 ${columnasFijos}`}>
             {cargando ? (
               <p className="py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
             ) : (
