@@ -18,8 +18,8 @@ type Props = {
   // true = fixed category (Settings), with a day of the month that carries over.
   fixed?: boolean;
   // "cta" = primary button (page toolbar); "boton" = compact pill, for a
-  // section header.
-  variant?: "cta" | "boton";
+  // section header; "mini" = just "+ Add", for tight card headers.
+  variant?: "cta" | "boton" | "mini";
   // If passed (Settings), shows an expense owner selector.
   members?: MiembroHogar[];
   // Owner selected when the form opens (e.g. the signed-in member).
@@ -217,16 +217,24 @@ export default function AgregarCategoria({
   const botonClase =
     variant === "cta"
       ? "inline-flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110"
-      : `inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium transition hover:border-gold/50 ${
-          esIngreso ? "text-sage" : "text-rust"
-        }`;
+      : variant === "mini"
+        ? "inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-gold px-2.5 py-1 text-xs font-semibold text-ink transition hover:brightness-110"
+        : `inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium transition hover:border-gold/50 ${
+            esIngreso ? "text-sage" : "text-rust"
+          }`;
 
   return (
     <>
       <span className="inline-flex flex-wrap items-center gap-3">
-        <button type="button" onClick={abrir} className={botonClase}>
+        <button
+          type="button"
+          onClick={abrir}
+          className={botonClase}
+          aria-label={etiqueta}
+          title={etiqueta}
+        >
           <Plus size={variant === "cta" ? 16 : 13} />
-          {etiqueta}
+          {variant === "mini" ? t("common.add") : etiqueta}
         </button>
         {aviso ? (
           <span role="status" className="text-xs font-medium text-sage">

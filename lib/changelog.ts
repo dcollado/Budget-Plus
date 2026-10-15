@@ -66,6 +66,13 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "ajuste",
         texto: {
+          en: "The Add fixed income button now lives inside the Fixed income widget.",
+          es: "El botón de agregar ingreso fijo ahora está dentro del widget de ingresos fijos.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
           en: "The Settings tab is now called \"Fixed Expenses\".",
           es: "La pestaña de Configuración ahora se llama \"Gastos Fijos\".",
         },
