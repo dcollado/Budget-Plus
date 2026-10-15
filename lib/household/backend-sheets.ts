@@ -342,6 +342,8 @@ export async function actualizarCategoria(
   id: string,
   householdId: string,
   cambios: {
+    name?: string;
+    ownerMemberId?: string;
     dueDay?: number | null;
     quincenal?: boolean;
     dueDay2?: number | null;

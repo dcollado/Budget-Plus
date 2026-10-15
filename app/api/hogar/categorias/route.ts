@@ -132,6 +132,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     const cambios: {
+      name?: string;
+      ownerMemberId?: string;
       dueDay?: number | null;
       quincenal?: boolean;
       dueDay2?: number | null;
@@ -141,6 +143,34 @@ export async function PATCH(req: NextRequest) {
 
     if ("ahorro" in body) {
       cambios.ahorro = body.ahorro === true;
+    }
+
+    if ("name" in body) {
+      const name = String(body.name ?? "").trim();
+
+      if (!name) {
+        return fallo("Category name is missing.", 400);
+      }
+
+      if (name.length > 80) {
+        return fallo("The name is too long.", 400);
+      }
+
+      cambios.name = name;
+    }
+
+    if ("ownerMemberId" in body) {
+      const ownerMemberId = String(body.ownerMemberId ?? "").trim();
+
+      if (ownerMemberId) {
+        const members = await listMembers(contexto.householdId);
+
+        if (!members.some((m) => m.id === ownerMemberId)) {
+          return fallo("That member is not part of this household.", 400);
+        }
+      }
+
+      cambios.ownerMemberId = ownerMemberId;
     }
 
     if ("dueDay" in body) {
@@ -186,7 +216,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     // La cuenta no sale en el calendario; solo un cambio de día lo afecta.
-    if ("dueDay" in cambios || "dueDay2" in cambios || "quincenal" in cambios) {
+    if (
+      "dueDay" in cambios ||
+      "dueDay2" in cambios ||
+      "quincenal" in cambios ||
+      "name" in cambios
+    ) {
       const householdId = contexto.householdId;
       after(() =>
         sincronizarSinFallar(() => sincronizarDosMeses(householdId, mesActual()))

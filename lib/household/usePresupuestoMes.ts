@@ -126,6 +126,29 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     );
   }
 
+  // Cambios hechos desde el modal de edición: datos de la categoría y, si
+  // se tocó, el total del mes.
+  function modificarCategoria(
+    categoryId: string,
+    cambios: Partial<CategoriaDelMes["category"]>,
+    plannedAmountCents?: number
+  ) {
+    setItems((actuales) =>
+      actuales.map((item) => {
+        if (item.category.id !== categoryId) return item;
+        const category = { ...item.category, ...cambios };
+        return {
+          ...item,
+          category,
+          plannedAmountCents: plannedAmountCents ?? item.plannedAmountCents,
+          inherited: plannedAmountCents !== undefined ? false : item.inherited,
+          fechaPago: category.fixed ? fechaDelDia(month, category.dueDay) : item.fechaPago,
+          fechaPago2: segundaFecha(category, month),
+        };
+      })
+    );
+  }
+
   // Frecuencia y días de pago de una fija (quincenal = dos pagos al mes).
   function cambiarPagos(
     categoryId: string,
@@ -175,5 +198,6 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     asignarCuenta,
     marcarAhorro,
     cambiarPagos,
+    modificarCategoria,
   };
 }
