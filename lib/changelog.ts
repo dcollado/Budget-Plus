@@ -66,8 +66,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "ajuste",
         texto: {
-          en: "The Add buttons for fixed items now live inside each list's own widget.",
-          es: "Los botones de agregar gastos fijos ahora están dentro del widget de cada lista.",
+          en: "The Add fixed income button now lives inside the Fixed income widget.",
+          es: "El botón de agregar ingreso fijo ahora está dentro del widget de ingresos fijos.",
         },
       },
       {

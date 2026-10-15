@@ -160,6 +160,17 @@ function Configuracion() {
 
       {hogarConfigurado && tab === "fijos" ? (
         <>
+          <div className="mb-4 flex justify-end">
+            <AgregarCategoria
+              kind="expense"
+              month={month}
+              onAgregado={agregarItem}
+              fixed
+              members={members}
+              defaultOwner={yo}
+            />
+          </div>
+
           <div className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-sm font-semibold text-text">
               {t("settings.fixedIncome")}
@@ -195,20 +206,6 @@ function Configuracion() {
 
           {/* Fixed expenses grouped by person, each group with its color
               (David blue, Caro red). Side by side on wide screens. */}
-          {!cargando && gruposFijos.length === 0 ? (
-            <div className={`${sectionCardClass} mt-4 flex flex-wrap items-center justify-between gap-3`}>
-              <p className="text-sm text-text-muted">{t("settings.noFixedYet")}</p>
-              <AgregarCategoria
-                kind="expense"
-                month={month}
-                onAgregado={agregarItem}
-                fixed
-                members={members}
-                defaultOwner={yo}
-              />
-            </div>
-          ) : null}
-
           <div className={`mt-4 grid grid-cols-1 gap-4 ${columnasFijos}`}>
             {cargando ? (
               <p className="py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
@@ -220,18 +217,7 @@ function Configuracion() {
                 >
                   <h2 className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-sm font-semibold">
                     <span className={grupo.color.texto}>{t("settings.fixedOf", { name: grupo.nombre })}</span>
-                    <span className="flex items-center gap-3">
-                      <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
-                      <AgregarCategoria
-                        kind="expense"
-                        month={month}
-                        onAgregado={agregarItem}
-                        fixed
-                        variant="mini"
-                        members={members}
-                        defaultOwner={grupo.id}
-                      />
-                    </span>
+                    <span className="text-text">{formatearCentavos(suma(grupo.items))}</span>
                   </h2>
                   <div className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_1.75rem_1.75rem_1.75rem] gap-1.5 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_3rem_1.75rem_1.75rem_1.75rem]">
                     <span />
