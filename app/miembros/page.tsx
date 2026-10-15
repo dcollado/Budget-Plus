@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import type { HogarResumen } from "@/lib/admin/hogares";
 import { useT } from "@/lib/i18n/client";
+import { Pagina } from "@/components/pagina";
 
 type Mensaje = { tipo: "ok" | "error"; texto: string };
 
@@ -66,7 +67,7 @@ export default function MiembrosPage() {
     ejecutar(URL_MIEMBROS, { method: "POST", body: JSON.stringify(cuerpo) }, exito);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
+    <Pagina ancho="normal" className="space-y-6">
       <div>
         <p className="text-sm font-medium text-gold">{t("members.kicker")}</p>
         <h1 className="font-display text-2xl font-semibold text-text">{t("members.title")}</h1>
@@ -127,6 +128,6 @@ export default function MiembrosPage() {
           }
         />
       )}
-    </main>
+    </Pagina>
   );
 }

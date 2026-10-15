@@ -90,7 +90,7 @@ export default function MesPanel({ month, datos }: Props) {
         />
       </div>
 
-      <div className={`${sectionCardClass} p-0`}>
+      <div className={`${sectionCardClass} p-0!`}>
         <h3 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
           {t("month.extra")}
         </h3>

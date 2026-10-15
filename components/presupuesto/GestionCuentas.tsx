@@ -112,7 +112,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
   }
 
   return (
-    <div className={`${sectionCardClass} p-0`}>
+    <div className={`${sectionCardClass} p-0!`}>
       <CuadroTransferencias cuadro={armarCuadro(items, cuentas, yo)} />
 
       <div className="border-t border-line px-4 py-3">

@@ -9,6 +9,7 @@ import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { armarCuadro } from "@/lib/household/transferencias";
 import { mesActual, mesSiguiente } from "@/lib/household/formato";
 import { useT } from "@/lib/i18n/client";
+import { Pagina } from "@/components/pagina";
 
 export default function PresupuestoPage() {
   const t = useT();
@@ -28,7 +29,7 @@ export default function PresupuestoPage() {
   }, []);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+    <Pagina ancho="extra">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gold">{t("nav.budget")}</p>
@@ -57,16 +58,18 @@ export default function PresupuestoPage() {
       ) : null}
 
       {hogarConfigurado ? (
-        <>
+        <div className="2xl:grid 2xl:grid-cols-[24rem_minmax(0,1fr)] 2xl:items-start 2xl:gap-8">
           {/* The first thing you check on payday: how much to move to each
               account. Only the logged-in person's table. */}
-          <TarjetaTransferencias
-            cuadro={
-              primerMes.cargando || !primerMes.yo
-                ? null
-                : armarCuadro(primerMes.items, primerMes.cuentas, primerMes.yo)
-            }
-          />
+          <div className="2xl:sticky 2xl:top-20">
+            <TarjetaTransferencias
+              cuadro={
+                primerMes.cargando || !primerMes.yo
+                  ? null
+                  : armarCuadro(primerMes.items, primerMes.cuentas, primerMes.yo)
+              }
+            />
+          </div>
 
           {/* Two months at a time: the selected one and the next. Side by side on
               desktop, stacked on mobile. */}
@@ -74,8 +77,8 @@ export default function PresupuestoPage() {
             <MesPanel month={month} datos={primerMes} />
             <MesPanel month={mesSiguiente(month)} datos={segundoMes} />
           </div>
-        </>
+        </div>
       ) : null}
-    </main>
+    </Pagina>
   );
 }
