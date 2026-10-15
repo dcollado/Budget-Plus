@@ -15,6 +15,7 @@ import {
 } from "@/lib/ui";
 import type { HogarResumen } from "@/lib/admin/hogares";
 import { useT } from "@/lib/i18n/client";
+import { Pagina } from "@/components/pagina";
 
 type Mensaje = { tipo: "ok" | "error"; texto: string };
 
@@ -108,7 +109,7 @@ export default function AdminPage() {
     );
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+    <Pagina ancho="ancho" className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gold">{t("admin.kicker")}</p>
@@ -262,6 +263,6 @@ export default function AdminPage() {
 
       <Actividad refrescar={version} />
       </div>
-    </main>
+    </Pagina>
   );
 }

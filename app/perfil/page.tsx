@@ -12,6 +12,7 @@ import {
 import { useT } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { CalendarCard } from "@/components/calendar-card";
+import { Pagina } from "@/components/pagina";
 
 type Perfil = {
   nombre: string;
@@ -126,7 +127,7 @@ export default function PerfilPage() {
       : t("profile.roleMember");
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+    <Pagina ancho="normal" className="space-y-6">
       <div>
         <p className="text-sm font-medium text-gold">{t("nav.myAccount")}</p>
         <h1 className="font-display text-2xl font-semibold text-text">{t("nav.profile")}</h1>
@@ -154,7 +155,8 @@ export default function PerfilPage() {
       {tab === "calendario" && perfil?.rol === "admin" ? (
         <CalendarCard endpoint="/api/hogar/calendario" />
       ) : (
-        <>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="space-y-6">
       <section className={sectionCardClass}>
         {perfil === null ? (
           <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
@@ -225,6 +227,8 @@ export default function PerfilPage() {
         </form>
       ) : null}
 
+      </div>
+      <div className="space-y-6">
       <form onSubmit={cambiar} className={`${sectionCardClass} space-y-4`}>
         <h2 className="text-base font-semibold text-text">{t("profile.changePasswordTitle")}</h2>
 
@@ -295,8 +299,9 @@ export default function PerfilPage() {
           {enviando ? t("common.saving") : t("profile.changePassword")}
         </button>
       </form>
-        </>
+      </div>
+        </div>
       )}
-    </main>
+    </Pagina>
   );
 }

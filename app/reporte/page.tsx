@@ -8,6 +8,7 @@ import { sectionCardClass } from "@/lib/ui";
 import { colorMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import type { ReporteAnual } from "@/lib/household/reporte";
 import { useT } from "@/lib/i18n/client";
+import { Pagina } from "@/components/pagina";
 
 function nombreMes(month: string, locale: string): string {
   const [anio, mes] = month.split("-").map(Number);
@@ -78,7 +79,7 @@ export default function ReportePage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <Pagina ancho="ancho" className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gold">{t("nav.report")}</p>
@@ -146,11 +147,12 @@ export default function ReportePage() {
             />
           </section>
 
-          <section className={`${sectionCardClass} p-0`}>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] xl:items-start">
+          <section className={`${sectionCardClass} p-0!`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
               {t("report.monthByMonth")}
             </h2>
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-[34rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
@@ -202,14 +204,67 @@ export default function ReportePage() {
                 </tbody>
               </table>
             </div>
+            {/* Móvil: un mes por tarjeta, sin desplazamiento horizontal. */}
+            <ul className="divide-y divide-line sm:hidden">
+              {reporte.meses.map((m) => {
+                const vacio =
+                  m.ingresosCents === 0 && m.fijosCents === 0 && m.variablesCents === 0;
+                const esActual = m.month === actual;
+
+                return (
+                  <li
+                    key={m.month}
+                    className={`px-4 py-3 ${esActual ? "bg-gold-soft" : ""} ${
+                      vacio ? "text-text-muted" : "text-text"
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-medium">
+                        {nombreMes(m.month, t.locale)}
+                        {esActual ? (
+                          <span className="ml-2 text-[10px] font-semibold uppercase text-gold">
+                            {t("report.today")}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span
+                        className={`font-semibold tabular-nums ${
+                          vacio ? "" : m.sobranteCents < 0 ? "text-rust" : "text-sage"
+                        }`}
+                      >
+                        {vacio ? "—" : formatearCentavos(m.sobranteCents)}
+                      </span>
+                    </div>
+                    {vacio ? null : (
+                      <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <dt className="text-text-muted">{t("report.income")}</dt>
+                          <dd className="tabular-nums">{dinero(m.ingresosCents)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-muted">{t("report.fixed")}</dt>
+                          <dd className="tabular-nums">{dinero(m.fijosCents)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-muted">{t("report.variable")}</dt>
+                          <dd className="tabular-nums">{dinero(m.variablesCents)}</dd>
+                        </div>
+                      </dl>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
-          <section className={`${sectionCardClass} p-0`}>
+          <div className="space-y-6">
+
+          <section className={`${sectionCardClass} p-0!`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
               {t("report.byPerson")}
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[30rem] text-sm">
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-[24rem] text-sm">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-wide text-text-muted">
                     <th className="px-4 py-2 text-left font-medium">{t("report.person")}</th>
@@ -246,12 +301,48 @@ export default function ReportePage() {
                 </tbody>
               </table>
             </div>
+            <ul className="divide-y divide-line sm:hidden">
+              {reporte.personas.map((p) => (
+                <li key={p.memberId || "conjunto"} className="px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span
+                      className={`font-medium capitalize ${
+                        p.memberId ? colorMiembro(miembros, p.memberId).texto : "text-text-muted"
+                      }`}
+                    >
+                      {p.memberId ? p.nombre : t("report.joint")}
+                    </span>
+                    <span
+                      className={`font-semibold tabular-nums ${
+                        p.memberId && p.sobranteCents < 0 ? "text-rust" : "text-text"
+                      }`}
+                    >
+                      {p.memberId ? formatearCentavos(p.sobranteCents) : "—"}
+                    </span>
+                  </div>
+                  <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <dt className="text-text-muted">{t("report.income")}</dt>
+                      <dd className="tabular-nums">{dinero(p.ingresosCents)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-text-muted">{t("report.expenses")}</dt>
+                      <dd className="tabular-nums">{dinero(p.gastosCents)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-text-muted">{t("report.savings")}</dt>
+                      <dd className="tabular-nums text-sage">{dinero(p.ahorroCents)}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
             <p className="border-t border-line px-4 py-2 text-xs text-text-muted">
               {t("report.jointNote")}
             </p>
           </section>
 
-          <section className={`${sectionCardClass} p-0`}>
+          <section className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between border-b border-line px-4 py-3 text-sm font-semibold text-text">
               {t("report.extraordinary")}
               <span className="text-rust">{formatearCentavos(totalExtraordinarios)}</span>
@@ -282,8 +373,10 @@ export default function ReportePage() {
               </ul>
             )}
           </section>
+          </div>
+          </div>
         </>
       ) : null}
-    </main>
+    </Pagina>
   );
 }

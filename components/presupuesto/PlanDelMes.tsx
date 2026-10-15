@@ -229,7 +229,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
         </div>
       ) : null}
 
-      <div className={`${sectionCardClass} p-0`}>
+      <div className={`${sectionCardClass} p-0!`}>
         <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
           {t("plan.expenseCategories")}
         </h2>

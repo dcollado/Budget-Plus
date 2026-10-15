@@ -12,6 +12,7 @@ import { formatearCentavos, mesActual } from "@/lib/household/formato";
 import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n/messages";
+import { Pagina } from "@/components/pagina";
 
 type Tab = "fijos" | "cuentas";
 
@@ -96,12 +97,10 @@ function Configuracion() {
         ? "lg:grid-cols-2"
         : "";
   // Con tres o más grupos la página se ensancha para que las filas respiren.
-  const anchoFijos = gruposVisibles >= 3 ? "max-w-7xl" : "max-w-5xl";
+  const ancho = tab === "fijos" ? (gruposVisibles >= 3 ? "ancho" : "normal") : "estrecho";
 
   return (
-    <main
-      className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${tab === "fijos" ? anchoFijos : "max-w-3xl"}`}
-    >
+    <Pagina ancho={ancho}>
       <div className="mb-5">
         <p className="text-sm font-medium text-gold">{t("nav.accounts")}</p>
         <h1 className="font-serif text-3xl font-semibold text-text">
@@ -237,6 +236,6 @@ function Configuracion() {
           </div>
         </>
       ) : null}
-    </main>
+    </Pagina>
   );
 }
