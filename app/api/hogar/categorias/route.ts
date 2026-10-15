@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
     const kind = String(body.kind ?? "expense");
     const fixed = Boolean(body.fixed);
     const dueDay = parseDueDay(body.dueDay);
+    // Dos pagos al mes: solo para fijas, con los dos días elegidos.
+    const quincenal = fixed && body.quincenal === true;
+    const dueDay2 = quincenal ? parseDueDay(body.dueDay2) : null;
     const ownerMemberId = String(body.ownerMemberId ?? "").trim();
 
     if (!name) {
@@ -46,6 +49,14 @@ export async function POST(req: NextRequest) {
 
     if (!KINDS.includes(kind as CategoryKind)) {
       return fallo("Invalid category type.", 400);
+    }
+
+    if (quincenal && (dueDay === null || dueDay2 === null)) {
+      return fallo("Pick both payment days.", 400);
+    }
+
+    if (quincenal && dueDay === dueDay2) {
+      return fallo("The two payment days must be different.", 400);
     }
 
     if (ownerMemberId) {
@@ -62,6 +73,8 @@ export async function POST(req: NextRequest) {
       kind: kind as CategoryKind,
       fixed,
       dueDay,
+      quincenal,
+      dueDay2,
       ownerMemberId,
     });
 
@@ -118,7 +131,13 @@ export async function PATCH(req: NextRequest) {
       return fallo("Category id is missing.", 400);
     }
 
-    const cambios: { dueDay?: number | null; cuentaId?: string; ahorro?: boolean } = {};
+    const cambios: {
+      dueDay?: number | null;
+      quincenal?: boolean;
+      dueDay2?: number | null;
+      cuentaId?: string;
+      ahorro?: boolean;
+    } = {};
 
     if ("ahorro" in body) {
       cambios.ahorro = body.ahorro === true;
@@ -126,6 +145,24 @@ export async function PATCH(req: NextRequest) {
 
     if ("dueDay" in body) {
       cambios.dueDay = parseDueDay(body.dueDay);
+    }
+
+    if ("quincenal" in body) {
+      cambios.quincenal = body.quincenal === true;
+      // Al volver a mensual se borra el segundo día; al pasar a quincenal,
+      // si no vino, queda el fin de mes (31).
+      cambios.dueDay2 = cambios.quincenal ? (parseDueDay(body.dueDay2) ?? 31) : null;
+    } else if ("dueDay2" in body) {
+      cambios.dueDay2 = parseDueDay(body.dueDay2);
+    }
+
+    if (
+      cambios.quincenal === true &&
+      cambios.dueDay !== undefined &&
+      cambios.dueDay !== null &&
+      cambios.dueDay === cambios.dueDay2
+    ) {
+      return fallo("The two payment days must be different.", 400);
     }
 
     if ("cuentaId" in body) {
@@ -149,7 +186,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // La cuenta no sale en el calendario; solo un cambio de día lo afecta.
-    if ("dueDay" in cambios) {
+    if ("dueDay" in cambios || "dueDay2" in cambios || "quincenal" in cambios) {
       const householdId = contexto.householdId;
       after(() =>
         sincronizarSinFallar(() => sincronizarDosMeses(householdId, mesActual()))

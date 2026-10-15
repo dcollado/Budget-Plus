@@ -10,6 +10,8 @@ const categoria = (parcial: Partial<Category>): Category => ({
   archived: false,
   fixed: true,
   dueDay: null,
+  quincenal: false,
+  dueDay2: null,
   ownerMemberId: "",
   cuentaId: "",
   ahorro: false,

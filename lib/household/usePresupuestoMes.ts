@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CategoriaDelMes } from "./presupuesto";
+import { fechaDelDia, segundaFecha } from "./presupuesto";
 import { useT } from "@/lib/i18n/client";
 
 export type MiembroHogar = { id: string; displayName: string; color?: number };
@@ -125,6 +126,30 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     );
   }
 
+  // Frecuencia y días de pago de una fija (quincenal = dos pagos al mes).
+  function cambiarPagos(
+    categoryId: string,
+    cambios: { quincenal: boolean; dueDay?: number | null; dueDay2: number | null }
+  ) {
+    setItems((actuales) =>
+      actuales.map((item) => {
+        if (item.category.id !== categoryId) return item;
+        const category = {
+          ...item.category,
+          quincenal: cambios.quincenal,
+          dueDay: cambios.dueDay !== undefined ? cambios.dueDay : item.category.dueDay,
+          dueDay2: cambios.dueDay2,
+        };
+        return {
+          ...item,
+          category,
+          fechaPago: fechaDelDia(month, category.dueDay),
+          fechaPago2: segundaFecha(category, month),
+        };
+      })
+    );
+  }
+
   function marcarAhorro(categoryId: string, ahorro: boolean) {
     setItems((actuales) =>
       actuales.map((item) =>
@@ -149,5 +174,6 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
     eliminarItem,
     asignarCuenta,
     marcarAhorro,
+    cambiarPagos,
   };
 }

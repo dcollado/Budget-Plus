@@ -13,6 +13,8 @@ export type CategoriaDelMes = {
   // Fijas: Category.dueDay aplicado al mes (acotado al último día).
   // Variables: la fecha guardada en el Budget de este mes.
   fechaPago: string;
+  // Segundo pago del mes (gastos quincenales), "" si se paga una vez.
+  fechaPago2: string;
   // Nota y marca de "pagado" de este mes (viene del Budget del mes).
   nota: string;
   pagado: boolean;
@@ -24,6 +26,11 @@ export function fechaDelDia(month: string, dueDay: number | null): string {
   const ultimoDia = new Date(anio, mes, 0).getDate();
   const dia = Math.min(dueDay, ultimoDia);
   return `${month}-${String(dia).padStart(2, "0")}`;
+}
+
+// Segundo pago de un gasto fijo quincenal en este mes ("" si no aplica).
+export function segundaFecha(category: Category, month: string): string {
+  return category.fixed && category.quincenal ? fechaDelDia(month, category.dueDay2) : "";
 }
 
 // Orden por fecha de pago; los que no tienen fecha van al final.
@@ -87,6 +94,7 @@ export function armarVistaMes(
         fechaPago: category.fixed
           ? fechaDelDia(month, category.dueDay)
           : budgetDeEsteMes.dueDate,
+        fechaPago2: segundaFecha(category, month),
         nota: budgetDeEsteMes.nota,
         pagado: budgetDeEsteMes.pagado,
       };
@@ -102,6 +110,7 @@ export function armarVistaMes(
           inherited: true,
           actualCents,
           fechaPago: fechaDelDia(month, category.dueDay),
+          fechaPago2: segundaFecha(category, month),
           nota: "",
           pagado: false,
         };
@@ -114,6 +123,7 @@ export function armarVistaMes(
       inherited: false,
       actualCents,
       fechaPago: category.fixed ? fechaDelDia(month, category.dueDay) : "",
+      fechaPago2: segundaFecha(category, month),
       nota: "",
       pagado: false,
     };

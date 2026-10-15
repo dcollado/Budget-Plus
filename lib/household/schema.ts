@@ -48,6 +48,10 @@ export type Category = {
   fixed: boolean;
   // Día del mes en que se paga (1-31), solo para fijas. null = sin fecha.
   dueDay: number | null;
+  // Se paga dos veces al mes: dueDay es el primer día y dueDay2 el segundo
+  // (31 = último día del mes). El monto del mes sigue siendo el total.
+  quincenal: boolean;
+  dueDay2: number | null;
   // De quién es el gasto (member id). "" = conjunto.
   ownerMemberId: string;
   // A qué cuenta va la plata de este fijo (Cuenta.id). "" = sin asignar.

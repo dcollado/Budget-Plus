@@ -61,9 +61,15 @@ export async function getCalendarClient(): Promise<Calendar> {
 // Id estable por (hogar, categoría, mes): así el mismo pago siempre cae en
 // el mismo evento y se actualiza en vez de duplicarse. Google exige ids
 // en base32hex (0-9, a-v); un hash hex cumple.
-function eventoId(householdId: string, categoryId: string, month: string): string {
+function eventoId(
+  householdId: string,
+  categoryId: string,
+  month: string,
+  pago: 1 | 2 = 1
+): string {
+  // El primer pago conserva el id de siempre; el segundo lleva un sufijo.
   const hash = createHash("sha1")
-    .update(`${householdId}|${categoryId}|${month}`)
+    .update(pago === 1 ? `${householdId}|${categoryId}|${month}` : `${householdId}|${categoryId}|${month}|2`)
     .digest("hex");
   return `bp${hash}`;
 }
@@ -77,19 +83,25 @@ function diaSiguiente(fecha: string): string {
 function armarEvento(
   item: CategoriaDelMes,
   householdId: string,
-  month: string
+  month: string,
+  pago: 1 | 2 = 1
 ): Evento {
   const esIngreso = item.category.kind === "income";
-  const monto = formatearCentavos(item.plannedAmountCents);
+  const quincenal = item.fechaPago2 !== "";
+  // Quincenal: cada pago es la mitad del total del mes.
+  const monto = formatearCentavos(
+    quincenal ? Math.round(item.plannedAmountCents / 2) : item.plannedAmountCents
+  );
+  const fecha = pago === 1 ? item.fechaPago : item.fechaPago2;
 
   return {
-    id: eventoId(householdId, item.category.id, month),
+    id: eventoId(householdId, item.category.id, month, pago),
     summary: esIngreso
       ? `💰 ${item.category.name} — +${monto}`
       : `💸 ${item.category.name} — ${monto}`,
     description: `Budget Plus · ${item.category.fixed ? "Fixed" : "Variable"} · ${formatearMes(month)}`,
-    start: { date: item.fechaPago },
-    end: { date: diaSiguiente(item.fechaPago) },
+    start: { date: fecha },
+    end: { date: diaSiguiente(fecha) },
     // No bloquea el calendario (no aparece como "ocupado").
     transparency: "transparent",
     status: "confirmed",
@@ -187,7 +199,11 @@ async function sincronizarMes(
 
   const deseados = armarVistaMes(categories, budgets, transactions, month)
     .filter((i) => i.fechaPago && i.plannedAmountCents > 0)
-    .map((i) => armarEvento(i, householdId, month));
+    .flatMap((i) =>
+      i.fechaPago2
+        ? [armarEvento(i, householdId, month, 1), armarEvento(i, householdId, month, 2)]
+        : [armarEvento(i, householdId, month)]
+    );
 
   const existentesPorId = new Map(existentes.map((e) => [e.id, e]));
   const idsDeseados = new Set(deseados.map((e) => e.id));

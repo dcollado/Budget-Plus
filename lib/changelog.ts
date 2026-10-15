@@ -31,6 +31,13 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
+          en: "Fixed items can be paid twice a month (for example the 15th and the end of the month). You enter the amount per payment and pick both days, and each payment gets its own calendar reminder.",
+          es: "Los gastos fijos se pueden pagar dos veces al mes (por ejemplo el 15 y fin de mes). Escribes el monto por pago, eliges los dos días, y cada pago tiene su propio recordatorio en el calendario.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
           en: "Adding a fixed or extra expense now opens a window with labeled fields, and the Add buttons sit at the top of each list.",
           es: "Agregar un gasto fijo o extra ahora abre una ventana con campos con etiqueta, y los botones de agregar están arriba de cada lista.",
         },
@@ -61,6 +68,13 @@ export const CHANGELOG: EntradaChangelog[] = [
         texto: {
           en: "Accepting or denying an access request is now logged in Recent activity, and the notice clears itself.",
           es: "Aceptar o rechazar una solicitud de acceso queda en Actividad reciente, y el aviso se quita solo.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "The Add fixed income button now lives inside the Fixed income widget.",
+          es: "El botón de agregar ingreso fijo ahora está dentro del widget de ingresos fijos.",
         },
       },
       {

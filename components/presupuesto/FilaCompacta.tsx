@@ -185,7 +185,11 @@ export default function FilaCompacta({
           </button>
         ) : null}
         <span className="text-xs text-text-muted">
-          {item.fechaPago ? formatearFechaCorta(item.fechaPago, t.locale) : "—"}
+          {item.fechaPago
+            ? item.fechaPago2
+              ? `${Number(item.fechaPago.slice(8))} · ${formatearFechaCorta(item.fechaPago2, t.locale)}`
+              : formatearFechaCorta(item.fechaPago, t.locale)
+            : "—"}
         </span>
 
         <span className="min-w-0">
