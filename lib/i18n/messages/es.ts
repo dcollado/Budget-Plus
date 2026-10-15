@@ -444,6 +444,7 @@ export const es: Record<MessageKey, string> = {
   "settings.both": "los dos",
   "settings.countsAsSavings": "Cuenta como ahorro",
   "settings.day": "Día",
+  "settings.dayShort": "Día",
   "settings.fixedIncome": "Ingresos fijos",
   "settings.fixedOf": "Fijos de {name}",
   "settings.hintAccounts": "A qué cuenta va cada uno de tus fijos. Con esto se arma tu cuadro de transferencias de Presupuesto.",
