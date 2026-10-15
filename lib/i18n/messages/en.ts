@@ -443,7 +443,7 @@ export const en = {
   "settings.both": "both",
   "settings.countsAsSavings": "Counts as savings",
   "settings.day": "Day",
-  "settings.dayShort": "Day",
+  "settings.dayShort": "Pay / day",
   "settings.fixedIncome": "Fixed income",
   "settings.fixedOf": "Fixed items of {name}",
   "settings.hintAccounts": "Which account each of your fixed items goes to. This builds your transfers table in Budget.",

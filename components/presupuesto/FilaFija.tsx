@@ -123,7 +123,7 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
 
   return (
     <div className="border-b border-line px-3 py-2 last:border-0">
-      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_3.5rem_5.25rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_6.5rem_4rem_5.25rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
         <button
           type="button"
           onClick={() => onEditar(item)}

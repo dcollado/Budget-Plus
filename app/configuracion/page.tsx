@@ -185,10 +185,10 @@ function Configuracion() {
             </h2>
 
             {ingresosFijos.length > 0 ? (
-              <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_3.5rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4rem_5.25rem]">
+              <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
                 <span />
                 <span className="text-right">{t("settings.amountMonth")}</span>
-                <span className="text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
+                <span className="whitespace-nowrap text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
                 <span />
               </div>
             ) : null}
@@ -237,10 +237,10 @@ function Configuracion() {
                       <span className="ml-1 text-[11px] font-normal text-text-muted">{t("settings.perMonth")}</span>
                     </span>
                   </h2>
-                  <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_3.5rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4rem_5.25rem]">
+                  <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
                     <span />
                     <span className="text-right">{t("settings.amountMonth")}</span>
-                    <span className="text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
+                    <span className="whitespace-nowrap text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
                     <span />
                   </div>
                   {grupo.items.map((item) => (
