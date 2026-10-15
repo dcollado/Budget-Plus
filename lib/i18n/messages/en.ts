@@ -412,7 +412,7 @@ export const en = {
   "settings.savings": "Savings",
   "settings.sections": "Settings sections",
   "settings.tabAccounts": "My accounts",
-  "settings.tabFixed": "Fixed",
+  "settings.tabFixed": "Fixed Expenses",
   "settings.titleAccounts": "My accounts",
   "settings.titleFixed": "Fixed expenses and income",
   "transfers.account": "Account",

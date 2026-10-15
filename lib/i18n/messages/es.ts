@@ -413,7 +413,7 @@ export const es: Record<MessageKey, string> = {
   "settings.savings": "Ahorro",
   "settings.sections": "Secciones de configuración",
   "settings.tabAccounts": "Mis cuentas",
-  "settings.tabFixed": "Fijos",
+  "settings.tabFixed": "Gastos Fijos",
   "settings.titleAccounts": "Mis cuentas",
   "settings.titleFixed": "Gastos e ingresos fijos",
   "transfers.account": "Cuenta",
