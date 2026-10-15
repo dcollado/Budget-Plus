@@ -457,6 +457,7 @@ export const en = {
   "settings.tabFixed": "Fixed Expenses",
   "settings.titleAccounts": "My accounts",
   "settings.titleFixed": "Fixed expenses and income",
+  "settings.totalMonth": "Total this month",
   "transfers.account": "Account",
   "transfers.biweekly": "Biweekly",
   "transfers.editAccounts": "Edit accounts →",

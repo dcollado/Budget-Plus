@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "ajuste",
+        texto: {
+          en: "In Settings, each fixed list shows its column titles in the header and the month's total at the bottom, aligned under the amounts.",
+          es: "En Configuración, cada lista de fijos muestra los títulos de columna en el encabezado y el total del mes al pie, alineado bajo los montos.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "Fixed items are edited in a window: name, how often it is paid, the amount per payment and the days, with the monthly total and the split shown as you type. The table keeps just the monthly amount and the payment day.",

@@ -5,6 +5,7 @@ import { Check, Pencil, PiggyBank, Trash2 } from "lucide-react";
 import { fechaDelDia, type CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
+import { COLUMNAS_FIJOS } from "@/components/presupuesto/PartesTablaFijos";
 import { useT } from "@/lib/i18n/client";
 
 type Props = {
@@ -123,7 +124,7 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
 
   return (
     <div className="border-b border-line px-3 py-2 last:border-0">
-      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
+      <div className={`grid ${COLUMNAS_FIJOS} items-center gap-2`}>
         <button
           type="button"
           onClick={() => onEditar(item)}

@@ -458,6 +458,7 @@ export const es: Record<MessageKey, string> = {
   "settings.tabFixed": "Gastos Fijos",
   "settings.titleAccounts": "Mis cuentas",
   "settings.titleFixed": "Gastos e ingresos fijos",
+  "settings.totalMonth": "Total del mes",
   "transfers.account": "Cuenta",
   "transfers.biweekly": "Quincenal",
   "transfers.editAccounts": "Editar cuentas →",

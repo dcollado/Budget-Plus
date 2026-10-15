@@ -4,12 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FilaFija from "@/components/presupuesto/FilaFija";
 import CategoriaModal from "@/components/presupuesto/CategoriaModal";
+import { EncabezadoTablaFijos, PieTablaFijos } from "@/components/presupuesto/PartesTablaFijos";
 import SinHogar from "@/components/presupuesto/SinHogar";
 import AgregarCategoria from "@/components/presupuesto/AgregarCategoria";
 import GestionCuentas from "@/components/presupuesto/GestionCuentas";
 import { usePresupuestoMes } from "@/lib/household/usePresupuestoMes";
 import { sectionCardClass } from "@/lib/ui";
-import { formatearCentavos, mesActual } from "@/lib/household/formato";
+import { mesActual } from "@/lib/household/formato";
 import { colorMiembro, nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -176,22 +177,7 @@ function Configuracion() {
           </div>
 
           <div className={`${sectionCardClass} p-0!`}>
-            <h2 className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5 text-sm font-semibold text-text">
-              {t("settings.fixedIncome")}
-              <span className="text-sage">
-                {formatearCentavos(suma(ingresosFijos))}
-                <span className="ml-1 text-[11px] font-normal text-text-muted">{t("settings.perMonth")}</span>
-              </span>
-            </h2>
-
-            {ingresosFijos.length > 0 ? (
-              <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
-                <span />
-                <span className="text-right">{t("settings.amountMonth")}</span>
-                <span className="whitespace-nowrap text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
-                <span />
-              </div>
-            ) : null}
+            <EncabezadoTablaFijos titulo={t("settings.fixedIncome")} claseTitulo="text-sage" />
 
             {cargando ? (
               <p className="px-4 py-6 text-center text-sm text-text-muted">{t("common.loading")}</p>
@@ -207,6 +193,8 @@ function Configuracion() {
                 />
               ))
             )}
+
+            <PieTablaFijos totalCents={suma(ingresosFijos)} verde />
 
             <div className="border-t border-line">
               <AgregarCategoria
@@ -230,19 +218,10 @@ function Configuracion() {
                   key={grupo.id || "conjunto"}
                   className={`${sectionCardClass} border-t-4 p-0! ${grupo.color.borde}`}
                 >
-                  <h2 className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-sm font-semibold">
-                    <span className={grupo.color.texto}>{t("settings.fixedOf", { name: grupo.nombre })}</span>
-                    <span className="text-text">
-                      {formatearCentavos(suma(grupo.items))}
-                      <span className="ml-1 text-[11px] font-normal text-text-muted">{t("settings.perMonth")}</span>
-                    </span>
-                  </h2>
-                  <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem_5.25rem] gap-2 px-3 pt-1.5 text-[10px] uppercase tracking-wide text-text-muted sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_5.25rem]">
-                    <span />
-                    <span className="text-right">{t("settings.amountMonth")}</span>
-                    <span className="whitespace-nowrap text-center" title={t("settings.paymentDay")}>{t("settings.dayShort")}</span>
-                    <span />
-                  </div>
+                  <EncabezadoTablaFijos
+                    titulo={t("settings.fixedOf", { name: grupo.nombre })}
+                    claseTitulo={grupo.color.texto}
+                  />
                   {grupo.items.map((item) => (
                     <FilaFija
                       key={item.category.id}
@@ -253,6 +232,7 @@ function Configuracion() {
                       onEliminar={eliminarItem}
                     />
                   ))}
+                  <PieTablaFijos totalCents={suma(grupo.items)} />
                 </div>
               ))
             )}
