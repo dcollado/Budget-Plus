@@ -50,22 +50,24 @@ export default async function InicioPage() {
         <div className="absolute left-1/3 top-[28rem] h-64 w-64 rounded-full bg-gold/5 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-5">
-        <header className="flex items-center justify-between py-6">
-          <Link href="/inicio" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line bg-surface-raised text-gold">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-5">
+        {/* Móvil: logo, idioma e "Iniciar sesión" en UNA línea. Todo es
+            nowrap y más compacto; por debajo de 370px solo queda el ícono. */}
+        <header className="flex items-center justify-between gap-3 py-5 sm:py-6">
+          <Link href="/inicio" className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-surface-raised text-gold sm:h-10 sm:w-10">
               <ReceiptText size={20} />
             </span>
-            <span className="font-display text-lg font-semibold tracking-[-0.02em]">
+            <span className="whitespace-nowrap font-display text-base font-semibold tracking-[-0.02em] max-[369px]:sr-only sm:text-lg">
               Budget Plus
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
             <Link
               href="/login"
-              className="rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-sage/50"
+              className="whitespace-nowrap rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-text transition hover:border-sage/50 sm:px-4"
             >
               {t("login.signIn")}
             </Link>

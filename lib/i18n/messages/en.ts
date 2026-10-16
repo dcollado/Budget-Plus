@@ -169,6 +169,7 @@ export const en = {
   "changes.tweak": "Tweak",
   "common.actionError": "Could not complete the action.",
   "common.add": "Add",
+  "common.back": "Back",
   "common.cancel": "Cancel",
   "common.changesSaved": "Changes saved.",
   "common.close": "Close",

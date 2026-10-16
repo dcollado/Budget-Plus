@@ -170,6 +170,7 @@ export const es: Record<MessageKey, string> = {
   "changes.tweak": "Ajuste",
   "common.actionError": "No se pudo completar la acción.",
   "common.add": "Agregar",
+  "common.back": "Volver",
   "common.cancel": "Cancelar",
   "common.changesSaved": "Cambios guardados.",
   "common.close": "Cerrar",

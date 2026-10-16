@@ -52,6 +52,20 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "ajuste",
         texto: {
+          en: "On the home page, the header on phones is tidier: the logo, language switch and “Sign in” button now fit on a single line.",
+          es: "En la página de inicio, el encabezado en el celular se ve más ordenado: el logo, el idioma y el botón «Iniciar sesión» ahora caben en una sola línea.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "The What's new page now has a Back button that takes you to the screen you came from.",
+          es: "La página de Novedades ahora tiene un botón Volver que te lleva a la pantalla de donde venías.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
           en: "The Reports page now fits your phone screen: nothing is cut off on the right, and the menu item is now called “Reports”.",
           es: "La página de Reportes ahora cabe en la pantalla del celular: nada se corta a la derecha, y la opción del menú ahora se llama «Reportes».",
         },

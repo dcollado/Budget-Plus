@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CHANGELOG, type CambioTipo } from "@/lib/changelog";
+import { BackButton } from "@/components/back-button";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { getT } from "@/lib/i18n/server";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -43,7 +44,8 @@ export default async function CambiosPage() {
   return (
     <main className="min-h-screen bg-ink px-5 py-10 text-text">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <BackButton />
           <LanguageSwitcher />
         </div>
 
