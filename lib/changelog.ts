@@ -22,6 +22,22 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-20",
+    titulo: {
+      en: "Payment reminders",
+      es: "Recordatorios de pago",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "New notifications bell: it tells you when a payment in your budget is due today or tomorrow, based on the payment day you set.",
+          es: "Nueva campana de notificaciones: te avisa cuando un pago de tu presupuesto vence hoy o mañana, según el día de pago que configuraste.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-19",
     titulo: {
       en: "Signing in is quicker",
