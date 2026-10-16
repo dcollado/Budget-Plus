@@ -70,7 +70,7 @@ function denegar(status: 401 | 403, message: string): Resultado {
 }
 
 async function cargar(req: NextRequest): Promise<Resultado> {
-  const usuarioId = getUsuarioId(req);
+  const usuarioId = await getUsuarioId(req);
   if (!usuarioId) return denegar(401, "Unauthorized.");
 
   const acceso = await obtenerAcceso(usuarioId);

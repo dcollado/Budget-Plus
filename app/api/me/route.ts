@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUsuarioId, getUsuarioNombre } from "@/lib/current-user";
+import { getIdentidad } from "@/lib/current-user";
 import { obtenerAcceso } from "@/lib/auth/acceso";
 import { getSql, usaPostgres } from "@/lib/db";
 
 // Quién está conectado y lo mínimo que la UI necesita (cabecera, perfil,
 // links de admin). La autorización real se vuelve a verificar en cada ruta.
 export async function GET(req: NextRequest) {
-  const usuarioId = getUsuarioId(req);
+  const identidad = await getIdentidad(req);
+  const usuarioId = identidad?.usuarioId ?? null;
   const acceso = usuarioId ? await obtenerAcceso(usuarioId) : null;
 
   if (!usuarioId || !acceso) {
     return NextResponse.json({ success: false }, { status: 401 });
   }
 
-  let nombre = getUsuarioNombre(req) ?? "";
+  let nombre = identidad?.nombre ?? "";
   let email: string | null = null;
   let hogar: string | null = null;
-  let usuario = getUsuarioNombre(req) ?? "";
+  let usuario = identidad?.nombre ?? "";
   let idioma: string | null = null;
 
   if (usaPostgres()) {

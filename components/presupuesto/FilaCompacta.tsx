@@ -204,10 +204,10 @@ export default function FilaCompacta({
             <EtiquetaDueno ownerMemberId={item.category.ownerMemberId} members={members} />
           </span>
           {conCuenta && nombreCuenta ? (
-            <span className="block truncate text-[11px] text-text-muted">→ {nombreCuenta}</span>
+            <span className="block truncate text-xs text-text-muted">→ {nombreCuenta}</span>
           ) : null}
           {item.nota ? (
-            <span className="block truncate text-[11px] italic text-text-muted">{item.nota}</span>
+            <span className="block truncate text-xs italic text-text-muted">{item.nota}</span>
           ) : null}
         </span>
 

@@ -91,7 +91,7 @@ export default function TablaHogares({
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full min-w-[34rem] text-sm">
           <thead>
-            <tr className="border-y border-line text-[11px] uppercase tracking-wide text-text-muted">
+            <tr className="border-y border-line text-xs uppercase tracking-wide text-text-muted">
               <th className="px-4 py-2 text-left font-medium sm:px-5">{t("admin.colHousehold")}</th>
               <th className="px-3 py-2 text-left font-medium">{t("admin.colAdmin")}</th>
               <th className="px-3 py-2 text-right font-medium">{t("admin.colPeople")}</th>

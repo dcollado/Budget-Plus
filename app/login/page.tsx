@@ -142,7 +142,7 @@ export default function LoginPage() {
                 key={item.label}
                 className="rounded-2xl border border-line bg-surface/80 p-4"
               >
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+                <p className="font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
                   {item.label}
                 </p>
                 <p className={`mt-2 font-display text-lg font-semibold ${item.tone}`}>
@@ -293,7 +293,7 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="mt-5 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+          <p className="mt-5 text-center font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
             Budget Plus
           </p>
           <p className="mt-2 text-center text-xs">

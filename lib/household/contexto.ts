@@ -44,7 +44,7 @@ export type ResultadoHogar =
 // dejó el proxy + hogar del usuario. Devuelve el contexto o la respuesta de
 // error lista para retornar (401 sin sesión, 409 sin hogar).
 export async function requerirHogar(req: NextRequest): Promise<ResultadoHogar> {
-  const usuarioId = getUsuarioId(req);
+  const usuarioId = await getUsuarioId(req);
   if (!usuarioId) return { ok: false, response: fallo("Unauthorized.", 401) };
 
   const contexto = await getContextoHogar(usuarioId);

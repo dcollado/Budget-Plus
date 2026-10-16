@@ -7,7 +7,7 @@ import { LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
 // here so the choice applies on the next request without a re-login.
 export async function PATCH(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
+    const usuarioId = await getUsuarioId(req);
     if (!usuarioId) {
       return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
     }

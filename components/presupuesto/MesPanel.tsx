@@ -26,7 +26,7 @@ function Widget({
 }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
-      <p className="text-[11px] uppercase tracking-wide text-text-muted">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-text-muted">{label}</p>
       <p className={`mt-0.5 text-base font-semibold ${color}`}>{formatearCentavos(valor)}</p>
     </div>
   );

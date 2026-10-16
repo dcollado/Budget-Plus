@@ -129,12 +129,17 @@ async function manejar(req: NextRequest, session: SessionPayload | null) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Pasa la identidad ya verificada a las rutas vía headers, para que no
-  // tengan que re-verificar la cookie cada una por su cuenta (ver
-  // lib/current-user.ts).
+  // Las rutas verifican la cookie firmada por su cuenta (lib/current-user.ts)
+  // y no confían en cabeceras. Estas dos solo existen para el auto-login de
+  // `next dev`, donde la primera petición todavía no trae cookie.
   const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-usuario-id", session.usuarioId);
-  requestHeaders.set("x-usuario-nombre", session.username);
+  requestHeaders.delete("x-usuario-id");
+  requestHeaders.delete("x-usuario-nombre");
+
+  if (process.env.NODE_ENV === "development") {
+    requestHeaders.set("x-usuario-id", session.usuarioId);
+    requestHeaders.set("x-usuario-nombre", session.username);
+  }
 
   return NextResponse.next({
     request: { headers: requestHeaders },

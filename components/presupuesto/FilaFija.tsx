@@ -138,7 +138,7 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
             ) : null}
           </span>
           {dosPagos ? (
-            <span className="block text-[11px] text-gold">
+            <span className="block text-xs text-gold">
               {t("row.splitSummary", {
                 each: formatearCentavos(porPago),
                 d1: textoDia(c.dueDay),

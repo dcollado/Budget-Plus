@@ -50,6 +50,20 @@ export const CHANGELOG: EntradaChangelog[] = [
         },
       },
       {
+        tipo: "mejora",
+        texto: {
+          en: "Small labels and captions are now a bit larger, so they are easier to read on your phone.",
+          es: "Las etiquetas y textos pequeños ahora son un poco más grandes, para leerlos mejor en el celular.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Pop-up windows work better with the keyboard: Tab stays inside the window and, when you close it, you go back to where you were.",
+          es: "Las ventanas emergentes funcionan mejor con el teclado: Tab se queda dentro de la ventana y, al cerrarla, vuelves a donde estabas.",
+        },
+      },
+      {
         tipo: "ajuste",
         texto: {
           en: "If something goes wrong, you now see a friendly screen with a retry button instead of a blank page.",

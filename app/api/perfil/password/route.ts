@@ -23,7 +23,7 @@ function error(message: string, status: number) {
 // la cookie de ESTA sesión para que no se salga.
 export async function POST(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
+    const usuarioId = await getUsuarioId(req);
     if (!usuarioId) return error("Unauthorized.", 401);
 
     if (!usaPostgres()) {

@@ -46,7 +46,7 @@ export default function EtiquetaDueno({
     <span
       title={nombre}
       aria-label={t("owner.of", { name: nombre })}
-      className={`flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${color.fondo} ${color.texto}`}
+      className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-semibold ${color.fondo} ${color.texto}`}
     >
       {nombre.charAt(0)}
     </span>

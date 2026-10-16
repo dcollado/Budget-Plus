@@ -23,7 +23,7 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
 
   return (
     <div className="text-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-b border-line px-4 py-2 text-[11px] uppercase tracking-wide text-text-muted">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-b border-line px-4 py-2 text-xs uppercase tracking-wide text-text-muted">
         <span>{t("transfers.account")}</span>
         <span className="w-20 text-right">{t("transfers.monthly")}</span>
         <span className="w-20 text-right">{t("transfers.biweekly")}</span>

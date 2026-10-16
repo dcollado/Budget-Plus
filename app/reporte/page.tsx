@@ -33,7 +33,7 @@ const dinero = (cents: number) => (cents === 0 ? "—" : formatearCentavos(cents
 function Tarjeta({ label, valor, color }: { label: string; valor: number; color: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
-      <p className="text-[11px] uppercase tracking-wide text-text-muted">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-text-muted">{label}</p>
       <p className={`mt-0.5 text-base font-semibold ${color}`}>{formatearCentavos(valor)}</p>
     </div>
   );
@@ -155,7 +155,7 @@ export default function ReportePage() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-[34rem] text-sm">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wide text-text-muted">
+                  <tr className="text-xs uppercase tracking-wide text-text-muted">
                     <th className="px-4 py-2 text-left font-medium">{t("report.month")}</th>
                     <th className="px-3 py-2 text-right font-medium">{t("report.income")}</th>
                     <th className="px-3 py-2 text-right font-medium">{t("report.fixed")}</th>
@@ -180,7 +180,7 @@ export default function ReportePage() {
                         <td className="px-4 py-2 font-medium">
                           {nombreMes(m.month, t.locale)}
                           {esActual ? (
-                            <span className="ml-2 text-[10px] font-semibold uppercase text-gold">
+                            <span className="ml-2 text-xs font-semibold uppercase text-gold">
                               {t("report.today")}
                             </span>
                           ) : null}
@@ -222,7 +222,7 @@ export default function ReportePage() {
                       <span className="font-medium">
                         {nombreMes(m.month, t.locale)}
                         {esActual ? (
-                          <span className="ml-2 text-[10px] font-semibold uppercase text-gold">
+                          <span className="ml-2 text-xs font-semibold uppercase text-gold">
                             {t("report.today")}
                           </span>
                         ) : null}
@@ -266,7 +266,7 @@ export default function ReportePage() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-[24rem] text-sm">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wide text-text-muted">
+                  <tr className="text-xs uppercase tracking-wide text-text-muted">
                     <th className="px-4 py-2 text-left font-medium">{t("report.person")}</th>
                     <th className="px-3 py-2 text-right font-medium">{t("report.income")}</th>
                     <th className="px-3 py-2 text-right font-medium">{t("report.expenses")}</th>

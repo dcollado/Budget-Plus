@@ -5,7 +5,7 @@ import { listarNotificaciones, marcarLeida, marcarTodasLeidas } from "@/lib/noti
 
 // Las notificaciones de la persona conectada (la campana).
 export async function GET(req: NextRequest) {
-  const usuarioId = getUsuarioId(req);
+  const usuarioId = await getUsuarioId(req);
   if (!usuarioId) return fallo("Unauthorized.", 401);
 
   try {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 // Marca una (id) o todas (todas: true) como leídas. Solo las propias.
 export async function PATCH(req: NextRequest) {
-  const usuarioId = getUsuarioId(req);
+  const usuarioId = await getUsuarioId(req);
   if (!usuarioId) return fallo("Unauthorized.", 401);
 
   try {

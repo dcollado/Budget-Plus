@@ -22,11 +22,11 @@ export function EncabezadoTablaFijos({
   return (
     <div className={`grid ${COLUMNAS_FIJOS} items-end gap-2 border-b border-line px-3 py-2.5`}>
       <h2 className={`min-w-0 break-words text-sm font-semibold ${claseTitulo}`}>{titulo}</h2>
-      <span className="text-right text-[10px] uppercase tracking-wide text-text-muted">
+      <span className="text-right text-xs uppercase tracking-wide text-text-muted">
         {t("settings.amountMonth")}
       </span>
       <span
-        className="whitespace-nowrap text-center text-[10px] uppercase tracking-wide text-text-muted"
+        className="whitespace-nowrap text-center text-xs uppercase tracking-wide text-text-muted"
         title={t("settings.paymentDay")}
       >
         {t("settings.dayShort")}

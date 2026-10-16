@@ -9,7 +9,7 @@ import { listMembers } from "@/lib/household/datos";
 // vez de tres — son datos chicos que casi no cambian.
 export async function GET(req: NextRequest) {
   try {
-    const usuarioId = getUsuarioId(req);
+    const usuarioId = await getUsuarioId(req);
 
     if (!usuarioId) {
       return fallo("Unauthorized.", 401);
