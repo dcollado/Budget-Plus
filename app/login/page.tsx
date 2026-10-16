@@ -243,10 +243,7 @@ export default function LoginPage() {
               </div>
 
               <label className="flex cursor-pointer items-center justify-between gap-4">
-                <span className="text-sm text-text">
-                  {t("login.rememberUser")}
-                  <span className="block text-xs text-text-muted">{t("login.rememberUserHint")}</span>
-                </span>
+                <span className="text-sm text-text">{t("login.rememberUser")}</span>
                 <input
                   type="checkbox"
                   role="switch"
