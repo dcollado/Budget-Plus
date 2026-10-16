@@ -10,6 +10,18 @@ export const SESION_LARGA_SEGUNDOS = 30 * 24 * 60 * 60;
 export const duracionSesionSegundos = (larga: boolean) =>
   larga ? SESION_LARGA_SEGUNDOS : SESION_CORTA_SEGUNDOS;
 
+// Sesión larga con "deslizamiento": cada visita la renueva, así que siempre dura
+// 30 días desde la última actividad. Para no reemitir la cookie en cada petición,
+// solo se renueva cuando ya pasó más de un día desde la última renovación.
+const RENOVAR_TRAS_MS = 24 * 60 * 60 * 1000;
+
+export function debeRenovarSesion(payload: { larga?: boolean; expiresAt: number }, ahora = Date.now()) {
+  return (
+    payload.larga === true &&
+    payload.expiresAt - ahora < SESION_LARGA_SEGUNDOS * 1000 - RENOVAR_TRAS_MS
+  );
+}
+
 function getSecret(): string {
   const secret = process.env.SESSION_SECRET;
 

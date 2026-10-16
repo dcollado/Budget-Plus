@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import {
   COOKIE_NAME,
   createSessionToken,
+  debeRenovarSesion,
+  duracionSesionSegundos,
   verifySessionToken,
 } from "@/lib/auth-session";
 import type { SessionPayload } from "@/lib/auth-session";
@@ -56,6 +58,21 @@ export async function proxy(req: NextRequest) {
   if (!dev) {
     const respuesta = await manejar(req, real);
     if (expulsada) respuesta.cookies.delete(COOKIE_NAME);
+
+    // "Recordarme": cada visita renueva los 30 días (ver debeRenovarSesion).
+    if (real && debeRenovarSesion(real)) {
+      respuesta.cookies.set(
+        COOKIE_NAME,
+        await createSessionToken(real.usuarioId, real.username, real.sv ?? 0, true),
+        {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: duracionSesionSegundos(true),
+        }
+      );
+    }
     return respuesta;
   }
 

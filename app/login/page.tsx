@@ -19,7 +19,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // "Recordar mi usuario": solo el texto, guardado en este navegador.
+  // "Recordarme": guarda el usuario (solo el texto, en este navegador) y mantiene
+  // la sesión 30 días desde la última visita, en vez de 8 horas.
   const [mantener, setMantener] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +54,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           username,
           password,
+          recordar: mantener,
         }),
       });
 
@@ -241,7 +243,10 @@ export default function LoginPage() {
               </div>
 
               <label className="flex cursor-pointer items-center justify-between gap-4">
-                <span className="text-sm text-text">{t("login.rememberUser")}</span>
+                <span className="text-sm text-text">
+                  {t("login.rememberUser")}
+                  <span className="block text-xs text-text-muted">{t("login.rememberUserHint")}</span>
+                </span>
                 <input
                   type="checkbox"
                   role="switch"
