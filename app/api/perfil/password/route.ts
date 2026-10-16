@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_NAME, createSessionToken } from "@/lib/auth-session";
+import {
+  COOKIE_NAME,
+  createSessionToken,
+  duracionSesionSegundos,
+  verifySessionToken,
+} from "@/lib/auth-session";
 import { getUsuarioId } from "@/lib/current-user";
 import { getSql, usaPostgres } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password-hash";
@@ -64,12 +69,16 @@ export async function POST(req: NextRequest) {
     await registrarEvento({ accion: "contrasena_cambiada", actorUserId: usuarioId });
 
     const respuesta = NextResponse.json({ success: true });
-    respuesta.cookies.set(COOKIE_NAME, await createSessionToken(usuarioId, u.usuario, version), {
+    // Si la sesión era de "mantener sesión iniciada", la nueva también lo es.
+    const sesionActual = await verifySessionToken(req.cookies.get(COOKIE_NAME)?.value);
+    const larga = sesionActual?.larga === true;
+
+    respuesta.cookies.set(COOKIE_NAME, await createSessionToken(usuarioId, u.usuario, version, larga), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 8 * 60 * 60,
+      maxAge: duracionSesionSegundos(larga),
     });
 
     return respuesta;

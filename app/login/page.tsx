@@ -1,11 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ReceiptText } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
+
+// Clave donde se guarda el usuario recordado (solo el texto, nunca la contraseña).
+const CLAVE_USUARIO = "bp.usuario";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +19,26 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // "Recordar mi usuario" (se guarda solo el texto, en este navegador) y
+  // "Mantener sesión iniciada" (sesión de 30 días en vez de 8 horas).
+  const [recordarUsuario, setRecordarUsuario] = useState(false);
+  const [mantener, setMantener] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  // Al abrir: si había un usuario guardado, ya aparece escrito y el cursor
+  // va directo a la contraseña.
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem(CLAVE_USUARIO);
+      if (guardado) {
+        setUsername(guardado);
+        setRecordarUsuario(true);
+        passwordRef.current?.focus();
+      }
+    } catch {
+      /* sin almacenamiento: se escribe a mano */
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,6 +55,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           username,
           password,
+          recordar: mantener,
         }),
       });
 
@@ -43,6 +67,13 @@ export default function LoginPage() {
       if (!response.ok) {
         setError(t.msg(data.message, "login.errorGeneric"));
         return;
+      }
+
+      try {
+        if (recordarUsuario) localStorage.setItem(CLAVE_USUARIO, username.trim());
+        else localStorage.removeItem(CLAVE_USUARIO);
+      } catch {
+        /* sin almacenamiento: no pasa nada */
       }
 
       const nextPath = new URLSearchParams(window.location.search).get("next");
@@ -188,6 +219,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <input
                     id="password"
+                    ref={passwordRef}
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
@@ -209,6 +241,33 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={recordarUsuario}
+                    onChange={(e) => setRecordarUsuario(e.target.checked)}
+                    disabled={loading}
+                    className="h-4 w-4 accent-[var(--color-sage)]"
+                  />
+                  {t("login.rememberUser")}
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={mantener}
+                    onChange={(e) => setMantener(e.target.checked)}
+                    disabled={loading}
+                    className="mt-0.5 h-4 w-4 accent-[var(--color-sage)]"
+                  />
+                  <span>
+                    {t("login.keepSignedIn")}
+                    <span className="block text-xs text-text-muted">{t("login.keepSignedInHint")}</span>
+                  </span>
+                </label>
               </div>
 
               {error && (
