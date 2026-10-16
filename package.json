@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "respaldo": "node --env-file=.env.local scripts/respaldo-db.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
