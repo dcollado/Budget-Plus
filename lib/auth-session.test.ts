@@ -40,6 +40,18 @@ describe("duración de la sesión", () => {
     expect(SESION_LARGA_SEGUNDOS).toBeGreaterThan(SESION_CORTA_SEGUNDOS);
   });
 
+  it("la sesión larga se renueva con la actividad, la corta no", async () => {
+    const { debeRenovarSesion, SESION_LARGA_SEGUNDOS, SESION_CORTA_SEGUNDOS } = await sesion();
+    const ahora = Date.now();
+
+    // Recién emitida: no hace falta renovar.
+    expect(debeRenovarSesion({ larga: true, expiresAt: ahora + SESION_LARGA_SEGUNDOS * 1000 }, ahora)).toBe(false);
+    // Pasaron 2 días desde la última renovación: se renueva.
+    expect(debeRenovarSesion({ larga: true, expiresAt: ahora + (SESION_LARGA_SEGUNDOS - 2 * 86400) * 1000 }, ahora)).toBe(true);
+    // La sesión corta nunca se renueva sola.
+    expect(debeRenovarSesion({ expiresAt: ahora + (SESION_CORTA_SEGUNDOS - 3600) * 1000 }, ahora)).toBe(false);
+  });
+
   it("rechaza un token alterado (no se puede alargar a mano)", async () => {
     const { createSessionToken, verifySessionToken } = await sesion();
     const token = await createSessionToken("u1", "ana", 0);
