@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { I18nProvider } from "@/lib/i18n/client";
@@ -47,6 +49,8 @@ export default async function RootLayout({
         <I18nProvider locale={locale}>
           <AppShell>{children}</AppShell>
         </I18nProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
