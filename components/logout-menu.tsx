@@ -86,7 +86,7 @@ export function LogoutMenu() {
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-rust transition hover:bg-rust/10 disabled:opacity-60"
+            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-rust-text transition hover:bg-rust/10 disabled:opacity-60"
           >
             <LogOut size={17} />
             {loggingOut ? t("userMenu.signingOut") : t("userMenu.signOut")}

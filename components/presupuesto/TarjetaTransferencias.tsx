@@ -84,7 +84,7 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
                   {t("transfers.remainder")}{" "}
                   <span
                     className={`font-semibold ${
-                      cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"
+                      cuadro.remanenteCents < 0 ? "text-rust-text" : "text-sage"
                     }`}
                   >
                     {formatearCentavos(cuadro.remanenteCents)}

@@ -52,7 +52,7 @@ export function AuthError({ children }: { children: React.ReactNode }) {
   return (
     <div
       role="alert"
-      className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust"
+      className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust-text"
     >
       {children}
     </div>

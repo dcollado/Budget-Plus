@@ -234,7 +234,7 @@ export default function FilaCompacta({
             <button
               type="button"
               onClick={eliminar}
-              className="rounded-md p-1 text-text-muted transition hover:text-rust"
+              className="rounded-md p-1 text-text-muted transition hover:text-rust-text"
               aria-label={t("row.delete", { name: item.category.name })}
             >
               <Trash2 size={13} />
@@ -298,7 +298,7 @@ export default function FilaCompacta({
         </div>
       ) : null}
 
-      {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-rust-text">{error}</p> : null}
     </div>
   );
 }

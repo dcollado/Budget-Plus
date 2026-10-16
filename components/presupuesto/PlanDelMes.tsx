@@ -121,7 +121,7 @@ function FilaCategoria({
         />
       </div>
 
-      {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-rust-text">{error}</p> : null}
     </div>
   );
 }
@@ -191,7 +191,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
   return (
     <div className="mb-6">
       {error ? (
-        <div className="mb-4 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust">
+        <div className="mb-4 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text">
           {error}
         </div>
       ) : null}
@@ -206,7 +206,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
           </div>
           <div className={sectionCardClass}>
             <p className="text-xs uppercase tracking-wide text-text-muted">{t("plan.spent")}</p>
-            <p className="mt-1 text-lg font-semibold text-rust">
+            <p className="mt-1 text-lg font-semibold text-rust-text">
               {formatearCentavos(totales.actualExpenseCents)}
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function PlanDelMes({ month, refreshKey }: Props) {
             <p className="text-xs uppercase tracking-wide text-text-muted">{t("month.leftToSpend")}</p>
             <p
               className={`mt-1 text-lg font-semibold ${
-                restante < 0 ? "text-rust" : "text-sage"
+                restante < 0 ? "text-rust-text" : "text-sage"
               }`}
             >
               {formatearCentavos(restante)}

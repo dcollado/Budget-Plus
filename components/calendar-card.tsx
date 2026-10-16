@@ -150,7 +150,7 @@ export function CalendarCard({
           className={`rounded-xl border px-4 py-3 text-sm ${
             mensaje.tipo === "ok"
               ? "border-sage/30 bg-surface text-text"
-              : "border-rust/30 bg-rust-soft text-rust"
+              : "border-rust/30 bg-rust-soft text-rust-text"
           }`}
         >
           {mensaje.texto}
@@ -176,7 +176,7 @@ export function CalendarCard({
                   type="button"
                   onClick={desconectar}
                   disabled={ocupado}
-                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-rust transition hover:bg-rust/10 disabled:opacity-60"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-rust-text transition hover:bg-rust/10 disabled:opacity-60"
                 >
                   {t("calendar.disconnect")}
                 </button>
@@ -205,7 +205,7 @@ export function CalendarCard({
                       </button>
                     </span>
                   ) : (
-                    <span className="mt-1 block text-rust">{t("calendar.noServiceAccount")}</span>
+                    <span className="mt-1 block text-rust-text">{t("calendar.noServiceAccount")}</span>
                   )}
                 </li>
                 <li>{t("calendar.step3")}</li>

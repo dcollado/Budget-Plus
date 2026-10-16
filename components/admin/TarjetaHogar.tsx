@@ -248,7 +248,7 @@ export function TarjetaHogar({
                             onEstado(m.userId, false, etiqueta);
                           }
                         }}
-                        className={`${botonAccion} text-rust hover:bg-rust/10`}
+                        className={`${botonAccion} text-rust-text hover:bg-rust/10`}
                       >
                         <UserMinus size={14} /> {t("household.remove")}
                       </button>
@@ -296,7 +296,7 @@ export function TarjetaHogar({
                         type="button"
                         disabled={ocupado}
                         onClick={() => onCancelar(i.id, i.email)}
-                        className={`${botonAccion} text-rust hover:bg-rust/10`}
+                        className={`${botonAccion} text-rust-text hover:bg-rust/10`}
                       >
                         <X size={14} /> {t("common.cancel")}
                       </button>
@@ -367,7 +367,7 @@ export function TarjetaHogar({
                     type="button"
                     disabled={ocupado}
                     onClick={onEliminar}
-                    className={`${botonAccion} text-rust hover:bg-rust/10`}
+                    className={`${botonAccion} text-rust-text hover:bg-rust/10`}
                   >
                     <Trash2 size={14} /> {t("household.deletePermanently")}
                   </button>

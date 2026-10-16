@@ -100,14 +100,14 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
             <span className="font-semibold text-text">{t("transfers.remainder")}</span>
             <span
               className={`w-20 text-right font-semibold ${
-                cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"
+                cuadro.remanenteCents < 0 ? "text-rust-text" : "text-sage"
               }`}
             >
               {formatearCentavos(cuadro.remanenteCents)}
             </span>
             <span
               className={`w-20 text-right font-semibold ${
-                cuadro.remanenteCents < 0 ? "text-rust" : "text-sage"
+                cuadro.remanenteCents < 0 ? "text-rust-text" : "text-sage"
               }`}
             >
               {formatearCentavos(quincena(cuadro.remanenteCents))}

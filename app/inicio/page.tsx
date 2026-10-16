@@ -27,10 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
 const FEATURES: { icon: typeof Users; title: MessageKey; body: MessageKey; tone: string }[] = [
   { icon: Users, title: "home.f1Title", body: "home.f1Body", tone: "text-gold" },
   { icon: Repeat, title: "home.f2Title", body: "home.f2Body", tone: "text-sage" },
-  { icon: Wallet, title: "home.f3Title", body: "home.f3Body", tone: "text-rust" },
+  { icon: Wallet, title: "home.f3Title", body: "home.f3Body", tone: "text-rust-text" },
   { icon: ChartNoAxesCombined, title: "home.f4Title", body: "home.f4Body", tone: "text-gold" },
   { icon: CalendarCheck, title: "home.f5Title", body: "home.f5Body", tone: "text-sage" },
-  { icon: ShieldCheck, title: "home.f6Title", body: "home.f6Body", tone: "text-rust" },
+  { icon: ShieldCheck, title: "home.f6Title", body: "home.f6Body", tone: "text-rust-text" },
 ];
 
 const STEPS: { title: MessageKey; body: MessageKey }[] = [

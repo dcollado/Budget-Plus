@@ -142,7 +142,7 @@ function Configuracion() {
       </div>
 
       {error ? (
-        <div className="mb-4 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust">
+        <div className="mb-4 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text">
           {error}
         </div>
       ) : null}

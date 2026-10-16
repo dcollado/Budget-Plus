@@ -65,7 +65,7 @@ export default function AgregarCategoria({
       : variant === "fila"
         ? "flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-text-muted transition hover:text-gold"
         : `inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium transition hover:border-gold/50 ${
-            esIngreso ? "text-sage" : "text-rust"
+            esIngreso ? "text-sage" : "text-rust-text"
           }`;
 
   return (

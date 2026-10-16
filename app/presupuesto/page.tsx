@@ -44,7 +44,7 @@ export default function PresupuestoPage() {
             type="month"
             value={month}
             onChange={(e) => e.target.value && setMonth(e.target.value)}
-            className="rounded-xl border border-line bg-surface-raised px-3 py-2.5 text-sm text-text outline-none"
+            className="rounded-xl border border-line bg-surface-raised px-3 py-2.5 text-sm text-text outline-none transition focus:border-sage focus:ring-4 focus:ring-sage/10"
           />
         </label>
       </div>

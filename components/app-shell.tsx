@@ -275,7 +275,7 @@ export function AppShell({
                       void handleLogout();
                     }}
                     disabled={loggingOut}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rust transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rust-text transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogOut size={16} className="shrink-0" />
                     {loggingOut ? t("userMenu.signingOut") : t("userMenu.signOut")}
@@ -353,7 +353,7 @@ export function AppShell({
                   void handleLogout();
                 }}
                 disabled={loggingOut}
-                className="mt-1 flex items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-rust transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-1 flex items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-rust-text transition hover:bg-rust/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LogOut size={18} />
 

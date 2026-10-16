@@ -134,7 +134,7 @@ export default function LoginPage() {
 
           <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
             {[
-              { label: t("login.bills"), value: t("login.organized"), tone: "text-rust" },
+              { label: t("login.bills"), value: t("login.organized"), tone: "text-rust-text" },
               { label: t("login.transactions"), value: t("login.upToDate"), tone: "text-sage" },
               { label: t("login.reports"), value: t("login.clear"), tone: "text-gold" },
             ].map((item) => (
@@ -261,7 +261,7 @@ export default function LoginPage() {
               {error && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust"
+                  className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust-text"
                 >
                   {error}
                 </div>

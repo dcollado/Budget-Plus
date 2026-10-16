@@ -111,7 +111,7 @@ export default function ReportePage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust">
+        <div className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text">
           {error}
         </div>
       ) : null}
@@ -138,12 +138,12 @@ export default function ReportePage() {
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             <Tarjeta label={t("report.income")} valor={reporte.totales.ingresosCents} color="text-sage" />
             <Tarjeta label={t("report.fixedExpenses")} valor={reporte.totales.fijosCents} color="text-text" />
-            <Tarjeta label={t("report.variable")} valor={reporte.totales.variablesCents} color="text-rust" />
+            <Tarjeta label={t("report.variable")} valor={reporte.totales.variablesCents} color="text-rust-text" />
             <Tarjeta label={t("report.savings")} valor={reporte.totales.ahorroCents} color="text-sage" />
             <Tarjeta
               label={t("report.leftOver")}
               valor={reporte.totales.sobranteCents}
-              color={reporte.totales.sobranteCents < 0 ? "text-rust" : "text-sage"}
+              color={reporte.totales.sobranteCents < 0 ? "text-rust-text" : "text-sage"}
             />
           </section>
 
@@ -193,7 +193,7 @@ export default function ReportePage() {
                         </td>
                         <td
                           className={`px-4 py-2 text-right font-semibold tabular-nums ${
-                            vacio ? "" : m.sobranteCents < 0 ? "text-rust" : "text-sage"
+                            vacio ? "" : m.sobranteCents < 0 ? "text-rust-text" : "text-sage"
                           }`}
                         >
                           {vacio ? "—" : formatearCentavos(m.sobranteCents)}
@@ -229,7 +229,7 @@ export default function ReportePage() {
                       </span>
                       <span
                         className={`font-semibold tabular-nums ${
-                          vacio ? "" : m.sobranteCents < 0 ? "text-rust" : "text-sage"
+                          vacio ? "" : m.sobranteCents < 0 ? "text-rust-text" : "text-sage"
                         }`}
                       >
                         {vacio ? "—" : formatearCentavos(m.sobranteCents)}
@@ -291,7 +291,7 @@ export default function ReportePage() {
                       </td>
                       <td
                         className={`px-4 py-2 text-right font-semibold tabular-nums ${
-                          p.memberId && p.sobranteCents < 0 ? "text-rust" : "text-text"
+                          p.memberId && p.sobranteCents < 0 ? "text-rust-text" : "text-text"
                         }`}
                       >
                         {p.memberId ? formatearCentavos(p.sobranteCents) : "—"}
@@ -314,7 +314,7 @@ export default function ReportePage() {
                     </span>
                     <span
                       className={`font-semibold tabular-nums ${
-                        p.memberId && p.sobranteCents < 0 ? "text-rust" : "text-text"
+                        p.memberId && p.sobranteCents < 0 ? "text-rust-text" : "text-text"
                       }`}
                     >
                       {p.memberId ? formatearCentavos(p.sobranteCents) : "—"}
@@ -345,7 +345,7 @@ export default function ReportePage() {
           <section className={`${sectionCardClass} p-0!`}>
             <h2 className="flex items-center justify-between border-b border-line px-4 py-3 text-sm font-semibold text-text">
               {t("report.extraordinary")}
-              <span className="text-rust">{formatearCentavos(totalExtraordinarios)}</span>
+              <span className="text-rust-text">{formatearCentavos(totalExtraordinarios)}</span>
             </h2>
 
             {reporte.extraordinarios.length === 0 ? (

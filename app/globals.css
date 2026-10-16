@@ -11,6 +11,8 @@
   --color-sage-soft: #1C2A1D;
   --color-rust: #C1553A;
   --color-rust-soft: #2B1A15;
+  /* Rojo para TEXTO: --color-rust solo da 3.4-4.0:1 sobre los fondos; este llega a 4.9+ (AA). */
+  --color-rust-text: #E0735A;
   --color-gold: #D2A24C;
   --color-gold-soft: #2C2412;
 
@@ -39,4 +41,16 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="month"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
+}
+
+/* Quien pidió menos movimiento en su sistema no ve animaciones ni transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -531,7 +531,7 @@ export default function CategoriaModal({
         {error ? (
           <p
             role="alert"
-            className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust"
+            className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text"
           >
             {error}
           </p>

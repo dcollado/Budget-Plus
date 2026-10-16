@@ -204,14 +204,14 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
             type="button"
             onClick={eliminar}
             disabled={eliminando}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-rust/10 hover:text-rust disabled:opacity-50"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-rust/10 hover:text-rust-text disabled:opacity-50"
             aria-label={t("row.delete", { name: c.name })}
           >
             <Trash2 size={14} />
           </button>
         </span>
       </div>
-      {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-rust-text">{error}</p> : null}
     </div>
   );
 }

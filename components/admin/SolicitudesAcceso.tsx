@@ -106,7 +106,7 @@ export default function SolicitudesAcceso({ onDecidida }: { onDecidida: () => vo
           className={`rounded-xl border px-4 py-3 text-sm ${
             mensaje.tipo === "ok"
               ? "border-sage/30 bg-surface text-text"
-              : "border-rust/30 bg-rust-soft text-rust"
+              : "border-rust/30 bg-rust-soft text-rust-text"
           }`}
         >
           {mensaje.texto}
@@ -211,7 +211,7 @@ export default function SolicitudesAcceso({ onDecidida }: { onDecidida: () => vo
                         void decidir(s, "rechazar", t("requests.deniedOk"));
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-rust transition hover:bg-rust/10 disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-rust-text transition hover:bg-rust/10 disabled:opacity-60"
                   >
                     <X size={14} /> {t("requests.deny")}
                   </button>

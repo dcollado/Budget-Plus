@@ -74,7 +74,7 @@ export default function MesPanel({ month, datos }: Props) {
       </h2>
 
       {error ? (
-        <div className="mb-3 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust">
+        <div className="mb-3 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text">
           {error}
         </div>
       ) : null}
@@ -82,11 +82,11 @@ export default function MesPanel({ month, datos }: Props) {
       <div className="mb-4 grid grid-cols-2 gap-2">
         <Widget label={t("report.income")} valor={ingresos} color="text-sage" />
         <Widget label={t("report.fixedExpenses")} valor={totalFijos} color="text-text" />
-        <Widget label={t("month.variableExpenses")} valor={totalVariables} color="text-rust" />
+        <Widget label={t("month.variableExpenses")} valor={totalVariables} color="text-rust-text" />
         <Widget
           label={t("month.leftToSpend")}
           valor={porGastar}
-          color={porGastar < 0 ? "text-rust" : "text-sage"}
+          color={porGastar < 0 ? "text-rust-text" : "text-sage"}
         />
       </div>
 

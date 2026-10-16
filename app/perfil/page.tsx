@@ -197,7 +197,7 @@ export default function PerfilPage() {
               className={`rounded-xl border px-4 py-3 text-sm ${
                 mensajeNombre.tipo === "ok"
                   ? "border-sage/30 bg-surface text-text"
-                  : "border-rust/30 bg-rust-soft text-rust"
+                  : "border-rust/30 bg-rust-soft text-rust-text"
               }`}
             >
               {mensajeNombre.texto}
@@ -238,7 +238,7 @@ export default function PerfilPage() {
             className={`rounded-xl border px-4 py-3 text-sm ${
               mensaje.tipo === "ok"
                 ? "border-sage/30 bg-surface text-text"
-                : "border-rust/30 bg-rust-soft text-rust"
+                : "border-rust/30 bg-rust-soft text-rust-text"
             }`}
           >
             {mensaje.texto}

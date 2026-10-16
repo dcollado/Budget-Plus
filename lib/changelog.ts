@@ -35,6 +35,27 @@ export const CHANGELOG: EntradaChangelog[] = [
           es: "Nueva campana de notificaciones: te avisa cuando un pago de tu presupuesto vence hoy o mañana, según el día de pago que configuraste.",
         },
       },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Error messages are easier to read: the red text is lighter and stands out better on dark backgrounds.",
+          es: "Los mensajes de error se leen mejor: el texto rojo es más claro y destaca más sobre el fondo oscuro.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "The month picker in Budget now shows when it is selected with the keyboard, and animations are skipped if your device is set to reduce motion.",
+          es: "El selector de mes en Presupuesto ahora se nota cuando lo seleccionas con el teclado, y se omiten las animaciones si tu dispositivo está configurado para reducir el movimiento.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "If something goes wrong, you now see a friendly screen with a retry button instead of a blank page.",
+          es: "Si algo sale mal, ahora ves una pantalla amable con un botón para reintentar en vez de una página en blanco.",
+        },
+      },
     ],
   },
   {

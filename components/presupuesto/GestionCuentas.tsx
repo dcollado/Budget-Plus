@@ -170,7 +170,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
                   <button
                     type="button"
                     onClick={() => borrar(cuenta)}
-                    className="rounded-md p-1 text-text-muted hover:text-rust"
+                    className="rounded-md p-1 text-text-muted hover:text-rust-text"
                     aria-label={t("accounts.delete", { name: cuenta.name })}
                   >
                     <Trash2 size={13} />
@@ -248,7 +248,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
         )}
       </div>
 
-      {error ? <p className="px-4 pb-3 text-xs text-rust">{error}</p> : null}
+      {error ? <p className="px-4 pb-3 text-xs text-rust-text">{error}</p> : null}
     </div>
   );
 }

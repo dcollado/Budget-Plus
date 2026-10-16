@@ -63,7 +63,7 @@ export default function Actividad({ refrescar }: { refrescar: number }) {
 
       {abierto ? (
         <div className="border-t border-line px-5 py-4">
-          {error ? <p className="text-sm text-rust">{error}</p> : null}
+          {error ? <p className="text-sm text-rust-text">{error}</p> : null}
           {eventos === null && !error ? (
             <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
           ) : null}
