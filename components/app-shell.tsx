@@ -18,6 +18,7 @@ import {
   usePathname,
   useRouter,
 } from "next/navigation";
+import { NotificacionesCampana } from "@/components/notificaciones-campana";
 import { useLocale, useSetLocale, useT } from "@/lib/i18n/client";
 import { isLocale } from "@/lib/i18n/config";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -207,6 +208,9 @@ export function AppShell({
             ))}
           </nav>
 
+          <div className="flex items-center gap-2">
+            {perfil ? <NotificacionesCampana /> : null}
+
           {/* User menu (desktop): click to open. */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
@@ -300,6 +304,7 @@ export function AppShell({
               <Menu size={18} />
             )}
           </button>
+          </div>
         </div>
 
         {menuOpen ? (

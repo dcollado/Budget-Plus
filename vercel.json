@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/calendario",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/notificaciones",
+      "schedule": "0 12 * * *"
     }
   ]
 }

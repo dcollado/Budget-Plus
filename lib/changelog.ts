@@ -22,6 +22,22 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-20",
+    titulo: {
+      en: "Payment reminders",
+      es: "Recordatorios de pago",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "New notifications bell: it tells you when a payment in your budget is due today or tomorrow, based on the payment day you set.",
+          es: "Nueva campana de notificaciones: te avisa cuando un pago de tu presupuesto vence hoy o mañana, según el día de pago que configuraste.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-19",
     titulo: {
       en: "Signing in is quicker",
@@ -31,8 +47,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
-          en: "A \"Remember me\" switch on the sign-in page: your username is filled in next time and you stay signed in on that device. You only sign in again after 30 days without visiting.",
-          es: "Un interruptor \"Recordarme\" en la página de acceso: tu usuario aparece escrito la próxima vez y tu sesión sigue iniciada en ese dispositivo. Solo vuelves a entrar si pasan 30 días sin visitar.",
+          en: "A \"Remember username\" switch on the sign-in page: your username is filled in next time and you stay signed in on that device. You only sign in again after 30 days without visiting.",
+          es: "Un interruptor \"Recordar usuario\" en la página de acceso: tu usuario aparece escrito la próxima vez y tu sesión sigue iniciada en ese dispositivo. Solo vuelves a entrar si pasan 30 días sin visitar.",
         },
       },
     ],

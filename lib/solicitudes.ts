@@ -4,6 +4,7 @@ import { crearHogarConAdmin } from "@/lib/admin/hogares";
 import { enviarCorreo, escaparHtml, urlApp } from "@/lib/mail";
 import { getT } from "@/lib/i18n/server";
 import { registrarEvento } from "@/lib/auth/eventos";
+import { notificarSolicitudDeAcceso, retirarAvisoDeSolicitud } from "@/lib/notificaciones";
 
 // Solicitudes públicas de acceso. Nadie crea cuenta solo: el super-admin las
 // revisa y, al aprobarlas, se crea el hogar y se manda la invitación.
@@ -88,9 +89,14 @@ export async function crearSolicitud(
     select 1 from solicitudes_acceso where lower(email) = ${email} and estado = 'pendiente'`;
   if (pendiente) return { limitada: false };
 
-  await sql`
+  const [{ id }] = await sql<{ id: string }[]>`
     insert into solicitudes_acceso (nombre, email, hogar, mensaje)
-    values (${nombre}, ${email}, ${hogar}, ${mensaje})`;
+    values (${nombre}, ${email}, ${hogar}, ${mensaje})
+    returning id`;
+
+  await notificarSolicitudDeAcceso({ id, nombre }).catch((e) =>
+    console.error("Error creating the access request notification:", e)
+  );
 
   await avisarSuperadmins({ nombre, email, hogar, mensaje }).catch((e) =>
     console.error("Error notifying about the access request:", e)
@@ -184,6 +190,8 @@ export async function aprobarSolicitud(
         household_id = ${householdId}
     where id = ${id}`;
 
+  await retirarAvisoDeSolicitud(id).catch(() => {});
+
   await registrarEvento({
     accion: "aceptar_solicitud",
     actorUserId,
@@ -199,6 +207,8 @@ export async function rechazarSolicitud(id: string, actorUserId: string): Promis
     update solicitudes_acceso
     set estado = 'rechazada', decidida_en = now(), decidida_por = ${actorUserId}
     where id = ${id}`;
+
+  await retirarAvisoDeSolicitud(id).catch(() => {});
 
   await registrarEvento({
     accion: "rechazar_solicitud",
