@@ -31,15 +31,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
-          en: "\"Remember my username\" on the sign-in page: next time your username is already filled in and the cursor goes straight to the password.",
-          es: "\"Recordar mi usuario\" en la página de acceso: la próxima vez tu usuario ya aparece escrito y el cursor va directo a la contraseña.",
-        },
-      },
-      {
-        tipo: "nuevo",
-        texto: {
-          en: "\"Keep me signed in for 30 days\" for your own device. Without it, your session lasts 8 hours as before.",
-          es: "\"Mantener mi sesión iniciada por 30 días\" para tu propio dispositivo. Sin marcarlo, la sesión dura 8 horas como antes.",
+          en: "A \"Remember my username\" switch on the sign-in page: next time your username is already filled in and the cursor goes straight to the password.",
+          es: "Un interruptor \"Recordar mi usuario\" en la página de acceso: la próxima vez tu usuario ya aparece escrito y el cursor va directo a la contraseña.",
         },
       },
     ],

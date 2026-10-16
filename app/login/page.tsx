@@ -19,9 +19,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // "Recordar mi usuario" (se guarda solo el texto, en este navegador) y
-  // "Mantener sesión iniciada" (sesión de 30 días en vez de 8 horas).
-  const [recordarUsuario, setRecordarUsuario] = useState(false);
+  // "Recordar mi usuario": solo el texto, guardado en este navegador.
   const [mantener, setMantener] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +30,7 @@ export default function LoginPage() {
       const guardado = localStorage.getItem(CLAVE_USUARIO);
       if (guardado) {
         setUsername(guardado);
-        setRecordarUsuario(true);
+        setMantener(true);
         passwordRef.current?.focus();
       }
     } catch {
@@ -55,7 +53,6 @@ export default function LoginPage() {
         body: JSON.stringify({
           username,
           password,
-          recordar: mantener,
         }),
       });
 
@@ -70,7 +67,7 @@ export default function LoginPage() {
       }
 
       try {
-        if (recordarUsuario) localStorage.setItem(CLAVE_USUARIO, username.trim());
+        if (mantener) localStorage.setItem(CLAVE_USUARIO, username.trim());
         else localStorage.removeItem(CLAVE_USUARIO);
       } catch {
         /* sin almacenamiento: no pasa nada */
@@ -243,32 +240,21 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="space-y-2.5">
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text">
-                  <input
-                    type="checkbox"
-                    checked={recordarUsuario}
-                    onChange={(e) => setRecordarUsuario(e.target.checked)}
-                    disabled={loading}
-                    className="h-4 w-4 accent-[var(--color-sage)]"
-                  />
-                  {t("login.rememberUser")}
-                </label>
-
-                <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text">
-                  <input
-                    type="checkbox"
-                    checked={mantener}
-                    onChange={(e) => setMantener(e.target.checked)}
-                    disabled={loading}
-                    className="mt-0.5 h-4 w-4 accent-[var(--color-sage)]"
-                  />
-                  <span>
-                    {t("login.keepSignedIn")}
-                    <span className="block text-xs text-text-muted">{t("login.keepSignedInHint")}</span>
-                  </span>
-                </label>
-              </div>
+              <label className="flex cursor-pointer items-center justify-between gap-4">
+                <span className="text-sm text-text">{t("login.rememberUser")}</span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={mantener}
+                  onChange={(e) => setMantener(e.target.checked)}
+                  disabled={loading}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className="relative h-6 w-11 shrink-0 rounded-full border border-line bg-surface-raised transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-text-muted after:transition-all peer-checked:border-sage peer-checked:bg-sage peer-checked:after:translate-x-5 peer-checked:after:bg-ink peer-focus-visible:ring-2 peer-focus-visible:ring-sage/50 peer-disabled:opacity-50"
+                />
+              </label>
 
               {error && (
                 <div

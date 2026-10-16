@@ -271,8 +271,6 @@ export const es: Record<MessageKey, string> = {
   "login.forgot": "¿Olvidaste tu contraseña?",
   "login.headline": "Todo lo importante de tus finanzas, en un solo lugar.",
   "login.hide": "Ocultar contraseña",
-  "login.keepSignedIn": "Mantener mi sesión iniciada por 30 días",
-  "login.keepSignedInHint": "Solo en tu propio dispositivo. Si no, la sesión dura 8 horas.",
   "login.kicker": "Panel financiero personal",
   "login.noAccount": "¿Aún no tienes acceso?",
   "login.organized": "Organizadas",

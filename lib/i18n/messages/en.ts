@@ -270,8 +270,6 @@ export const en = {
   "login.forgot": "Forgot your password?",
   "login.headline": "Everything that matters about your finances, in one place.",
   "login.hide": "Hide password",
-  "login.keepSignedIn": "Keep me signed in for 30 days",
-  "login.keepSignedInHint": "Only on your own device. Otherwise you stay signed in for 8 hours.",
   "login.kicker": "Personal finance dashboard",
   "login.noAccount": "Do not have access yet?",
   "login.organized": "Organized",
