@@ -147,7 +147,9 @@ export default function ReportePage() {
             />
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] xl:items-start">
+          {/* Columna fija en móvil: sin esto crece hasta el texto más largo (los
+              nombres de gastos extraordinarios no se parten) y ensancha la página. */}
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] xl:items-start">
           <section className={`${sectionCardClass} p-0!`}>
             <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-text">
               {t("report.monthByMonth")}

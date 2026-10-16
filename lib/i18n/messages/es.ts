@@ -326,7 +326,7 @@ export const es: Record<MessageKey, string> = {
   "nav.myAccount": "Mi cuenta",
   "nav.openMenu": "Abrir menú",
   "nav.profile": "Perfil y seguridad",
-  "nav.report": "Reporte",
+  "nav.report": "Reportes",
   "noHousehold.body": "Pídele a quien administra tu hogar que te invite con tu correo, o escribe al administrador de Budget Plus.",
   "noHousehold.title": "Tu cuenta todavía no tiene un hogar.",
   "notif.accessRequest": "{name} solicitó acceso",

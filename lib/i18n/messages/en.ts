@@ -325,7 +325,7 @@ export const en = {
   "nav.myAccount": "My account",
   "nav.openMenu": "Open menu",
   "nav.profile": "Profile and security",
-  "nav.report": "Report",
+  "nav.report": "Reports",
   "noHousehold.body": "Ask whoever manages your household to invite you with your email, or write to the Budget Plus administrator.",
   "noHousehold.title": "Your account does not have a household yet.",
   "notif.accessRequest": "{name} requested access",

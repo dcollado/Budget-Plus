@@ -50,6 +50,13 @@ export const CHANGELOG: EntradaChangelog[] = [
         },
       },
       {
+        tipo: "ajuste",
+        texto: {
+          en: "The Reports page now fits your phone screen: nothing is cut off on the right, and the menu item is now called “Reports”.",
+          es: "La página de Reportes ahora cabe en la pantalla del celular: nada se corta a la derecha, y la opción del menú ahora se llama «Reportes».",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "Small labels and captions are now a bit larger, so they are easier to read on your phone.",
