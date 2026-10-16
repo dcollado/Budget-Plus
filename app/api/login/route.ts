@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   COOKIE_NAME,
   createSessionToken,
+  duracionSesionSegundos,
 } from "@/lib/auth-session";
 import { buscarUsuarioPorNombreDeUsuario } from "@/lib/usuarios-sheet";
 import {
@@ -30,8 +31,10 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       username?: unknown;
       password?: unknown;
+      recordar?: unknown;
     };
 
+    const recordar = body.recordar === true;
     const username =
       typeof body.username === "string" ? body.username.trim() : "";
     const password =
@@ -82,7 +85,8 @@ export async function POST(request: Request) {
     const token = await createSessionToken(
       usuario.id,
       usuario.usuario,
-      usuario.sesionVersion
+      usuario.sesionVersion,
+      recordar
     );
     const response = NextResponse.json({ success: true });
 
@@ -91,7 +95,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 8 * 60 * 60,
+      maxAge: duracionSesionSegundos(recordar),
     });
 
     // Saved language preference follows the person to this browser.
