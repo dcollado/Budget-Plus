@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import type { CategoryKind } from "@/lib/household/schema";
 import type { Category } from "@/lib/household/schema";
 import { fechaDelDia, segundaFecha, type CategoriaDelMes } from "@/lib/household/presupuesto";
-import { formatearCentavos } from "@/lib/household/formato";
+import { formatearCentavos, formatearMes, mesSiguiente } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass, helperTextClass, labelClass } from "@/lib/ui";
 import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
 import { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
@@ -35,6 +35,15 @@ type Props = {
 
 const aCentavos = (texto: string) => Math.round(Number(texto || 0) * 100);
 
+// Hasta cuántos meses adelante se puede programar un cambio de precio.
+const MAX_MESES_ADELANTE = 3;
+
+function sumarMeses(month: string, n: number): string {
+  let m = month;
+  for (let i = 0; i < n; i++) m = mesSiguiente(m);
+  return m;
+}
+
 // Crear o editar un ítem (fijo o variable). Para los fijos muestra, en vivo, el
 // total del mes y cómo se reparte entre los pagos.
 export default function CategoriaModal({
@@ -61,6 +70,8 @@ export default function CategoriaModal({
   const [dueno, setDueno] = useState("");
   const [cuentaId, setCuentaId] = useState("");
   const [nota, setNota] = useState("");
+  // Cuántos meses después del mes abierto empieza a regir el monto nuevo (0 = desde ya).
+  const [desde, setDesde] = useState(0);
   const [ahorro, setAhorro] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -78,6 +89,7 @@ export default function CategoriaModal({
 
     setError("");
     setGuardando(false);
+    setDesde(0);
 
     if (editar) {
       const c = editar.category;
@@ -109,6 +121,10 @@ export default function CategoriaModal({
   const dosPagos = fixed && quincenal;
   const porPagoCents = aCentavos(monto);
   const totalCents = porPagoCents * (dosPagos ? 2 : 1);
+
+  // Al cambiar el monto de un fijo se puede elegir desde cuándo rige.
+  const cambiaMonto = Boolean(editar) && fixed && totalCents !== editar!.plannedAmountCents;
+  const mesDestino = cambiaMonto ? sumarMeses(month, desde) : month;
 
   const textoDia = (valor: string) => {
     const n = Number(valor);
@@ -181,7 +197,11 @@ export default function CategoriaModal({
           const resMonto = await fetch("/api/hogar/presupuesto", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ categoryId: id, month, amount: String(totalCents / 100) }),
+            body: JSON.stringify({
+              categoryId: id,
+              month: mesDestino,
+              amount: String(totalCents / 100),
+            }),
           });
           const dataMonto = await resMonto.json();
 
@@ -200,7 +220,8 @@ export default function CategoriaModal({
             dueDay2,
             ...(conAhorro ? { ahorro } : {}),
           },
-          totalCents
+          // Con un cambio a futuro, el mes abierto conserva su monto.
+          desde > 0 && cambiaMonto ? editar.plannedAmountCents : totalCents
         );
         onCerrar();
         return;
@@ -447,6 +468,40 @@ export default function CategoriaModal({
                 {dia ? t("cat.summaryOnce", { d: textoDia(dia) }) : t("cat.summaryNoDay")}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {cambiaMonto ? (
+          <div>
+            <label className={labelClass} htmlFor="cat-desde">
+              {t("cat.fieldEffective")}
+            </label>
+            <select
+              id="cat-desde"
+              value={desde}
+              onChange={(e) => setDesde(Number(e.target.value))}
+              className={`${fieldBaseClass} ${fieldNormalClass}`}
+            >
+              <option value={0}>{t("cat.effectiveNow", { month: formatearMes(month, t.locale) })}</option>
+              {Array.from({ length: MAX_MESES_ADELANTE }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {t("cat.effectiveFrom", { month: formatearMes(sumarMeses(month, n), t.locale) })}
+                </option>
+              ))}
+            </select>
+            <p className={`${helperTextClass} mt-2`}>
+              {desde === 0
+                ? t("cat.effectiveHintNow", {
+                    month: formatearMes(month, t.locale),
+                    amount: formatearCentavos(totalCents),
+                  })
+                : t("cat.effectiveHintLater", {
+                    month: formatearMes(month, t.locale),
+                    old: formatearCentavos(editar!.plannedAmountCents),
+                    target: formatearMes(mesDestino, t.locale),
+                    amount: formatearCentavos(totalCents),
+                  })}
+            </p>
           </div>
         ) : null}
 

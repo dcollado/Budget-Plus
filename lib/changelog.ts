@@ -31,6 +31,13 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
+          en: "Price increases: when you change the amount of a fixed item, you choose when it starts: right away (to fix a mistake) or from any of the next 3 months, so the current month stays as it is.",
+          es: "Aumentos de precio: al cambiar el monto de un gasto o ingreso fijo, eliges desde cuándo aplica: desde ya (para corregir un error) o desde cualquiera de los próximos 3 meses, y el mes actual se queda como está.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
           en: "New notifications bell: it tells you when a payment in your budget is due today or tomorrow, based on the payment day you set.",
           es: "Nueva campana de notificaciones: te avisa cuando un pago de tu presupuesto vence hoy o mañana, según el día de pago que configuraste.",
         },
