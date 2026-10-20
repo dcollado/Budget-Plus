@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "ajuste",
+        texto: {
+          en: "Fixed a date field in Projects that went outside its box on phones.",
+          es: "Arreglado un campo de fecha en Proyectos que se salía de su caja en el celular.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "New Budgeted card in Projects, next to Committed: what is already set aside plus everyone's planned contributions, with how much is short or over. Committed now also shows what is already paid out of the project's total.",

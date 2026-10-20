@@ -27,6 +27,17 @@ body {
   font-family: var(--font-body), sans-serif;
 }
 
+/* En el celular (iPhone) el campo de fecha tiene un ancho propio y se sale de su
+   caja. Así se queda dentro; la altura mínima evita que se aplaste vacío. */
+input[type="date"],
+input[type="month"] {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* El ícono del selector nativo de fecha/mes lo dibuja el navegador, no
    sigue el color del texto — sin esto se ve negro sobre nuestro fondo
    oscuro. invert(1) lo vuelve claro; brightness baja un poco la

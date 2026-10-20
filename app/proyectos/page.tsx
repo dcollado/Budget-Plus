@@ -339,7 +339,7 @@ function FilaItemProyecto({
       <li className="py-3">
         <form
           onSubmit={guardar}
-          className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end"
         >
           <div>
             <label className={labelClass} htmlFor={`edit-nombre-${item.id}`}>
@@ -1166,7 +1166,7 @@ function TarjetaProyecto({
         </ul>
       )}
 
-      <form onSubmit={agregar} className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end">
+      <form onSubmit={agregar} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end">
         <div>
           <label className={labelClass} htmlFor={`item-nombre-${proyecto.id}`}>
             {t("proj.itemName")}

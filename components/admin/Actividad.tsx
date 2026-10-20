@@ -27,6 +27,7 @@ const ETIQUETAS: Record<string, MessageKey> = {
   crear_novedad: "activity.createNews",
   editar_novedad: "activity.editNews",
   eliminar_novedad: "activity.deleteNews",
+  cambiar_modulo: "activity.toggleModule",
 };
 
 // Log of who did what. Only the super-admin sees it (Admin).

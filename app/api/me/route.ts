@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIdentidad } from "@/lib/current-user";
 import { obtenerAcceso } from "@/lib/auth/acceso";
 import { getSql, usaPostgres } from "@/lib/db";
+import { listarModulos } from "@/lib/modulos-datos";
 
 // Quién está conectado y lo mínimo que la UI necesita (cabecera, perfil,
 // links de admin). La autorización real se vuelve a verificar en cada ruta.
@@ -49,6 +50,8 @@ export async function GET(req: NextRequest) {
       idioma,
       esSuperadmin: acceso.esSuperadmin,
       rol: acceso.rol,
+      // Qué módulos están encendidos (el menú oculta los apagados).
+      modulos: await listarModulos(),
     },
   });
 }

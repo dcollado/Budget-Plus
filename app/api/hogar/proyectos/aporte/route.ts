@@ -1,3 +1,4 @@
+import { moduloApagado } from "@/lib/modulos-datos";
 import { NextRequest } from "next/server";
 import { exito, fallo } from "@/lib/api";
 import { requerirHogar } from "@/lib/household/contexto";
@@ -21,6 +22,8 @@ export async function PUT(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
+    const apagado = await moduloApagado("proyectos");
+    if (apagado) return apagado;
     const { contexto } = r;
 
     const body = (await req.json()) as Record<string, unknown>;

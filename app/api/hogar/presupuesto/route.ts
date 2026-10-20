@@ -12,6 +12,7 @@ import {
   upsertBudget,
 } from "@/lib/household/datos";
 import { mesActual } from "@/lib/household/formato";
+import { moduloActivo } from "@/lib/modulos-datos";
 import { armarProyectosVista } from "@/lib/household/proyectos-datos";
 import { armarVistaMes } from "@/lib/household/presupuesto";
 import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
@@ -50,10 +51,13 @@ export async function GET(req: NextRequest) {
     }[] = [];
 
     try {
-      const [aportes, proyectos] = await Promise.all([
-        listProyectoAportesMes(contexto.householdId),
-        listProyectos(contexto.householdId),
-      ]);
+      // Con el módulo de Proyectos apagado, el presupuesto no muestra sus líneas.
+      const [aportes, proyectos] = (await moduloActivo("proyectos"))
+        ? await Promise.all([
+            listProyectoAportesMes(contexto.householdId),
+            listProyectos(contexto.householdId),
+          ])
+        : [[], []];
       const nombres = new Map(proyectos.map((p) => [p.id, p.name]));
 
       aportesProyecto = aportes

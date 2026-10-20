@@ -23,7 +23,8 @@ export type Accion =
   | "contrasena_cambiada"
   | "crear_novedad"
   | "editar_novedad"
-  | "eliminar_novedad";
+  | "eliminar_novedad"
+  | "cambiar_modulo";
 
 export async function registrarEvento(evento: {
   accion: Accion;

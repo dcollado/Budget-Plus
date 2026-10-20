@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import Actividad from "@/components/admin/Actividad";
+import Modulos from "@/components/admin/Modulos";
 import Novedades from "@/components/admin/Novedades";
 import SolicitudesAcceso from "@/components/admin/SolicitudesAcceso";
 import TablaHogares from "@/components/admin/TablaHogares";
@@ -26,6 +27,7 @@ const PESTANAS = [
   { id: "general", clave: "admin.tabGeneral" },
   { id: "hogares", clave: "admin.tabHouseholds" },
   { id: "novedades", clave: "admin.tabNews" },
+  { id: "modulos", clave: "admin.tabModules" },
 ] as const satisfies readonly { id: string; clave: MessageKey }[];
 
 type PestanaId = (typeof PESTANAS)[number]["id"];
@@ -193,6 +195,12 @@ export default function AdminPage() {
       {pestana === "novedades" ? (
         <div role="tabpanel" id="panel-novedades" aria-labelledby="tab-novedades">
           <Novedades onCambio={() => setVersion((v) => v + 1)} />
+        </div>
+      ) : null}
+
+      {pestana === "modulos" ? (
+        <div role="tabpanel" id="panel-modulos" aria-labelledby="tab-modulos">
+          <Modulos onCambio={() => setVersion((v) => v + 1)} />
         </div>
       ) : null}
 

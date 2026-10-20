@@ -23,6 +23,7 @@ import {
 import { AvisoLanzamiento } from "@/components/aviso-lanzamiento";
 import { NotificacionesCampana } from "@/components/notificaciones-campana";
 import { seccionDeLaGuia } from "@/lib/guia-seccion";
+import { moduloDeLaRuta, type Modulos } from "@/lib/modulos";
 import { useLocale, useSetLocale, useT } from "@/lib/i18n/client";
 import { isLocale } from "@/lib/i18n/config";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -54,6 +55,7 @@ type Perfil = {
   esSuperadmin: boolean;
   rol: "admin" | "member" | null;
   idioma?: string | null;
+  modulos?: Partial<Modulos>;
 };
 
 const claseLink = (activo: boolean) =>
@@ -140,6 +142,11 @@ export function AppShell({
 
   const esSuperadmin = perfil?.esSuperadmin === true;
   const esAdminHogar = perfil?.rol === "admin";
+  // Los módulos que el super-admin apagó no salen en el menú.
+  const enlaces = navLinks.filter((link) => {
+    const modulo = moduloDeLaRuta(link.href);
+    return !modulo || perfil?.modulos?.[modulo] !== false;
+  });
 
   // Household data (set up once, rarely changes). The super-admin manages
   // everything, their household included, from Admin, so doesn't need "Members".
@@ -204,7 +211,7 @@ export function AppShell({
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
+            {enlaces.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -329,7 +336,7 @@ export function AppShell({
         {menuOpen ? (
           <nav className="border-t border-line bg-surface px-4 py-3 md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col">
-              {navLinks.map((link) => (
+              {enlaces.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
