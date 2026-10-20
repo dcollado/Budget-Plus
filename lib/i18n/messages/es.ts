@@ -467,7 +467,6 @@ export const es: Record<MessageKey, string> = {
   "proj.registeredInBudget": "Registrado en Presupuesto",
   "proj.recordExpense": "Registrar el gasto",
   "proj.paidOutsideBy": "Pagado por fuera por {name}",
-  "proj.jointNote": "{income} de ingresos y {expenses} de gastos de este mes no tienen dueño, así que no cuentan para nadie. Asígnales un dueño en Presupuesto para que cuenten.",
   "proj.myContributionEachMonth": "Mi aporte cada mes",
   "proj.seeDetail": "Ver detalle",
   "proj.monthLimits": "Hasta {max} (lo que te queda libre este mes). Sugerido: {suggested}.",

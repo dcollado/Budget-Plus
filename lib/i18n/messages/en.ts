@@ -466,7 +466,6 @@ export const en = {
   "proj.registeredInBudget": "Recorded in Budget",
   "proj.recordExpense": "Record the expense",
   "proj.paidOutsideBy": "Paid outside by {name}",
-  "proj.jointNote": "{income} of income and {expenses} of expenses this month have no owner, so they do not count for anyone. Give them an owner in Budget so they count.",
   "proj.myContributionEachMonth": "My contribution each month",
   "proj.seeDetail": "See breakdown",
   "proj.monthLimits": "Up to {max} (what you have free this month). Suggested: {suggested}.",

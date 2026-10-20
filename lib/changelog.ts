@@ -78,13 +78,6 @@ export const CHANGELOG: EntradaChangelog[] = [
         },
       },
       {
-        tipo: "mejora",
-        texto: {
-          en: "In Projects, a notice under each month now warns when income or expenses have no owner (they do not count for anyone) and tells you to assign one in Budget.",
-          es: "En Proyectos, un aviso bajo cada mes ahora te dice cuando hay ingresos o gastos sin dueño (no cuentan para nadie) y que se los asignes en Presupuesto.",
-        },
-      },
-      {
         tipo: "nuevo",
         texto: {
           en: "New Guide page that explains how each part of the app works (Budget, Accounts and fixed expenses, Projects, Reports…), in English and Spanish. Open it with the ? icon at the top, which takes you to the section of the screen you are on, or from your name menu.",
