@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles, X } from "lucide-react";
-import { ANUNCIOS, type Anuncio } from "@/lib/anuncios";
+import type { Anuncio } from "@/lib/anuncios";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { EVENTO_NOTIFICACIONES } from "@/components/notificaciones-campana";
 import type { Notificacion } from "@/lib/notificaciones";
@@ -22,9 +22,11 @@ export function AvisoLanzamiento() {
       .then((json) => {
         if (!json?.data) return;
         const items = json.data.items as Notificacion[];
+        const vigentes = json.data.anuncios as Anuncio[];
+        // Solo se muestra si la novedad sigue vigente (si se apaga o vence, el aviso se va).
         for (const n of items) {
           if (n.tipo !== "novedad" || n.leida) continue;
-          const anuncio = ANUNCIOS.find((a) => a.id === n.datos.id);
+          const anuncio = vigentes.find((a) => a.id === n.datos.id);
           if (anuncio) {
             setPendiente({ id: n.id, anuncio });
             return;

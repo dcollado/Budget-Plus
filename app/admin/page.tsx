@@ -2,8 +2,10 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { TarjetaHogar } from "@/components/admin/TarjetaHogar";
 import Actividad from "@/components/admin/Actividad";
+import Novedades from "@/components/admin/Novedades";
 import SolicitudesAcceso from "@/components/admin/SolicitudesAcceso";
 import TablaHogares from "@/components/admin/TablaHogares";
 import {
@@ -19,6 +21,20 @@ import { Pagina } from "@/components/pagina";
 
 type Mensaje = { tipo: "ok" | "error"; texto: string };
 
+// El Admin va por pestañas para no ser una sola pantalla larga.
+const PESTANAS = [
+  { id: "general", clave: "admin.tabGeneral" },
+  { id: "hogares", clave: "admin.tabHouseholds" },
+  { id: "novedades", clave: "admin.tabNews" },
+] as const satisfies readonly { id: string; clave: MessageKey }[];
+
+type PestanaId = (typeof PESTANAS)[number]["id"];
+
+function pestanaDelHash(): PestanaId {
+  const hash = typeof window === "undefined" ? "" : window.location.hash.slice(1);
+  return PESTANAS.find((p) => p.id === hash)?.id ?? "general";
+}
+
 export default function AdminPage() {
   const t = useT();
   const [hogares, setHogares] = useState<HogarResumen[] | null>(null);
@@ -27,6 +43,22 @@ export default function AdminPage() {
   const [ocupado, setOcupado] = useState(false);
   // Increments on every reload: the open activity list refreshes itself.
   const [version, setVersion] = useState(0);
+
+  const [pestana, setPestana] = useState<PestanaId>("general");
+
+  // La pestaña va en la dirección (#hogares) para poder volver a ella o compartirla.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPestana(pestanaDelHash());
+    const alCambiar = () => setPestana(pestanaDelHash());
+    window.addEventListener("hashchange", alCambiar);
+    return () => window.removeEventListener("hashchange", alCambiar);
+  }, []);
+
+  function irA(id: PestanaId) {
+    setPestana(id);
+    window.history.replaceState(null, "", "#" + id);
+  }
 
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
   const [nombreHogar, setNombreHogar] = useState("");
@@ -115,13 +147,27 @@ export default function AdminPage() {
           <p className="text-sm font-medium text-gold">{t("admin.kicker")}</p>
           <h1 className="font-display text-2xl font-semibold text-text">{t("admin.title")}</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setNuevoAbierto((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90"
-        >
-          <Plus size={16} /> {t("admin.newHousehold")}
-        </button>
+      </div>
+
+      <div role="tablist" aria-label={t("admin.title")} className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line">
+        {PESTANAS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            role="tab"
+            id={"tab-" + p.id}
+            aria-selected={pestana === p.id}
+            aria-controls={"panel-" + p.id}
+            onClick={() => irA(p.id)}
+            className={`-mb-px whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition ${
+              pestana === p.id
+                ? "border-gold text-text"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            {t(p.clave)}
+          </button>
+        ))}
       </div>
 
       {mensaje ? (
@@ -137,7 +183,30 @@ export default function AdminPage() {
         </div>
       ) : null}
 
-      <SolicitudesAcceso onDecidida={() => void cargar()} />
+      {pestana === "general" ? (
+        <div role="tabpanel" id="panel-general" aria-labelledby="tab-general" className="space-y-6">
+          <SolicitudesAcceso onDecidida={() => void cargar()} />
+          <Actividad refrescar={version} abiertoAlInicio />
+        </div>
+      ) : null}
+
+      {pestana === "novedades" ? (
+        <div role="tabpanel" id="panel-novedades" aria-labelledby="tab-novedades">
+          <Novedades onCambio={() => setVersion((v) => v + 1)} />
+        </div>
+      ) : null}
+
+      {pestana === "hogares" ? (
+      <div role="tabpanel" id="panel-hogares" aria-labelledby="tab-hogares" className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setNuevoAbierto((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-ink transition hover:opacity-90"
+        >
+          <Plus size={16} /> {t("admin.newHousehold")}
+        </button>
+      </div>
 
       {nuevoAbierto ? (
         <form onSubmit={crearHogar} className={`${sectionCardClass} space-y-4`}>
@@ -178,7 +247,6 @@ export default function AdminPage() {
         </form>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       {hogares === null ? (
         <p className="text-sm text-text-muted">{t("common.loadingEllipsis")}</p>
       ) : (
@@ -260,9 +328,8 @@ export default function AdminPage() {
           )}
         />
       )}
-
-      <Actividad refrescar={version} />
       </div>
+      ) : null}
     </Pagina>
   );
 }

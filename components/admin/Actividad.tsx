@@ -24,12 +24,15 @@ const ETIQUETAS: Record<string, MessageKey> = {
   enviar_restablecer: "activity.sendReset",
   contrasena_restablecida: "activity.passwordReset",
   contrasena_cambiada: "activity.passwordChanged",
+  crear_novedad: "activity.createNews",
+  editar_novedad: "activity.editNews",
+  eliminar_novedad: "activity.deleteNews",
 };
 
 // Log of who did what. Only the super-admin sees it (Admin).
-export default function Actividad({ refrescar }: { refrescar: number }) {
+export default function Actividad({ refrescar, abiertoAlInicio = false }: { refrescar: number; abiertoAlInicio?: boolean }) {
   const t = useT();
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(abiertoAlInicio);
   const [eventos, setEventos] = useState<EventoAdmin[] | null>(null);
   const [error, setError] = useState("");
 

@@ -1,4 +1,5 @@
-import { anunciosVigentes } from "@/lib/anuncios";
+import type { Anuncio } from "@/lib/anuncios";
+import { listarAnunciosVigentes } from "@/lib/anuncios-datos";
 import { getSql, usaPostgres } from "@/lib/db";
 import { listBudgets, listCategories, listHouseholds, listMembers, listTransactions } from "@/lib/household/datos";
 import { armarVistaMes, type CategoriaDelMes } from "@/lib/household/presupuesto";
@@ -14,7 +15,7 @@ export const TIPOS_NOTIFICACION = {
   pago_vencido: { activa: false },
   // Solo para super-admin: llegó una solicitud de acceso.
   solicitud_acceso: { activa: true },
-  // Se lanzó una funcionalidad nueva (lib/anuncios.ts): un aviso por persona.
+  // Se lanzó una funcionalidad nueva (novedades del Admin): un aviso por persona.
   novedad: { activa: true },
 } as const;
 
@@ -37,14 +38,18 @@ const MAX_EN_CAMPANA = 30;
 export async function listarNotificaciones(usuarioId: string): Promise<{
   items: Notificacion[];
   noLeidas: number;
+  // Las novedades vigentes (para el aviso de arriba, que usa su texto y enlace).
+  anuncios: Anuncio[];
 }> {
-  if (!usaPostgres()) return { items: [], noLeidas: 0 };
+  if (!usaPostgres()) return { items: [], noLeidas: 0, anuncios: [] };
   const sql = getSql();
 
   // Los lanzamientos recientes se avisan aquí, una sola vez por persona. Si
   // falla, la campana sigue mostrando lo demás.
+  let anuncios: Anuncio[] = [];
   try {
-    await asegurarNovedades(usuarioId);
+    anuncios = await listarAnunciosVigentes(fechaEnPanama());
+    await asegurarNovedades(usuarioId, anuncios);
   } catch (error) {
     console.error("Could not create release notifications:", error);
   }
@@ -72,6 +77,7 @@ export async function listarNotificaciones(usuarioId: string): Promise<{
       leida: f.leida_en !== null,
     })),
     noLeidas: n,
+    anuncios,
   };
 }
 
@@ -106,12 +112,11 @@ async function crearNotificacion(n: {
   return filas.length > 0;
 }
 
-// Un aviso por cada lanzamiento vigente (lib/anuncios.ts) que esta persona
-// todavía no tiene. La clave única evita repetirlo; el texto va en los dos
-// idiomas y se elige al leer. Los avisos duran menos que lo que se conservan
-// (DIAS_DE_ANUNCIO < DIAS_QUE_SE_CONSERVAN), así que no reaparecen.
-export async function asegurarNovedades(usuarioId: string, hoy: string = fechaEnPanama()): Promise<number> {
-  const vigentes = anunciosVigentes(hoy);
+// Un aviso por cada novedad vigente que esta persona todavía no tiene. La
+// clave única evita repetirlo; el texto va en los dos idiomas y se elige al
+// leer. Las novedades duran como máximo lo que se conservan los avisos
+// (DIAS_MAX <= DIAS_QUE_SE_CONSERVAN), así que no reaparecen.
+export async function asegurarNovedades(usuarioId: string, vigentes: Anuncio[]): Promise<number> {
   if (vigentes.length === 0) return 0;
 
   const claves = vigentes.map((a) => `novedad:${a.id}`);

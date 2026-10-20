@@ -725,15 +725,25 @@ function AhorroMensual({
                         ? fila(t("proj.otherProjects"), m.otrosProyectosCents, "-")
                         : null}
                     </dl>
-                    {m.conjunto.ingresosCents > 0 || m.conjunto.gastosCents > 0 ? (
-                      <p className="mt-1 text-xs text-text-muted">
+                  </details>
+                  {m.fraccion < 1 ? (
+                    <p className="mt-1 text-xs text-text-muted">{t("proj.halfMonth")}</p>
+                  ) : null}
+                  {m.conjunto.ingresosCents > 0 || m.conjunto.gastosCents > 0 ? (
+                    <p
+                      className={`mt-1 flex items-start gap-1.5 text-xs ${
+                        m.conjunto.ingresosCents > 0 ? "text-gold" : "text-text-muted"
+                      }`}
+                    >
+                      <CircleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                      <span>
                         {t("proj.jointNote", {
                           income: formatearCentavos(m.conjunto.ingresosCents),
                           expenses: formatearCentavos(m.conjunto.gastosCents),
                         })}
-                      </p>
-                    ) : null}
-                  </details>
+                      </span>
+                    </p>
+                  ) : null}
                 </div>
 
                 <div>

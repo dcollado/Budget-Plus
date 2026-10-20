@@ -58,6 +58,11 @@ export function apartadoDisponible(proyecto: ProyectoParaPlan): number {
   return Math.max(0, proyecto.ahorradoCents - (proyecto.pagadoConApartadoCents ?? 0));
 }
 
+// Si un pago cae del día 16 en adelante, la primera quincena de ese mismo mes
+// todavía sirve para apartar: ese mes cuenta, pero solo a medias.
+export const DIA_SEGUNDA_QUINCENA = 16;
+export const FRACCION_MES_PARCIAL = 0.5;
+
 // Meses completos entre dos "YYYY-MM" (b - a).
 export function mesesEntre(a: string, b: string): number {
   const [ay, am] = a.split("-").map(Number);
@@ -65,9 +70,33 @@ export function mesesEntre(a: string, b: string): number {
   return (by - ay) * 12 + (bm - am);
 }
 
+// Cuántos meses de la ventana se pueden usar para un pago: desde este mes hasta
+// el mes anterior al pago, más el mes del pago si cae del 16 en adelante (ese
+// último cuenta a medias, ver FRACCION_MES_PARCIAL). Si el pago es este mes o ya
+// pasó, no queda ninguno (≤ 0).
+export function mesesParaApartar(mesHoy: string, fecha: string): number {
+  const meses = mesesEntre(mesHoy, fecha.slice(0, 7));
+  if (meses < 1) return meses;
+  return Number(fecha.slice(8, 10)) >= DIA_SEGUNDA_QUINCENA ? meses + 1 : meses;
+}
+
+// Cuánto de un mes se puede usar para apartar: el mes del último pago (si es
+// posterior a este mes y entra por caer del 16 en adelante) cuenta a medias;
+// los demás, completos.
+export function fraccionDelMes(mes: string, mesHoy: string, ultimaFecha: string): number {
+  const esElUltimo = mes === ultimaFecha.slice(0, 7) && mes > mesHoy;
+  return esElUltimo && Number(ultimaFecha.slice(8, 10)) >= DIA_SEGUNDA_QUINCENA ? FRACCION_MES_PARCIAL : 1;
+}
+
+// La fecha del último pago: la del proyecto o la de algún gasto pendiente, la que sea más tarde.
+export function ultimaFechaDelProyecto(fechas: string[], fechaProyecto: string): string {
+  return [fechaProyecto, ...fechas].filter(Boolean).reduce((max, f) => (f > max ? f : max), "");
+}
+
 // Cuota mínima: la menor que deja ahorrado, en cada fecha de pago, al menos
 // lo que vence hasta ese día. Se aparta una vez por mes, desde el mes actual
-// hasta el mes anterior al pago. `mesHoy` es "YYYY-MM".
+// hasta el mes anterior al pago (y la primera quincena del mes del pago, si el
+// pago cae del 16 en adelante). `mesHoy` es "YYYY-MM".
 export function planDelProyecto(proyecto: ProyectoParaPlan, mesHoy: string): PlanProyecto {
   const items = proyecto.items.map((i) => ({
     ...i,
@@ -100,7 +129,9 @@ export function planDelProyecto(proyecto: ProyectoParaPlan, mesHoy: string): Pla
       continue;
     }
 
-    const cuota = Math.ceil(porCubrir / meses);
+    // El mes del pago, si entra, vale la mitad.
+    const equivalentes = meses + (mesesParaApartar(mesHoy, fecha) > meses ? FRACCION_MES_PARCIAL : 0);
+    const cuota = Math.ceil(porCubrir / equivalentes);
 
     if (cuota > cuotaMensualCents) {
       cuotaMensualCents = cuota;
@@ -183,7 +214,7 @@ export function controlesDelPlan(proyecto: ProyectoParaPlan, mesHoy: string): Co
 
   for (const fecha of [...new Set(items.map((i) => i.fecha))].sort()) {
     const vence = items.filter((i) => i.fecha <= fecha).reduce((t, i) => t + i.montoCents, 0);
-    const meses = mesesEntre(mesHoy, fecha.slice(0, 7));
+    const meses = mesesParaApartar(mesHoy, fecha);
     if (meses <= 0) continue;
 
     const necesario = Math.max(0, vence - apartadoDisponible(proyecto));
@@ -246,10 +277,12 @@ export function sumarMeses(month: string, n: number): string {
 
 // Meses en los que se puede apartar para un proyecto: desde este mes hasta el
 // mes anterior al último pago (la fecha del proyecto o la de algún gasto
-// pendiente, la que sea más tarde). Siempre incluye al menos este mes.
+// pendiente, la que sea más tarde), más el mes del último pago si cae del 16 en
+// adelante (ese cuenta a medias: ver fraccionDelMes). Siempre incluye al menos
+// este mes.
 export function ventanaDeAhorro(mesHoy: string, fechas: string[], fechaProyecto: string): string[] {
-  const ultima = [fechaProyecto, ...fechas].filter(Boolean).reduce((max, f) => (f > max ? f : max), "");
-  const cantidad = Math.max(1, mesesEntre(mesHoy, ultima.slice(0, 7)));
+  const ultima = ultimaFechaDelProyecto(fechas, fechaProyecto);
+  const cantidad = Math.max(1, mesesParaApartar(mesHoy, ultima));
 
   return Array.from({ length: cantidad }, (_, i) => sumarMeses(mesHoy, i));
 }
@@ -282,6 +315,9 @@ export type MesLibre = {
   libreCents: number;
   // Lo conjunto de ese mes (sin dueño): informativo, no entra en el libre.
   conjunto: ConjuntoDelMes;
+  // Cuánto de ese mes se puede usar para apartar: 1, o 0.5 si es el mes del
+  // último pago y solo sirve su primera quincena.
+  fraccion: number;
 };
 
 // El mes con menos libre manda: un aporte es un monto fijo por mes, así que
@@ -340,7 +376,7 @@ export function coberturaConAportes(
 
   for (const fecha of [...new Set(items.map((i) => i.fecha))].sort()) {
     const vence = items.filter((i) => i.fecha <= fecha).reduce((t, i) => t + i.montoCents, 0);
-    const meses = Math.max(0, mesesEntre(mesHoy, fecha.slice(0, 7)));
+    const meses = Math.max(0, mesesParaApartar(mesHoy, fecha));
     const reunido = apartadoDisponible(proyecto) + apartadoEn(meses);
 
     if (reunido < vence) {

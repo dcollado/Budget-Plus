@@ -41,10 +41,11 @@ Cada vez que se **crea y lanza** una funcionalidad nueva (algo que la gente va a
 1. Actualizar la guía (`lib/guia.ts`, **inglés y español**): sección nueva o
    puntos nuevos en la que corresponda. Si hay pantalla nueva, mapearla en
    `lib/guia-seccion.ts` para que el ícono "?" lleve a su sección.
-2. Agregar un anuncio arriba en `lib/anuncios.ts` (título y texto cortos, en los dos
-   idiomas, con enlace a la funcionalidad). De ahí salen la notificación especial
-   en la campana y el aviso que se ve al entrar a la app (no en el login).
+2. Crear la novedad en Admin > Novedades (título y texto cortos, en los dos idiomas,
+   enlace a la funcionalidad y cuántos días vive). Se crea en producción cuando
+   la funcionalidad ya está desplegada. De ahí salen la notificación especial en
+   la campana y el aviso que se ve al entrar a la app (no en el login).
 3. Entrada en `/cambios` (regla de arriba).
 4. Sin cambios de administración en nada de esto. Lo validan `lib/guia.test.ts` y
-   `lib/anuncios.test.ts`.
+   `lib/anuncios.test.ts` (y la validación al guardar la novedad).
 No decir "listo para subir" sin que la guía y el anuncio estén al día.

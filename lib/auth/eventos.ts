@@ -20,7 +20,10 @@ export type Accion =
   | "editar_miembro"
   | "enviar_restablecer"
   | "contrasena_restablecida"
-  | "contrasena_cambiada";
+  | "contrasena_cambiada"
+  | "crear_novedad"
+  | "editar_novedad"
+  | "eliminar_novedad";
 
 export async function registrarEvento(evento: {
   accion: Accion;

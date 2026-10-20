@@ -29,6 +29,20 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "Projects now use the first half of the month of the last payment: if a trip is on December 26th, half of December's free money counts for saving.",
+          es: "Los proyectos ahora usan la primera quincena del mes del último pago: si el viaje es el 26 de diciembre, la mitad de lo libre de diciembre cuenta para apartar.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "In Projects, a notice under each month now warns when income or expenses have no owner (they do not count for anyone) and tells you to assign one in Budget.",
+          es: "En Proyectos, un aviso bajo cada mes ahora te dice cuando hay ingresos o gastos sin dueño (no cuentan para nadie) y que se los asignes en Presupuesto.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "New Guide page that explains how each part of the app works (Budget, Accounts and fixed expenses, Projects, Reports…), in English and Spanish. Open it with the ? icon at the top, which takes you to the section of the screen you are on, or from your name menu.",

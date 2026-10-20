@@ -15,8 +15,10 @@ import {
   controlesDelPlan,
   coberturaConAportes,
   disponibleDeLaPersona,
+  fraccionDelMes,
   planDelProyecto,
   repartirEnMeses,
+  ultimaFechaDelProyecto,
   ventanaDeAhorro,
   type CoberturaProyecto,
   type ConjuntoDelMes,
@@ -114,8 +116,10 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
   // Meses en los que se aparta para cada proyecto (los que ya no tienen nada
   // pendiente no piden ahorro: su ventana queda vacía).
   const ventanas = new Map<string, string[]>();
+  const ultimas = new Map<string, string>();
   for (const p of proyectos) {
     const pendientes = items.filter((i) => i.projectId === p.id && !i.pagado);
+    ultimas.set(p.id, ultimaFechaDelProyecto(pendientes.map((i) => i.fecha), p.targetDate));
     ventanas.set(
       p.id,
       pendientes.length > 0
@@ -171,6 +175,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         otrosProyectosCents: otros,
         libreCents: d.disponibleCents - otros,
         conjunto: conjuntos.get(mes) ?? { ingresosCents: 0, gastosCents: 0 },
+        fraccion: fraccionDelMes(mes, mesHoy, ultimas.get(projectId) ?? ""),
       };
     });
   };
@@ -193,8 +198,10 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
       // Para cada persona y mes: lo libre y lo que aporta (confirmado o sugerido).
       const librePorPersona = new Map(miembros.map((m) => [m.id, mesesDe(m.id, proyecto.id)]));
       const aporteDe = new Map<string, { cents: number; definido: boolean; hecho: boolean; sugerido: number }>();
-      const capDe = (memberId: string, mes: string) =>
-        capacidadSugerible(librePorPersona.get(memberId)?.find((x) => x.month === mes)?.libreCents ?? 0);
+      const capDe = (memberId: string, mes: string) => {
+        const m = librePorPersona.get(memberId)?.find((x) => x.month === mes);
+        return capacidadSugerible(Math.floor((m?.libreCents ?? 0) * (m?.fraccion ?? 1)));
+      };
       const controles = controlesDelPlan(datos, mesHoy);
 
       // El plan sugerido: lo que falta por apartar se reparte entre los meses según
@@ -297,7 +304,8 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
           definido: a?.definido ?? false,
           hecho: a?.hecho ?? false,
           sugeridoCents: a?.sugerido ?? 0,
-          topeCents: Math.max(0, l.libreCents),
+          // Un mes parcial (el del último pago) solo deja usar su primera quincena.
+          topeCents: Math.max(0, Math.floor(l.libreCents * l.fraccion)),
           totalMesCents: totalMes(l.month),
           otros: miembros
             .filter((m) => m.id !== yo)

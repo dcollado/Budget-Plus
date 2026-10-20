@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   capacidadSugerible,
   controlesDelPlan,
+  fraccionDelMes,
+  mesesParaApartar,
   repartirEnMeses,
   coberturaConAportes,
   conjuntoDelMes,
@@ -348,6 +350,50 @@ describe("ventanaDeAhorro", () => {
   });
 });
 
+describe("el mes del último pago cuenta a medias (pago del 16 en adelante)", () => {
+  it("un pago del 16 en adelante suma un mes más a la ventana", () => {
+    expect(mesesParaApartar("2026-10", "2026-12-26")).toBe(3);
+    expect(mesesParaApartar("2026-10", "2026-12-15")).toBe(2);
+    expect(mesesParaApartar("2026-10", "2026-11-16")).toBe(2);
+  });
+
+  it("si el pago es este mes o ya pasó, no suma nada", () => {
+    expect(mesesParaApartar("2026-10", "2026-10-28")).toBe(0);
+    expect(mesesParaApartar("2026-10", "2026-08-30")).toBeLessThan(0);
+  });
+
+  it("la ventana del viaje del 26 de diciembre incluye diciembre", () => {
+    expect(ventanaDeAhorro("2026-10", ["2026-11-16"], "2026-12-26")).toEqual(["2026-10", "2026-11", "2026-12"]);
+    expect(ventanaDeAhorro("2026-10", [], "2026-12-10")).toEqual(["2026-10", "2026-11"]);
+  });
+
+  it("solo el mes del último pago vale la mitad", () => {
+    expect(fraccionDelMes("2026-12", "2026-10", "2026-12-26")).toBe(0.5);
+    expect(fraccionDelMes("2026-11", "2026-10", "2026-12-26")).toBe(1);
+    expect(fraccionDelMes("2026-12", "2026-10", "2026-12-10")).toBe(1);
+    expect(fraccionDelMes("2026-10", "2026-10", "2026-10-28")).toBe(1);
+  });
+
+  it("la cuota mínima reparte entre los meses completos y el medio mes", () => {
+    const plan = planDelProyecto(
+      { fechaObjetivo: "2026-12-26", objetivoCents: 0, ahorradoCents: 0, items: [{ id: "1", concepto: "x", montoCents: 100000, fecha: "" }] },
+      "2026-10"
+    );
+    expect(plan.cuotaMensualCents).toBe(40000); // 1000 / 2.5 meses
+  });
+
+  it("los aportes del mes del pago cuentan para llegar a tiempo", () => {
+    const proyecto = {
+      fechaObjetivo: "2026-12-26",
+      objetivoCents: 0,
+      ahorradoCents: 0,
+      items: [{ id: "1", concepto: "x", montoCents: 100000, fecha: "" }],
+    };
+    const c = coberturaConAportes(proyecto, { "2026-10": 30000, "2026-11": 30000, "2026-12": 40000 }, "2026-10");
+    expect(c.alcanza).toBe(true);
+  });
+});
+
 describe("mesMasAjustado", () => {
   const mes = (month: string, libreCents: number) => ({
     month,
@@ -358,6 +404,7 @@ describe("mesMasAjustado", () => {
     otrosProyectosCents: 0,
     libreCents,
     conjunto: { ingresosCents: 0, gastosCents: 0 },
+    fraccion: 1,
   });
 
   it("el tope es el mes con menos libre", () => {
