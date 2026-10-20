@@ -733,7 +733,7 @@ export async function listProyectoItems(householdId: string): Promise<ProyectoIt
 }
 
 export async function crearProyectoItem(
-  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado">
+  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado" | "pagadoPor" | "pagadoFecha" | "gastoCategoriaId">
 ): Promise<ProyectoItem> {
   void input;
   throw new Error(SIN_PROYECTOS);
@@ -742,7 +742,12 @@ export async function crearProyectoItem(
 export async function actualizarProyectoItem(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado">>
+  cambios: Partial<
+    Pick<
+      ProyectoItem,
+      "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado" | "pagadoPor" | "pagadoFecha" | "gastoCategoriaId"
+    >
+  >
 ): Promise<ProyectoItem | null> {
   void householdId;
   void id;

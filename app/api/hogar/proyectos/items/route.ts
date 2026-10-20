@@ -1,12 +1,21 @@
-import { NextRequest } from "next/server";
+import { after, NextRequest } from "next/server";
 import { exito, fallo } from "@/lib/api";
 import { requerirHogar } from "@/lib/household/contexto";
 import {
   actualizarProyectoItem,
   crearProyectoItem,
   eliminarProyectoItem,
+  listMembers,
+  listProyectoItems,
   listProyectos,
 } from "@/lib/household/datos";
+import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
+import {
+  ajustarGastoDelItem,
+  registrarGastoDelItem,
+  retirarGastoDelItem,
+} from "@/lib/household/proyectos-pagos";
+import { fechaEnPanama } from "@/lib/notificaciones";
 import { centavosDe, fechaValida } from "@/lib/validacion";
 
 const MAX_CONCEPTO = 120;
@@ -107,10 +116,71 @@ export async function PATCH(req: NextRequest) {
       cambios.pagadoConApartado = body.pagadoConApartado === true;
     }
 
-    const item = await actualizarProyectoItem(contexto.householdId, id, cambios);
+    const householdId = contexto.householdId;
+    const actual = (await listProyectoItems(householdId)).find((i) => i.id === id);
+
+    if (!actual) {
+      return fallo("That project is not part of this household.", 404);
+    }
+
+    // ---- el pago por fuera se refleja como gasto extra de quien lo pagó
+    const pagado = cambios.pagado ?? actual.pagado;
+    const conApartado = cambios.pagadoConApartado ?? actual.pagadoConApartado;
+    const porFuera = pagado && !conApartado;
+    const pidioRegistrar = body.registrarGasto === true;
+    const mesesASincronizar: string[] = [];
+
+    if (porFuera && (pidioRegistrar || (body.pagado === true && body.registrarGasto !== false))) {
+      const pagadoPor = String(body.pagadoPor ?? "").trim();
+      const fechaPago = String(body.pagadoFecha ?? "").trim() || fechaEnPanama();
+
+      if (!fechaValida(fechaPago)) return fallo("Pick a valid payment date.", 400);
+
+      if (pagadoPor) {
+        const miembros = await listMembers(householdId);
+        if (!miembros.some((m) => m.id === pagadoPor)) {
+          return fallo("That member is not part of this household.", 400);
+        }
+      }
+
+      const proyecto = (await listProyectos(householdId)).find((p) => p.id === actual.projectId);
+      const monto = cambios.montoCents ?? actual.montoCents;
+
+      // Si ya había un gasto registrado, se rehace con los datos nuevos.
+      await retirarGastoDelItem(householdId, actual.gastoCategoriaId);
+      if (actual.pagadoFecha) mesesASincronizar.push(actual.pagadoFecha.slice(0, 7));
+
+      cambios.gastoCategoriaId = await registrarGastoDelItem({
+        householdId,
+        proyecto: proyecto?.name ?? "",
+        concepto: cambios.concepto ?? actual.concepto,
+        montoCents: monto,
+        pagadoPor,
+        fecha: fechaPago,
+      });
+      cambios.pagadoPor = pagadoPor;
+      cambios.pagadoFecha = fechaPago;
+      mesesASincronizar.push(fechaPago.slice(0, 7));
+    } else if (!porFuera && actual.gastoCategoriaId) {
+      // Se desmarcó o pasó a pagarse con lo apartado: ese gasto extra ya no existe.
+      await retirarGastoDelItem(householdId, actual.gastoCategoriaId);
+      if (actual.pagadoFecha) mesesASincronizar.push(actual.pagadoFecha.slice(0, 7));
+      cambios.gastoCategoriaId = "";
+      cambios.pagadoPor = "";
+      cambios.pagadoFecha = "";
+    } else if (porFuera && actual.gastoCategoriaId && cambios.montoCents !== undefined) {
+      await ajustarGastoDelItem(householdId, actual.gastoCategoriaId, actual.pagadoFecha, cambios.montoCents);
+      mesesASincronizar.push(actual.pagadoFecha.slice(0, 7));
+    }
+
+    const item = await actualizarProyectoItem(householdId, id, cambios);
 
     if (!item) {
       return fallo("That project is not part of this household.", 404);
+    }
+
+    for (const mes of new Set(mesesASincronizar)) {
+      after(() => sincronizarSinFallar(() => sincronizarDosMeses(householdId, mes)));
     }
 
     return exito(item);
@@ -130,6 +200,12 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) {
       return fallo("Project is missing.", 400);
+    }
+
+    // Si el ítem tenía un gasto extra registrado, se retira con él.
+    const actual = (await listProyectoItems(contexto.householdId)).find((i) => i.id === id);
+    if (actual?.gastoCategoriaId) {
+      await retirarGastoDelItem(contexto.householdId, actual.gastoCategoriaId);
     }
 
     const borrado = await eliminarProyectoItem(contexto.householdId, id);

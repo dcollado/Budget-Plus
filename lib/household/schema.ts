@@ -132,6 +132,11 @@ export type ProyectoItem = {
   // Si ya está pagado: se pagó con lo apartado para el proyecto (baja lo
   // apartado) o por fuera (no lo toca).
   pagadoConApartado: boolean;
+  // Pagado por fuera: quién lo pagó ("" = conjunto o sin registrar), cuándo
+  // (YYYY-MM-DD) y la categoría del gasto extra que se creó en Presupuesto ("" = ninguna).
+  pagadoPor: string;
+  pagadoFecha: string;
+  gastoCategoriaId: string;
 };
 
 // Lo que una persona aparta para un proyecto en un mes concreto. "hecho" = ya

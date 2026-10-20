@@ -419,7 +419,19 @@ export async function eliminarTransaction(id: string, householdId: string): Prom
 // ---------- Proyectos ----------
 
 const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "objetivo_cents", "ahorrado_cents", "archived"];
-const COLS_PROYECTO_ITEM = ["id", "project_id", "household_id", "concepto", "monto_cents", "fecha", "pagado", "pagado_con_apartado"];
+const COLS_PROYECTO_ITEM = [
+  "id",
+  "project_id",
+  "household_id",
+  "concepto",
+  "monto_cents",
+  "fecha",
+  "pagado",
+  "pagado_con_apartado",
+  "pagado_por",
+  "pagado_fecha",
+  "gasto_categoria_id",
+];
 
 type FilaProyecto = {
   id: string;
@@ -449,6 +461,9 @@ type FilaProyectoItem = {
   fecha: unknown;
   pagado: boolean;
   pagado_con_apartado: boolean;
+  pagado_por: string | null;
+  pagado_fecha: unknown;
+  gasto_categoria_id: string | null;
 };
 const aProyectoItem = (r: FilaProyectoItem): ProyectoItem => ({
   id: r.id,
@@ -459,6 +474,9 @@ const aProyectoItem = (r: FilaProyectoItem): ProyectoItem => ({
   fecha: fecha(r.fecha),
   pagado: r.pagado,
   pagadoConApartado: r.pagado_con_apartado,
+  pagadoPor: r.pagado_por ?? "",
+  pagadoFecha: fecha(r.pagado_fecha),
+  gastoCategoriaId: r.gasto_categoria_id ?? "",
 });
 
 export async function listProyectos(householdId: string): Promise<Proyecto[]> {
@@ -525,7 +543,7 @@ export async function listProyectoItems(householdId: string): Promise<ProyectoIt
 }
 
 export async function crearProyectoItem(
-  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado">
+  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado" | "pagadoPor" | "pagadoFecha" | "gastoCategoriaId">
 ): Promise<ProyectoItem> {
   const sql = getSql();
   const [fila] = await sql<FilaProyectoItem[]>`
@@ -543,7 +561,12 @@ export async function crearProyectoItem(
 export async function actualizarProyectoItem(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado">>
+  cambios: Partial<
+    Pick<
+      ProyectoItem,
+      "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado" | "pagadoPor" | "pagadoFecha" | "gastoCategoriaId"
+    >
+  >
 ): Promise<ProyectoItem | null> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
@@ -552,6 +575,9 @@ export async function actualizarProyectoItem(
   if (cambios.fecha !== undefined) set.fecha = nulo(cambios.fecha);
   if (cambios.pagado !== undefined) set.pagado = cambios.pagado;
   if (cambios.pagadoConApartado !== undefined) set.pagado_con_apartado = cambios.pagadoConApartado;
+  if (cambios.pagadoPor !== undefined) set.pagado_por = nulo(cambios.pagadoPor);
+  if (cambios.pagadoFecha !== undefined) set.pagado_fecha = nulo(cambios.pagadoFecha);
+  if (cambios.gastoCategoriaId !== undefined) set.gasto_categoria_id = nulo(cambios.gastoCategoriaId);
 
   if (Object.keys(set).length === 0) return null;
 

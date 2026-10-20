@@ -261,10 +261,12 @@ function NuevoProyecto({
 // Una fila de la lista del proyecto: marcar pagado, editar o eliminar.
 function FilaItemProyecto({
   item,
+  personas,
   ocupado,
   hacer,
 }: {
   item: ProyectoItem;
+  personas: { id: string; nombre: string; esMio: boolean }[];
   ocupado: boolean;
   hacer: (accion: () => Promise<void>) => Promise<void>;
 }) {
@@ -276,6 +278,27 @@ function FilaItemProyecto({
   const [borrando, setBorrando] = useState(false);
   // Al marcarlo como pagado se pregunta cómo se pagó.
   const [eligiendoPago, setEligiendoPago] = useState(false);
+  // Pagado por fuera: quién pagó, cuándo y si se registra como gasto en Presupuesto.
+  const [formPago, setFormPago] = useState(false);
+  const [pagadoPor, setPagadoPor] = useState(item.pagadoPor || personas.find((p) => p.esMio)?.id || "");
+  const [pagadoFecha, setPagadoFecha] = useState(item.pagadoFecha || new Date().toLocaleDateString("en-CA"));
+  const [registrar, setRegistrar] = useState(true);
+  const nombreDe = (id: string) => personas.find((p) => p.id === id)?.nombre ?? "";
+
+  function pagarPorFuera(e: FormEvent) {
+    e.preventDefault();
+    setFormPago(false);
+    void hacer(() =>
+      enviar("/api/hogar/proyectos/items", "PATCH", {
+        id: item.id,
+        pagado: true,
+        pagadoConApartado: false,
+        pagadoPor,
+        pagadoFecha,
+        registrarGasto: registrar,
+      })
+    );
+  }
 
   const pagarCon = (conApartado: boolean) => {
     setEligiendoPago(false);
@@ -375,7 +398,8 @@ function FilaItemProyecto({
   }
 
   return (
-    <li className="flex items-center gap-3 py-2">
+    <li className="py-2">
+      <div className="flex items-center gap-3">
       <input
         type="checkbox"
         checked={item.pagado}
@@ -399,7 +423,9 @@ function FilaItemProyecto({
           {item.pagado
             ? item.pagadoConApartado
               ? t("proj.paidFromSaved")
-              : t("proj.paidOutside")
+              : item.gastoCategoriaId
+                ? `${item.pagadoPor ? t("proj.paidOutsideBy", { name: nombreDe(item.pagadoPor) }) : t("proj.paidOutside")} · ${t("proj.registeredInBudget")}`
+                : t("proj.paidOutside")
             : item.fecha
               ? t("proj.dueOn", { date: fechaLarga(item.fecha, t.locale) })
               : t("proj.noDate")}
@@ -420,7 +446,10 @@ function FilaItemProyecto({
           <button
             type="button"
             disabled={ocupado}
-            onClick={() => pagarCon(false)}
+            onClick={() => {
+              setEligiendoPago(false);
+              setFormPago(true);
+            }}
             className="rounded-lg px-2 py-1 font-medium text-gold transition hover:bg-surface-raised"
           >
             {t("proj.outside")}
@@ -458,6 +487,16 @@ function FilaItemProyecto({
         </span>
       ) : (
         <>
+          {item.pagado && !item.pagadoConApartado && !item.gastoCategoriaId ? (
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() => setFormPago(true)}
+              className="rounded-lg px-2 py-1 text-xs font-medium text-gold transition hover:bg-surface-raised"
+            >
+              {t("proj.recordExpense")}
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={ocupado}
@@ -478,6 +517,78 @@ function FilaItemProyecto({
           </button>
         </>
       )}
+      </div>
+
+      {formPago ? (
+        <form
+          onSubmit={pagarPorFuera}
+          className="mt-2 space-y-3 rounded-xl border border-line bg-surface-raised p-3"
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor={`pago-quien-${item.id}`}>
+                {t("proj.whoPaid")}
+              </label>
+              <select
+                id={`pago-quien-${item.id}`}
+                value={pagadoPor}
+                onChange={(e) => setPagadoPor(e.target.value)}
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              >
+                {personas.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+                <option value="">{t("proj.joint")}</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor={`pago-fecha-${item.id}`}>
+                {t("proj.paidOn")}
+              </label>
+              <input
+                id={`pago-fecha-${item.id}`}
+                type="date"
+                value={pagadoFecha}
+                onChange={(e) => setPagadoFecha(e.target.value)}
+                required
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-start gap-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={registrar}
+              onChange={(e) => setRegistrar(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-[var(--color-gold)]"
+            />
+            <span>
+              {t("proj.registerExpense")}
+              <span className="block text-xs text-text-muted">{t("proj.registerExpenseHelp")}</span>
+            </span>
+          </label>
+
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={ocupado}
+              className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-110 disabled:opacity-60"
+            >
+              {t("proj.confirmPaid")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormPago(false)}
+              className="rounded-xl px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-surface hover:text-text"
+            >
+              {t("common.cancel")}
+            </button>
+          </div>
+        </form>
+      ) : null}
     </li>
   );
 }
@@ -1035,7 +1146,13 @@ function TarjetaProyecto({
       ) : (
         <ul className="mt-2 divide-y divide-line text-sm">
           {itemsOrdenados.map((item) => (
-            <FilaItemProyecto key={item.id} item={item} ocupado={ocupado} hacer={hacer} />
+            <FilaItemProyecto
+              key={item.id}
+              item={item}
+              personas={vista.aportes.map((a) => ({ id: a.memberId, nombre: a.nombre, esMio: a.esMio }))}
+              ocupado={ocupado}
+              hacer={hacer}
+            />
           ))}
         </ul>
       )}

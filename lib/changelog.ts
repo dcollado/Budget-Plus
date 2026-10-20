@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "nuevo",
+        texto: {
+          en: "In Projects, when you mark an item as paid outside your saved money, you choose who paid and when, and it is recorded in Budget as that person's expense, so what they have free that month goes down. Items already paid have a Record the expense button.",
+          es: "En Proyectos, al marcar un gasto como pagado por fuera de lo apartado, eliges quién pagó y cuándo, y se registra en Presupuesto como gasto de esa persona, así que baja lo que tiene libre ese mes. Los gastos ya pagados tienen un botón Registrar el gasto.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "Budget now shows each month's suggested saving for your projects (marked Suggested, with a Confirm button). It does not count in the totals until it is confirmed.",
