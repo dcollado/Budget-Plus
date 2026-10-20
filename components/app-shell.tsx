@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BookOpen,
   ChevronDown,
+  CircleHelp,
   LogOut,
   Menu,
   ShieldCheck,
@@ -18,7 +20,9 @@ import {
   usePathname,
   useRouter,
 } from "next/navigation";
+import { AvisoLanzamiento } from "@/components/aviso-lanzamiento";
 import { NotificacionesCampana } from "@/components/notificaciones-campana";
+import { seccionDeLaGuia } from "@/lib/guia-seccion";
 import { useLocale, useSetLocale, useT } from "@/lib/i18n/client";
 import { isLocale } from "@/lib/i18n/config";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -31,12 +35,12 @@ const navLinks: { href: string; label: MessageKey }[] = [
     label: "nav.budget",
   },
   {
-    href: "/reporte",
-    label: "nav.report",
-  },
-  {
     href: "/proyectos",
     label: "nav.projects",
+  },
+  {
+    href: "/reporte",
+    label: "nav.report",
   },
 ];
 
@@ -149,6 +153,7 @@ export function AppShell({
   // Mine: profile and, if applicable, platform administration.
   const cuentaLinks = [
     { href: "/perfil", label: t("nav.profile"), Icono: UserCog },
+    { href: "/guia", label: t("nav.guide"), Icono: BookOpen },
     { href: "/cambios", label: t("nav.changes"), Icono: Sparkles },
     ...(esSuperadmin ? [{ href: "/admin", label: t("nav.admin"), Icono: ShieldCheck }] : []),
   ];
@@ -213,6 +218,16 @@ export function AppShell({
           </nav>
 
           <div className="flex items-center gap-2">
+            {perfil ? (
+              <Link
+                href={`/guia#${seccionDeLaGuia(pathname)}`}
+                aria-label={t("nav.guideHelp")}
+                title={t("nav.guideHelp")}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text"
+              >
+                <CircleHelp size={18} aria-hidden="true" />
+              </Link>
+            ) : null}
             {perfil ? <NotificacionesCampana /> : null}
 
           {/* User menu (desktop): click to open. */}
@@ -369,6 +384,8 @@ export function AppShell({
           </nav>
         ) : null}
       </header>
+
+      {perfil ? <AvisoLanzamiento /> : null}
 
       {children}
     </>

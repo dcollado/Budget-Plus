@@ -10,6 +10,9 @@ import type { Notificacion } from "@/lib/notificaciones";
 
 const CADA_MS = 60_000;
 
+// Avisa a la campana que algo cambió (p. ej. se cerró un aviso de lanzamiento).
+export const EVENTO_NOTIFICACIONES = "bp:notificaciones";
+
 // La campana del encabezado: avisos de pagos y, para el super-admin, de
 // solicitudes. Se actualiza sola cada minuto y al abrirla.
 export function NotificacionesCampana() {
@@ -35,7 +38,12 @@ export function NotificacionesCampana() {
   useEffect(() => {
     cargar();
     const timer = setInterval(cargar, CADA_MS);
-    return () => clearInterval(timer);
+    // Otras partes de la app (el aviso de lanzamiento) piden refrescar al marcar algo leído.
+    window.addEventListener(EVENTO_NOTIFICACIONES, cargar);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(EVENTO_NOTIFICACIONES, cargar);
+    };
   }, [cargar]);
 
   useEffect(() => {
@@ -82,12 +90,19 @@ export function NotificacionesCampana() {
       pago_manana: "notif.payTomorrow",
       pago_vencido: "notif.payOverdue",
       solicitud_acceso: "notif.accessRequest",
+      novedad: "notif.release",
     };
     const k = clave[n.tipo];
     if (!k) return { titulo: "", detalle: "" };
 
     return {
-      titulo: t(k, { name: nombre, amount: monto, date: fecha }),
+      // Los lanzamientos traen su título en los dos idiomas.
+      titulo: t(k, {
+        name: nombre,
+        amount: monto,
+        date: fecha,
+        title: String(n.datos[t.locale] ?? n.datos.en ?? ""),
+      }),
       detalle: new Date(n.creadaEn).toLocaleDateString(t.locale, { day: "numeric", month: "short" }),
     };
   }

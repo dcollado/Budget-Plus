@@ -24,6 +24,36 @@ export const CHANGELOG: EntradaChangelog[] = [
   {
     fecha: "2026-10-20",
     titulo: {
+      en: "A guide inside the app",
+      es: "Una guía dentro de la app",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "New Guide page that explains how each part of the app works (Budget, Accounts and fixed expenses, Projects, Reports…), in English and Spanish. Open it with the ? icon at the top, which takes you to the section of the screen you are on, or from your name menu.",
+          es: "Nueva página de Guía que explica cómo funciona cada parte de la app (Presupuesto, Cuentas y gastos fijos, Proyectos, Reportes…), en español e inglés. Ábrela con el ícono ? de arriba, que te lleva a la sección de la pantalla donde estás, o desde el menú de tu nombre.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "When something new is released you get a special notification in the bell, plus a notice at the top once you sign in. Close it or open the news and it is marked as read.",
+          es: "Cuando se lanza algo nuevo recibes una notificación especial en la campana, y un aviso arriba al entrar. Ciérralo o abre la novedad y queda como leído.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "The main menu is now ordered Budget, Projects, Reports.",
+          es: "El menú principal ahora va en este orden: Presupuesto, Proyectos, Reportes.",
+        },
+      },
+    ],
+  },
+  {
+    fecha: "2026-10-20",
+    titulo: {
       en: "Projects for big expenses",
       es: "Proyectos para gastos grandes",
     },

@@ -1,3 +1,4 @@
+import { anunciosVigentes } from "@/lib/anuncios";
 import { getSql, usaPostgres } from "@/lib/db";
 import { listBudgets, listCategories, listHouseholds, listMembers, listTransactions } from "@/lib/household/datos";
 import { armarVistaMes, type CategoriaDelMes } from "@/lib/household/presupuesto";
@@ -13,6 +14,8 @@ export const TIPOS_NOTIFICACION = {
   pago_vencido: { activa: false },
   // Solo para super-admin: llegó una solicitud de acceso.
   solicitud_acceso: { activa: true },
+  // Se lanzó una funcionalidad nueva (lib/anuncios.ts): un aviso por persona.
+  novedad: { activa: true },
 } as const;
 
 export type TipoNotificacion = keyof typeof TIPOS_NOTIFICACION;
@@ -37,6 +40,14 @@ export async function listarNotificaciones(usuarioId: string): Promise<{
 }> {
   if (!usaPostgres()) return { items: [], noLeidas: 0 };
   const sql = getSql();
+
+  // Los lanzamientos recientes se avisan aquí, una sola vez por persona. Si
+  // falla, la campana sigue mostrando lo demás.
+  try {
+    await asegurarNovedades(usuarioId);
+  } catch (error) {
+    console.error("Could not create release notifications:", error);
+  }
 
   const filas = await sql<
     { id: string; tipo: string; datos: Notificacion["datos"]; enlace: string; creada_en: Date; leida_en: Date | null }[]
@@ -93,6 +104,41 @@ async function crearNotificacion(n: {
     on conflict (usuario_id, clave) do nothing
     returning id`;
   return filas.length > 0;
+}
+
+// Un aviso por cada lanzamiento vigente (lib/anuncios.ts) que esta persona
+// todavía no tiene. La clave única evita repetirlo; el texto va en los dos
+// idiomas y se elige al leer. Los avisos duran menos que lo que se conservan
+// (DIAS_DE_ANUNCIO < DIAS_QUE_SE_CONSERVAN), así que no reaparecen.
+export async function asegurarNovedades(usuarioId: string, hoy: string = fechaEnPanama()): Promise<number> {
+  const vigentes = anunciosVigentes(hoy);
+  if (vigentes.length === 0) return 0;
+
+  const claves = vigentes.map((a) => `novedad:${a.id}`);
+  const existentes = new Set(
+    (
+      await getSql()<{ clave: string }[]>`
+        select clave from notificaciones
+        where usuario_id = ${usuarioId} and clave = any(${claves})`
+    ).map((f) => f.clave)
+  );
+
+  let creadas = 0;
+  for (const anuncio of vigentes) {
+    const clave = `novedad:${anuncio.id}`;
+    if (existentes.has(clave)) continue;
+
+    const nueva = await crearNotificacion({
+      usuarioId,
+      tipo: "novedad",
+      clave,
+      datos: { id: anuncio.id, en: anuncio.titulo.en, es: anuncio.titulo.es },
+      enlace: anuncio.enlace,
+    });
+    if (nueva) creadas++;
+  }
+
+  return creadas;
 }
 
 // Llegó una solicitud de acceso: aviso para cada super-admin activo.

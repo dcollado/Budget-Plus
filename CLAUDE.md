@@ -33,3 +33,18 @@ Antes de cada push a `main` (o a la rama que se despliega):
    dentro de `eslint-config-next`) no bloquea el push, pero se reporta.
 4. Decir el resultado explícitamente en el resumen: "audit de producción: 0" o
    la lista de lo pendiente. No decir "listo para subir" sin haberlo corrido.
+
+## Guía y aviso de lanzamiento — obligatorios en cada funcionalidad nueva
+
+Cada vez que se **crea y lanza** una funcionalidad nueva (algo que la gente va a notar):
+
+1. Actualizar la guía (`lib/guia.ts`, **inglés y español**): sección nueva o
+   puntos nuevos en la que corresponda. Si hay pantalla nueva, mapearla en
+   `lib/guia-seccion.ts` para que el ícono "?" lleve a su sección.
+2. Agregar un anuncio arriba en `lib/anuncios.ts` (título y texto cortos, en los dos
+   idiomas, con enlace a la funcionalidad). De ahí salen la notificación especial
+   en la campana y el aviso que se ve al entrar a la app (no en el login).
+3. Entrada en `/cambios` (regla de arriba).
+4. Sin cambios de administración en nada de esto. Lo validan `lib/guia.test.ts` y
+   `lib/anuncios.test.ts`.
+No decir "listo para subir" sin que la guía y el anuncio estén al día.
