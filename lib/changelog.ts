@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "nuevo",
+        texto: {
+          en: "New Budgeted card in Projects, next to Committed: what is already set aside plus everyone's planned contributions, with how much is short or over. Committed now also shows what is already paid out of the project's total.",
+          es: "Nuevo widget Presupuestado en Proyectos, junto a Comprometido: lo que ya está apartado más los aportes planeados de todas las personas, con cuánto falta o sobra. Comprometido ahora también muestra lo ya pagado del total del proyecto.",
+        },
+      },
+      {
         tipo: "ajuste",
         texto: {
           en: "In Projects, the suggested amounts of each person now depend only on their own entries: when you change your contribution, the other person's suggestions no longer move.",

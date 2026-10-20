@@ -37,11 +37,14 @@ function Dato({
   valor,
   tono = "",
   ayuda,
+  detalles = [],
 }: {
   label: string;
   valor: string;
   tono?: string;
   ayuda?: ReactNode;
+  // Líneas más abajo del valor (p. ej. el desglose o la diferencia contra otro monto).
+  detalles?: { texto: string; tono?: string }[];
 }) {
   return (
     <div className="relative rounded-xl border border-line bg-surface-raised px-3 py-2.5">
@@ -50,6 +53,11 @@ function Dato({
         {ayuda}
       </div>
       <p className={`mt-0.5 text-base font-semibold ${tono || "text-text"}`}>{valor}</p>
+      {detalles.map((d) => (
+        <p key={d.texto} className={`text-xs ${d.tono ?? "text-text-muted"}`}>
+          {d.texto}
+        </p>
+      ))}
     </div>
   );
 }
@@ -1006,6 +1014,11 @@ function TarjetaProyecto({
     });
   }
 
+  // Lo presupuestado: lo que ya está apartado más lo que todas las personas planean
+  // aportar en los meses que vienen. Se compara con lo comprometido: si es menor
+  // falta sumar; si es mayor, se pasan.
+  const presupuestado = plan.apartadoDisponibleCents + vista.cobertura.planeadoCents;
+  const diferencia = presupuestado - plan.comprometidoCents;
   // Pendientes primero; lo ya pagado al final.
   const itemsOrdenados = [...items].sort((a, b) => Number(a.pagado) - Number(b.pagado));
   // Si algún pago cae después de la fecha del proyecto, se avisa.
@@ -1059,14 +1072,57 @@ function TarjetaProyecto({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Dato
           label={t("proj.committed")}
           valor={formatearCentavos(plan.comprometidoCents)}
+          detalles={
+            plan.pagadoCents > 0
+              ? [
+                  {
+                    texto: t("proj.committedPaid", {
+                      paid: formatearCentavos(plan.pagadoCents),
+                      total: formatearCentavos(plan.pagadoCents + plan.comprometidoCents),
+                    }),
+                  },
+                ]
+              : []
+          }
           ayuda={
             <InfoTip
               texto={t("proj.committedHelp", { paid: formatearCentavos(plan.pagadoCents) })}
               etiqueta={t("proj.moreInfo", { name: t("proj.committed") })}
+            />
+          }
+        />
+        <Dato
+          label={t("proj.budgeted")}
+          valor={formatearCentavos(presupuestado)}
+          tono="text-gold"
+          detalles={[
+            {
+              texto: t("proj.budgetedBreakdown", {
+                saved: formatearCentavos(plan.apartadoDisponibleCents),
+                planned: formatearCentavos(vista.cobertura.planeadoCents),
+              }),
+            },
+            {
+              texto:
+                diferencia < 0
+                  ? t("proj.budgetedShort", { amount: formatearCentavos(-diferencia) })
+                  : diferencia > 0
+                    ? t("proj.budgetedOver", { amount: formatearCentavos(diferencia) })
+                    : t("proj.budgetedExact"),
+              tono: diferencia < 0 ? "text-rust-text" : diferencia > 0 ? "text-gold" : "text-sage",
+            },
+          ]}
+          ayuda={
+            <InfoTip
+              texto={t("proj.budgetedHelp", {
+                saved: formatearCentavos(plan.apartadoDisponibleCents),
+                planned: formatearCentavos(vista.cobertura.planeadoCents),
+              })}
+              etiqueta={t("proj.moreInfo", { name: t("proj.budgeted") })}
             />
           }
         />
