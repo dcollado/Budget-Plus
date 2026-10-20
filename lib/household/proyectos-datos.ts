@@ -216,20 +216,20 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
 
       // El plan sugerido: lo que falta por apartar se reparte entre los meses según
       // la capacidad de cada uno (sus ingresos y gastos, fijos y extra) y cumpliendo
-      // las fechas de pago. Lo que alguien ya confirmó se respeta: la sugerencia llena
-      // solo lo que falta. `excepcion` = una persona y un mes a los que se les calcula lo
-      // que se les sugeriría aunque ya hayan confirmado (para mostrar su sugerido junto a su monto).
-      const sugerir = (excepcion: { memberId: string; mes: string } | null) => {
+      // las fechas de pago. La sugerencia de cada persona solo depende de lo SUYO: lo
+      // que ella ya confirmó se respeta (la sugerencia llena solo lo que falta), pero lo
+      // que confirme o cambie la otra persona no la mueve; lo ya hecho sí, porque ya es
+      // dinero apartado. `para` = de quién son las sugerencias que se calculan.
+      // `excepcion` = una persona y un mes a los que se les calcula lo que se les
+      // sugeriría aunque ya hayan confirmado (para mostrar su sugerido junto a su monto).
+      const sugerir = (excepcion: { memberId: string; mes: string } | null, para: string) => {
         const resultado = new Map<string, number>();
         const sinConfirmar = (memberId: string, mes: string) => {
           const fila = filaDe(proyecto.id, memberId, mes);
-          // Un aporte confirmado en 0 es "este mes no aporto": no cambia lo que se
-          // sugiere a los demás (cada quien responde por lo suyo).
-          return (
-            fila === undefined ||
-            (fila.montoCents === 0 && !fila.hecho) ||
-            (excepcion !== null && excepcion.memberId === memberId && excepcion.mes === mes && !fila.hecho)
-          );
+          if (fila === undefined) return true;
+          // Lo pendiente de las demás personas no cuenta para esta sugerencia.
+          if (memberId !== para) return !fila.hecho;
+          return excepcion !== null && excepcion.memberId === memberId && excepcion.mes === mes && !fila.hecho;
         };
         // Lo confirmado que aún no está hecho (lo hecho ya está en lo apartado).
         const pendienteConfirmado = ventana.map((mes) =>
@@ -266,14 +266,16 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         return resultado;
       };
 
-      const sugeridos = sugerir(null);
+      // Las sugerencias de cada persona, cada una con lo suyo.
+      const sugeridosPor = new Map(miembros.map((m) => [m.id, sugerir(null, m.id)]));
+      const sugeridoDe = (memberId: string, clave: string) => sugeridosPor.get(memberId)?.get(clave);
 
       for (const mes of ventana) {
         for (const m of miembros) {
           const clave = `${m.id}:${mes}`;
           const fila = filaDe(proyecto.id, m.id, mes);
           aporteDe.set(clave, {
-            cents: fila?.montoCents ?? sugeridos.get(clave) ?? 0,
+            cents: fila?.montoCents ?? sugeridoDe(m.id, clave) ?? 0,
             definido: fila !== undefined,
             hecho: fila?.hecho ?? false,
             // Mi sugerido de un mes que ya confirmé se calcula solo para ese mes.
@@ -282,10 +284,10 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
               fila && fila.montoCents === 0
                 ? 0
                 : m.id === yo && fila && !fila.hecho
-                ? (sugerir({ memberId: yo, mes }).get(clave) ?? fila.montoCents)
+                ? (sugerir({ memberId: yo, mes }, yo).get(clave) ?? fila.montoCents)
                 : fila?.hecho
                   ? fila.montoCents
-                  : (sugeridos.get(clave) ?? 0),
+                  : (sugeridoDe(m.id, clave) ?? 0),
           });
         }
       }

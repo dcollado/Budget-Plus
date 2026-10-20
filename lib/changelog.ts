@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "ajuste",
+        texto: {
+          en: "In Projects, the suggested amounts of each person now depend only on their own entries: when you change your contribution, the other person's suggestions no longer move.",
+          es: "En Proyectos, los montos sugeridos de cada persona ahora dependen solo de lo suyo: cuando cambias tu aporte, las sugerencias de la otra persona ya no se mueven.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "In Projects you can now set a contribution of 0 for a month (you cannot contribute that month). It only affects your own amounts, not the other person's. Leave the field empty to go back to the suggestion.",
