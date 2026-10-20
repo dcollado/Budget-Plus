@@ -6,6 +6,8 @@ import {
   listCategories,
   listCuentas,
   listMembers,
+  listProyectoAportesMes,
+  listProyectos,
   listTransactions,
   upsertBudget,
 } from "@/lib/household/datos";
@@ -34,6 +36,36 @@ export async function GET(req: NextRequest) {
 
     const items = armarVistaMes(categories, budgets, transactions, month);
 
+    // Lo que cada persona aparta ese mes para los proyectos (solo lo confirmado).
+    // Nunca debe romper el presupuesto: si falla, el mes se ve sin esas líneas.
+    let aportesProyecto: {
+      projectId: string;
+      projectName: string;
+      memberId: string;
+      montoCents: number;
+      hecho: boolean;
+    }[] = [];
+
+    try {
+      const [aportes, proyectos] = await Promise.all([
+        listProyectoAportesMes(contexto.householdId),
+        listProyectos(contexto.householdId),
+      ]);
+      const nombres = new Map(proyectos.map((p) => [p.id, p.name]));
+
+      aportesProyecto = aportes
+        .filter((a) => a.month === month && nombres.has(a.projectId))
+        .map((a) => ({
+          projectId: a.projectId,
+          projectName: nombres.get(a.projectId) ?? "",
+          memberId: a.memberId,
+          montoCents: a.montoCents,
+          hecho: a.hecho,
+        }));
+    } catch (error) {
+      console.error("Could not read the project contributions:", error);
+    }
+
     const totales = items.reduce(
       (acc, item) => {
         if (item.category.kind === "income") {
@@ -57,6 +89,7 @@ export async function GET(req: NextRequest) {
       month,
       items,
       totales,
+      aportesProyecto,
       members: members.map((m) => ({ id: m.id, displayName: m.displayName, color: m.color })),
       cuentas: cuentas.map((c) => ({ id: c.id, name: c.name })),
       // Quién está mirando: el desglose de transferencias es solo suyo.

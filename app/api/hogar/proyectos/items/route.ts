@@ -99,6 +99,12 @@ export async function PATCH(req: NextRequest) {
 
     if (body.pagado !== undefined) {
       cambios.pagado = body.pagado === true;
+      // Al desmarcarlo, deja de contar como pagado con lo apartado.
+      if (!cambios.pagado) cambios.pagadoConApartado = false;
+    }
+
+    if (body.pagadoConApartado !== undefined && cambios.pagado !== false) {
+      cambios.pagadoConApartado = body.pagadoConApartado === true;
     }
 
     const item = await actualizarProyectoItem(contexto.householdId, id, cambios);

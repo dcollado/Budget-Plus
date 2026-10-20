@@ -8,7 +8,7 @@ import type {
   Household,
   Member,
   Proyecto,
-  ProyectoAporte,
+  ProyectoAporteMes,
   ProyectoItem,
   Transaction,
 } from "./schema";
@@ -733,7 +733,7 @@ export async function listProyectoItems(householdId: string): Promise<ProyectoIt
 }
 
 export async function crearProyectoItem(
-  input: Omit<ProyectoItem, "id" | "pagado">
+  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado">
 ): Promise<ProyectoItem> {
   void input;
   throw new Error(SIN_PROYECTOS);
@@ -742,7 +742,7 @@ export async function crearProyectoItem(
 export async function actualizarProyectoItem(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado">>
+  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado">>
 ): Promise<ProyectoItem | null> {
   void householdId;
   void id;
@@ -762,12 +762,29 @@ export async function eliminarProyecto(householdId: string, id: string): Promise
   throw new Error(SIN_PROYECTOS);
 }
 
-export async function listProyectoAportes(householdId: string): Promise<ProyectoAporte[]> {
+export async function listProyectoAportesMes(householdId: string): Promise<ProyectoAporteMes[]> {
   void householdId;
   return [];
 }
 
-export async function guardarProyectoAporte(input: ProyectoAporte): Promise<void> {
+export async function guardarProyectoAporteMes(
+  input: Omit<ProyectoAporteMes, "hecho">
+): Promise<void> {
   void input;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function marcarProyectoAporteHecho(
+  householdId: string,
+  projectId: string,
+  memberId: string,
+  month: string,
+  hecho: boolean
+): Promise<boolean> {
+  void householdId;
+  void projectId;
+  void memberId;
+  void month;
+  void hecho;
   throw new Error(SIN_PROYECTOS);
 }

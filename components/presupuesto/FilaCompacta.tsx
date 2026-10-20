@@ -6,7 +6,7 @@ import type { CategoriaDelMes } from "@/lib/household/presupuesto";
 import { formatearCentavos, formatearFechaCorta } from "@/lib/household/formato";
 import { fieldBaseClass, fieldNormalClass } from "@/lib/ui";
 import type { CuentaHogar, MiembroHogar } from "@/lib/household/usePresupuestoMes";
-import EtiquetaDueno from "@/components/presupuesto/EtiquetaDueno";
+import EtiquetaDueno, { nombreMiembro } from "@/components/presupuesto/EtiquetaDueno";
 import { useT } from "@/lib/i18n/client";
 
 type Props = {
@@ -25,6 +25,8 @@ type Props = {
   // it does not count toward the transfers table (that is fixed items only).
   cuentas?: CuentaHogar[];
   onCuenta?: (categoryId: string, cuentaId: string) => void;
+  // Cambiar de quién es (conjunto o una persona). Sin esto no se muestra el selector.
+  onDueno?: (categoryId: string, ownerMemberId: string) => void;
 };
 
 // A single line: date · name · amount. Designed for long lists on
@@ -37,12 +39,14 @@ export default function FilaCompacta({
   members = [],
   cuentas = [],
   onCuenta,
+  onDueno,
 }: Props) {
   const t = useT();
   const [editando, setEditando] = useState(false);
   const [monto, setMonto] = useState(String(item.plannedAmountCents / 100));
   const [fecha, setFecha] = useState(item.fechaPago);
   const [cuentaId, setCuentaId] = useState(item.category.cuentaId);
+  const [dueno, setDueno] = useState(item.category.ownerMemberId);
   const [nota, setNota] = useState(item.nota);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -51,12 +55,14 @@ export default function FilaCompacta({
   const [anio, mes] = month.split("-").map(Number);
   const ultimoDia = new Date(anio, mes, 0).getDate();
   const conCuenta = !esIngreso && Boolean(onCuenta);
+  const conDueno = Boolean(onDueno) && members.length > 0;
   const nombreCuenta = cuentas.find((c) => c.id === item.category.cuentaId)?.name;
 
   function abrir() {
     setMonto(String(item.plannedAmountCents / 100));
     setFecha(item.fechaPago);
     setCuentaId(item.category.cuentaId);
+    setDueno(item.category.ownerMemberId);
     setNota(item.nota);
     setError("");
     setEditando(true);
@@ -96,6 +102,19 @@ export default function FilaCompacta({
           throw new Error(t.msg(dataCuenta.message, "common.saveAccountError"));
         }
         onCuenta?.(item.category.id, cuentaId);
+      }
+
+      if (conDueno && dueno !== item.category.ownerMemberId) {
+        const resDueno = await fetch("/api/hogar/categorias", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.category.id, ownerMemberId: dueno }),
+        });
+        const dataDueno = await resDueno.json();
+        if (!resDueno.ok || !dataDueno.success) {
+          throw new Error(t.msg(dataDueno.message, "common.saveError"));
+        }
+        onDueno?.(item.category.id, dueno);
       }
 
       onGuardado?.(item.category.id, Math.round(Number(monto || 0) * 100), fecha, {
@@ -272,6 +291,21 @@ export default function FilaCompacta({
             aria-label={t("row.note")}
             className={`${fieldBaseClass} ${fieldNormalClass} w-full py-1.5 text-sm`}
           />
+          {conDueno ? (
+            <select
+              value={dueno}
+              onChange={(e) => setDueno(e.target.value)}
+              aria-label={t("cat.fieldOwner")}
+              className={`${fieldBaseClass} ${fieldNormalClass} w-full py-1.5 text-sm`}
+            >
+              <option value="">{t("cat.joint")}</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {nombreMiembro(members, m.id)}
+                </option>
+              ))}
+            </select>
+          ) : null}
           {conCuenta ? (
             <select
               value={cuentas.some((c) => c.id === cuentaId) ? cuentaId : ""}

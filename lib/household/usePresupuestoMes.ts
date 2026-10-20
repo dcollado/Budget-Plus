@@ -6,6 +6,15 @@ import { useT } from "@/lib/i18n/client";
 export type MiembroHogar = { id: string; displayName: string; color?: number };
 export type CuentaHogar = { id: string; name: string };
 
+// Lo que una persona aparta ese mes para un proyecto (solo lo confirmado).
+export type AporteProyectoMes = {
+  projectId: string;
+  projectName: string;
+  memberId: string;
+  montoCents: number;
+  hecho: boolean;
+};
+
 export type TotalesMes = {
   plannedIncomeCents: number;
   actualIncomeCents: number;
@@ -37,6 +46,7 @@ function sumarTotales(items: CategoriaDelMes[]): TotalesMes {
 export function usePresupuestoMes(month: string, refreshKey = 0) {
   const t = useT();
   const [items, setItems] = useState<CategoriaDelMes[]>([]);
+  const [aportesProyecto, setAportesProyecto] = useState<AporteProyectoMes[]>([]);
   const [cargado, setCargado] = useState(false);
   const [members, setMembers] = useState<MiembroHogar[]>([]);
   const [cuentas, setCuentas] = useState<CuentaHogar[]>([]);
@@ -66,6 +76,7 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
         }
 
         setItems(data.data.items);
+        setAportesProyecto(data.data.aportesProyecto ?? []);
         setCargado(true);
         setMembers(data.data.members ?? []);
         setCuentas(data.data.cuentas ?? []);
@@ -186,6 +197,8 @@ export function usePresupuestoMes(month: string, refreshKey = 0) {
   return {
     items,
     totales,
+    aportesProyecto,
+    setAportesProyecto,
     members,
     cuentas,
     setCuentas,

@@ -13,7 +13,7 @@ import type {
   Household,
   Member,
   Proyecto,
-  ProyectoAporte,
+  ProyectoAporteMes,
   ProyectoItem,
   Transaction,
 } from "./schema";
@@ -419,7 +419,7 @@ export async function eliminarTransaction(id: string, householdId: string): Prom
 // ---------- Proyectos ----------
 
 const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "objetivo_cents", "ahorrado_cents", "archived"];
-const COLS_PROYECTO_ITEM = ["id", "project_id", "household_id", "concepto", "monto_cents", "fecha", "pagado"];
+const COLS_PROYECTO_ITEM = ["id", "project_id", "household_id", "concepto", "monto_cents", "fecha", "pagado", "pagado_con_apartado"];
 
 type FilaProyecto = {
   id: string;
@@ -448,6 +448,7 @@ type FilaProyectoItem = {
   monto_cents: string | number;
   fecha: unknown;
   pagado: boolean;
+  pagado_con_apartado: boolean;
 };
 const aProyectoItem = (r: FilaProyectoItem): ProyectoItem => ({
   id: r.id,
@@ -457,6 +458,7 @@ const aProyectoItem = (r: FilaProyectoItem): ProyectoItem => ({
   montoCents: Number(r.monto_cents),
   fecha: fecha(r.fecha),
   pagado: r.pagado,
+  pagadoConApartado: r.pagado_con_apartado,
 });
 
 export async function listProyectos(householdId: string): Promise<Proyecto[]> {
@@ -523,7 +525,7 @@ export async function listProyectoItems(householdId: string): Promise<ProyectoIt
 }
 
 export async function crearProyectoItem(
-  input: Omit<ProyectoItem, "id" | "pagado">
+  input: Omit<ProyectoItem, "id" | "pagado" | "pagadoConApartado">
 ): Promise<ProyectoItem> {
   const sql = getSql();
   const [fila] = await sql<FilaProyectoItem[]>`
@@ -541,7 +543,7 @@ export async function crearProyectoItem(
 export async function actualizarProyectoItem(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado">>
+  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado" | "pagadoConApartado">>
 ): Promise<ProyectoItem | null> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
@@ -549,6 +551,7 @@ export async function actualizarProyectoItem(
   if (cambios.montoCents !== undefined) set.monto_cents = cambios.montoCents;
   if (cambios.fecha !== undefined) set.fecha = nulo(cambios.fecha);
   if (cambios.pagado !== undefined) set.pagado = cambios.pagado;
+  if (cambios.pagadoConApartado !== undefined) set.pagado_con_apartado = cambios.pagadoConApartado;
 
   if (Object.keys(set).length === 0) return null;
 
@@ -572,24 +575,60 @@ export async function eliminarProyecto(householdId: string, id: string): Promise
   return filas.length > 0;
 }
 
-export async function listProyectoAportes(householdId: string): Promise<ProyectoAporte[]> {
+export async function listProyectoAportesMes(householdId: string): Promise<ProyectoAporteMes[]> {
   const filas = await getSql()<
-    { project_id: string; member_id: string; household_id: string; monto_cents: string | number }[]
-  >`select project_id, member_id, household_id, monto_cents from proyecto_aportes
+    {
+      project_id: string;
+      member_id: string;
+      household_id: string;
+      month: string;
+      monto_cents: string | number;
+      hecho: boolean;
+    }[]
+  >`select project_id, member_id, household_id, month, monto_cents, hecho from proyecto_aportes_mes
     where household_id = ${householdId}`;
   return filas.map((f) => ({
     projectId: f.project_id,
     memberId: f.member_id,
     householdId: f.household_id,
+    month: f.month,
     montoCents: Number(f.monto_cents),
+    hecho: f.hecho,
   }));
 }
 
-// Crea o cambia el aporte de una persona a un proyecto.
-export async function guardarProyectoAporte(input: ProyectoAporte): Promise<void> {
-  await getSql()`
-    insert into proyecto_aportes (project_id, member_id, household_id, monto_cents)
-    values (${input.projectId}, ${input.memberId}, ${input.householdId}, ${input.montoCents})
-    on conflict (project_id, member_id)
+// Crea o cambia lo que una persona aparta en un mes (no toca "hecho"); con 0 lo borra.
+export async function guardarProyectoAporteMes(
+  input: Omit<ProyectoAporteMes, "hecho">
+): Promise<void> {
+  const sql = getSql();
+
+  if (input.montoCents <= 0) {
+    await sql`delete from proyecto_aportes_mes
+      where project_id = ${input.projectId} and member_id = ${input.memberId}
+        and month = ${input.month} and household_id = ${input.householdId}`;
+    return;
+  }
+
+  await sql`
+    insert into proyecto_aportes_mes (project_id, member_id, household_id, month, monto_cents)
+    values (${input.projectId}, ${input.memberId}, ${input.householdId}, ${input.month}, ${input.montoCents})
+    on conflict (project_id, member_id, month)
     do update set monto_cents = excluded.monto_cents, updated_at = now()`;
+}
+
+// Marca o desmarca un aporte como hecho. false si no existe ese aporte.
+export async function marcarProyectoAporteHecho(
+  householdId: string,
+  projectId: string,
+  memberId: string,
+  month: string,
+  hecho: boolean
+): Promise<boolean> {
+  const filas = await getSql()<{ month: string }[]>`
+    update proyecto_aportes_mes set hecho = ${hecho}, updated_at = now()
+    where project_id = ${projectId} and member_id = ${memberId} and month = ${month}
+      and household_id = ${householdId}
+    returning month`;
+  return filas.length > 0;
 }

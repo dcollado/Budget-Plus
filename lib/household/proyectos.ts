@@ -18,9 +18,11 @@ export type ProyectoParaPlan = {
   objetivoCents: number; // 0 = sin presupuesto objetivo
   // Total que se ha apartado hasta hoy, incluido lo que ya se usó para pagar.
   ahorradoCents: number;
-  // Suma de los ítems ya pagados. Se pagaron con lo apartado, así que se
-  // descuentan de él. 0 si no viene.
+  // Suma de los ítems ya pagados (cuenta para el presupuesto objetivo). 0 si no viene.
   pagadoCents?: number;
+  // De esos, lo que se pagó CON lo apartado para el proyecto: eso sí se
+  // descuenta de lo apartado. Lo pagado por fuera no lo toca. 0 si no viene.
+  pagadoConApartadoCents?: number;
   // Solo los ítems que faltan por pagar.
   items: ItemProyecto[];
 };
@@ -49,10 +51,11 @@ export type PlanProyecto = {
   porAsignarCents: number;
 };
 
-// Lo apartado que queda después de pagar lo que ya se pagó (nunca negativo:
-// si se pagó más de lo apartado, el resto salió de otro lado).
+// Lo apartado que queda después de pagar con ello lo que se pagó con lo
+// apartado (nunca negativo: si se pagó más de lo apartado, el resto salió de
+// otro lado). Lo pagado por fuera no lo toca.
 export function apartadoDisponible(proyecto: ProyectoParaPlan): number {
-  return Math.max(0, proyecto.ahorradoCents - (proyecto.pagadoCents ?? 0));
+  return Math.max(0, proyecto.ahorradoCents - (proyecto.pagadoConApartadoCents ?? 0));
 }
 
 // Meses completos entre dos "YYYY-MM" (b - a).
@@ -126,29 +129,31 @@ export function planDelProyecto(proyecto: ProyectoParaPlan, mesHoy: string): Pla
 
 export type DisponiblePersona = {
   salarioCents: number; // ingresos fijos a su nombre
+  ingresosExtraCents: number; // ingresos extra (variables) a su nombre en el mes
   fijosCents: number; // gastos fijos a su nombre
   extrasCents: number; // gastos extra (variables) a su nombre en el mes
-  // salario - fijos - extras; puede ser negativo.
+  // salario + ingresos extra - fijos - extras; puede ser negativo.
   disponibleCents: number;
 };
 
-// Lo que le queda a una persona en el mes después de sus gastos fijos y de
-// sus gastos extra. Mismo criterio que "Tus transferencias": solo cuenta lo
-// que está a su nombre (los gastos conjuntos no se le restan a nadie) y los
-// ingresos extra no se cuentan, porque no son seguros.
+// Lo que le queda a una persona en el mes: sus ingresos (fijos y extra) menos
+// sus gastos fijos y sus gastos extra, tal como los presupuestó. Solo cuenta lo
+// que está a su nombre (lo conjunto no se le suma ni se le resta a nadie).
 export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string): DisponiblePersona {
   const mios = items.filter((i) => i.category.ownerMemberId === memberId);
   const suma = (lista: CategoriaDelMes[]) => lista.reduce((t, i) => t + i.plannedAmountCents, 0);
 
   const salarioCents = suma(mios.filter((i) => i.category.fixed && i.category.kind === "income"));
+  const ingresosExtraCents = suma(mios.filter((i) => !i.category.fixed && i.category.kind === "income"));
   const fijosCents = suma(mios.filter((i) => i.category.fixed && i.category.kind === "expense"));
   const extrasCents = suma(mios.filter((i) => !i.category.fixed && i.category.kind === "expense"));
 
   return {
     salarioCents,
+    ingresosExtraCents,
     fijosCents,
     extrasCents,
-    disponibleCents: salarioCents - fijosCents - extrasCents,
+    disponibleCents: salarioCents + ingresosExtraCents - fijosCents - extrasCents,
   };
 }
 
@@ -157,95 +162,175 @@ export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string
 // margen para imprevistos.
 export const PORCENTAJE_MAXIMO_SUGERIDO = 70;
 
-export type LibrePersona = { memberId: string; libreCents: number };
-
-// Primera versión del aporte de cada persona, a partir del tiempo (la cuota
-// mínima que pide el proyecto) y de lo que cada una tiene libre: la cuota se
-// reparte en proporción a lo libre, en dólares enteros hacia arriba, y a
-// nadie se le sugiere más del 70% de lo suyo. Si entre todas no alcanzan la
-// cuota, la suma queda por debajo y la pantalla muestra lo que falta. Es solo
-// una sugerencia: cada persona puede cambiarla hasta su tope.
-export function aportesSugeridos(
-  cuotaMensualCents: number,
-  libres: LibrePersona[]
-): Record<string, number> {
-  const conLibre = libres.filter((l) => l.libreCents > 0);
-  const totalLibre = conLibre.reduce((t, l) => t + l.libreCents, 0);
-  const resultado: Record<string, number> = {};
-
-  for (const l of libres) resultado[l.memberId] = 0;
-  if (cuotaMensualCents <= 0 || totalLibre === 0) return resultado;
-
-  for (const l of conLibre) {
-    const parte = Math.ceil(((cuotaMensualCents * l.libreCents) / totalLibre) / 100) * 100;
-    // Con enteros: 172000 * 0.7 da 120399,99… y se perdería un dólar.
-    const comodo = Math.floor((l.libreCents * PORCENTAJE_MAXIMO_SUGERIDO) / 10000) * 100;
-    resultado[l.memberId] = Math.min(parte, comodo);
-  }
-
-  return resultado;
+// Lo más que se sugiere que una persona aparte en un mes con `libreCents`
+// libres: el 70%, en dólares enteros hacia abajo. Con enteros: 172000 * 0.7
+// da 120399,99… y se perdería un dólar.
+export function capacidadSugerible(libreCents: number): number {
+  if (libreCents <= 0) return 0;
+  return Math.floor((libreCents * PORCENTAJE_MAXIMO_SUGERIDO) / 10000) * 100;
 }
 
-export type PersonaAporte = {
-  memberId: string;
-  libreCents: number;
-  // Lo que ya confirmó; null = todavía no (se le sugiere).
-  confirmadoCents: number | null;
-};
+// Un pago futuro del proyecto: antes de los `meses` primeros meses de la
+// ventana tiene que haber apartado, en total, `necesarioCents` (ya descontado
+// lo que está apartado).
+export type ControlDelPlan = { meses: number; necesarioCents: number };
 
-// Sugerencia para cada persona teniendo en cuenta lo que las demás YA
-// confirmaron: lo que falta de la cuota (después de lo confirmado por las
-// otras) se reparte entre ella y quienes aún no confirman. Así, si una persona
-// baja su aporte, la sugerencia de la otra sube para compensar (hasta su 70%).
-export function sugerirAportes(
-  cuotaMensualCents: number,
-  personas: PersonaAporte[]
-): Record<string, number> {
-  const resultado: Record<string, number> = {};
+// Los puntos de control del plan: uno por cada fecha de pago futura. Lo que
+// vence este mes o ya venció no tiene control (ya no se arregla ahorrando).
+export function controlesDelPlan(proyecto: ProyectoParaPlan, mesHoy: string): ControlDelPlan[] {
+  const items = proyecto.items.map((i) => ({ ...i, fecha: i.fecha || proyecto.fechaObjetivo }));
+  const porMeses = new Map<number, number>();
 
-  for (const p of personas) {
-    const confirmadoPorOtras = personas
-      .filter((o) => o.memberId !== p.memberId && o.confirmadoCents !== null)
-      .reduce((t, o) => t + (o.confirmadoCents ?? 0), 0);
+  for (const fecha of [...new Set(items.map((i) => i.fecha))].sort()) {
+    const vence = items.filter((i) => i.fecha <= fecha).reduce((t, i) => t + i.montoCents, 0);
+    const meses = mesesEntre(mesHoy, fecha.slice(0, 7));
+    if (meses <= 0) continue;
 
-    const participantes = personas
-      .filter((o) => o.memberId === p.memberId || o.confirmadoCents === null)
-      .map((o) => ({ memberId: o.memberId, libreCents: o.libreCents }));
-
-    resultado[p.memberId] =
-      aportesSugeridos(Math.max(0, cuotaMensualCents - confirmadoPorOtras), participantes)[p.memberId] ?? 0;
+    const necesario = Math.max(0, vence - apartadoDisponible(proyecto));
+    porMeses.set(meses, Math.max(porMeses.get(meses) ?? 0, necesario));
   }
 
-  return resultado;
+  return [...porMeses.entries()]
+    .map(([meses, necesarioCents]) => ({ meses, necesarioCents }))
+    .sort((a, b) => a.meses - b.meses);
+}
+
+// Reparte `totalCents` entre los meses: más en los que hay más capacidad
+// (ingresos y gastos de ese mes), sin pasar de la capacidad de cada uno y
+// cumpliendo, mientras alcance, lo que hay que tener apartado antes de cada
+// pago. Si entre todos los meses no caben, se sugiere todo lo que cabe.
+export function repartirEnMeses(
+  totalCents: number,
+  capacidades: number[],
+  controles: ControlDelPlan[]
+): number[] {
+  const n = capacidades.length;
+  const cap = capacidades.map((c) => Math.max(0, c));
+  const capTotal = cap.reduce((t, c) => t + c, 0);
+
+  if (n === 0 || totalCents <= 0 || capTotal === 0) return cap.map(() => 0);
+  if (capTotal <= totalCents) return [...cap];
+
+  // Primera idea: en proporción a la capacidad de cada mes.
+  const a = cap.map((c) => (totalCents * c) / capTotal);
+
+  // Después se adelanta lo necesario para llegar a cada pago a tiempo,
+  // quitándolo de los meses posteriores para no cambiar el total.
+  for (const control of [...controles].sort((x, y) => x.meses - y.meses)) {
+    const k = Math.min(control.meses, n);
+    const faltante = control.necesarioCents - a.slice(0, k).reduce((t, v) => t + v, 0);
+    if (faltante <= 0.01) continue;
+
+    const sobra = a.slice(0, k).map((v, i) => cap[i] - v);
+    const sobraTotal = sobra.reduce((t, v) => t + v, 0);
+    const mover = Math.min(faltante, sobraTotal);
+    if (mover <= 0) continue;
+
+    for (let i = 0; i < k; i++) a[i] += (mover * sobra[i]) / sobraTotal;
+
+    const resto = a.slice(k).reduce((t, v) => t + v, 0);
+    if (resto > 0) for (let i = k; i < n; i++) a[i] -= (mover * a[i]) / resto;
+  }
+
+  return a.map((v) => Math.round(v));
+}
+
+// ---------- Los meses en los que se aparta ----------
+
+// "2026-10" + 3 -> "2027-01".
+export function sumarMeses(month: string, n: number): string {
+  const [anio, mes] = month.split("-").map(Number);
+  const total = anio * 12 + (mes - 1) + n;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
+}
+
+// Meses en los que se puede apartar para un proyecto: desde este mes hasta el
+// mes anterior al último pago (la fecha del proyecto o la de algún gasto
+// pendiente, la que sea más tarde). Siempre incluye al menos este mes.
+export function ventanaDeAhorro(mesHoy: string, fechas: string[], fechaProyecto: string): string[] {
+  const ultima = [fechaProyecto, ...fechas].filter(Boolean).reduce((max, f) => (f > max ? f : max), "");
+  const cantidad = Math.max(1, mesesEntre(mesHoy, ultima.slice(0, 7)));
+
+  return Array.from({ length: cantidad }, (_, i) => sumarMeses(mesHoy, i));
+}
+
+// Lo que está a nombre de "conjunto" en un mes: no se le suma ni se le resta
+// a nadie, así que conviene mostrarlo para que se vea qué queda sin contar.
+export type ConjuntoDelMes = { ingresosCents: number; gastosCents: number };
+
+export function conjuntoDelMes(items: CategoriaDelMes[]): ConjuntoDelMes {
+  const sinDueno = items.filter((i) => !i.category.ownerMemberId && i.plannedAmountCents > 0);
+  const suma = (lista: CategoriaDelMes[]) => lista.reduce((t, i) => t + i.plannedAmountCents, 0);
+
+  return {
+    ingresosCents: suma(sinDueno.filter((i) => i.category.kind === "income")),
+    gastosCents: suma(sinDueno.filter((i) => i.category.kind === "expense")),
+  };
+}
+
+// Lo que una persona tiene libre en UN mes, con el detalle.
+export type MesLibre = {
+  month: string; // YYYY-MM
+  salarioCents: number;
+  ingresosExtraCents: number;
+  fijosCents: number;
+  extrasCents: number;
+  // Lo que ya aparta ese mes para otros proyectos.
+  otrosProyectosCents: number;
+  // salario + ingresos extra - fijos - extras - otros; puede ser negativo. Es
+  // lo libre ANTES de lo que aporte a este proyecto.
+  libreCents: number;
+  // Lo conjunto de ese mes (sin dueño): informativo, no entra en el libre.
+  conjunto: ConjuntoDelMes;
+};
+
+// El mes con menos libre manda: un aporte es un monto fijo por mes, así que
+// solo se sostiene si cabe en el mes más ajustado. Si hay empate, el primero.
+// El tope nunca es negativo.
+export function mesMasAjustado(meses: MesLibre[]): { month: string; topeCents: number } {
+  if (meses.length === 0) return { month: "", topeCents: 0 };
+
+  const peor = meses.reduce((p, m) => (m.libreCents < p.libreCents ? m : p));
+
+  return { month: peor.month, topeCents: Math.max(0, peor.libreCents) };
 }
 
 // ---------- Si los aportes alcanzan ----------
 
 export type CoberturaProyecto = {
-  // Lo que se aparta por mes entre todos.
-  aportesMensualCents: number;
-  // Lo que falta por mes para llegar a la cuota mínima (0 si ya la cubren).
-  faltanteMensualCents: number;
-  // Con estos aportes se paga cada ítem a tiempo.
+  // Lo que falta por apartar de lo planeado: la suma de los aportes de todas
+  // las personas en los meses que aún no están marcados como hechos.
+  planeadoCents: number;
+  // Con lo que ya hay apartado más lo planeado se paga cada ítem a tiempo.
   alcanza: boolean;
   // Si no alcanza: la primera fecha en que falta plata, y cuánto.
   fechaProblema: string;
   faltanteEnFechaCents: number;
-  // Esa fecha es este mes o ya pasó: aportar más cada mes ya no la arregla.
+  // Esa fecha es este mes o ya pasó: apartar más en los meses que quedan ya no la arregla.
   problemaYaVencido: boolean;
-  // Meses que tardan en juntar todo lo comprometido. null = no se aparta
-  // nada, así que no se completa nunca; 0 = ya está cubierto.
+  // Meses que tardan en juntar todo lo comprometido con lo planeado. null = con
+  // lo planeado no se completa nunca; 0 = ya está cubierto.
   mesesParaCubrirTodo: number | null;
 };
 
-// Comprueba, fecha por fecha, que lo ahorrado más lo que se aparta cada mes
-// llegue a lo que vence. Se aparta una vez por mes desde el mes actual hasta
-// el mes anterior al pago (igual que en planDelProyecto).
+// Comprueba, fecha por fecha, que lo apartado más lo que se planea apartar mes
+// a mes llegue a lo que vence. `aportesPorMes` es lo que se planea apartar en
+// cada mes ("YYYY-MM" -> centavos), sumando a todas las personas y SOLO lo que
+// todavía no está hecho (lo hecho ya cuenta en lo apartado). Se aparta en los
+// meses desde el actual hasta el anterior al pago (igual que en planDelProyecto).
 export function coberturaConAportes(
   proyecto: ProyectoParaPlan,
-  aportesMensualCents: number,
+  aportesPorMes: Record<string, number>,
   mesHoy: string
 ): CoberturaProyecto {
+  const delMes = (i: number) => aportesPorMes[sumarMeses(mesHoy, i)] ?? 0;
+  // Lo que se planea apartar durante los primeros `meses` meses.
+  const apartadoEn = (meses: number) => {
+    let total = 0;
+    for (let i = 0; i < meses; i++) total += delMes(i);
+    return total;
+  };
+
   const plan = planDelProyecto(proyecto, mesHoy);
   const items = proyecto.items.map((i) => ({ ...i, fecha: i.fecha || proyecto.fechaObjetivo }));
 
@@ -256,7 +341,7 @@ export function coberturaConAportes(
   for (const fecha of [...new Set(items.map((i) => i.fecha))].sort()) {
     const vence = items.filter((i) => i.fecha <= fecha).reduce((t, i) => t + i.montoCents, 0);
     const meses = Math.max(0, mesesEntre(mesHoy, fecha.slice(0, 7)));
-    const reunido = apartadoDisponible(proyecto) + aportesMensualCents * meses;
+    const reunido = apartadoDisponible(proyecto) + apartadoEn(meses);
 
     if (reunido < vence) {
       fechaProblema = fecha;
@@ -266,14 +351,30 @@ export function coberturaConAportes(
     }
   }
 
-  let mesesParaCubrirTodo: number | null;
-  if (plan.faltaCents === 0) mesesParaCubrirTodo = 0;
-  else if (aportesMensualCents <= 0) mesesParaCubrirTodo = null;
-  else mesesParaCubrirTodo = Math.ceil(plan.faltaCents / aportesMensualCents);
+  // Meses que tardan en juntar todo con lo planeado.
+  let mesesParaCubrirTodo: number | null = null;
+  if (plan.faltaCents === 0) {
+    mesesParaCubrirTodo = 0;
+  } else {
+    const ultimoMes = Object.keys(aportesPorMes).reduce((max, m) => (m > max ? m : max), "");
+    let acumulado = 0;
+    for (let i = 0; i < 600; i++) {
+      acumulado += delMes(i);
+      if (acumulado >= plan.faltaCents) {
+        mesesParaCubrirTodo = i + 1;
+        break;
+      }
+      // Ya no hay más aportes planeados por delante: no se completa.
+      if (sumarMeses(mesHoy, i) >= ultimoMes) break;
+    }
+  }
+
+  const planeadoCents = Object.entries(aportesPorMes)
+    .filter(([mes]) => mes >= mesHoy)
+    .reduce((t, [, cents]) => t + cents, 0);
 
   return {
-    aportesMensualCents,
-    faltanteMensualCents: Math.max(0, plan.cuotaMensualCents - aportesMensualCents),
+    planeadoCents,
     alcanza: fechaProblema === "",
     fechaProblema,
     faltanteEnFechaCents,

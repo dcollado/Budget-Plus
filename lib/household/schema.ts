@@ -129,13 +129,18 @@ export type ProyectoItem = {
   // YYYY-MM-DD; "" = sin fecha (se asume la del proyecto).
   fecha: string;
   pagado: boolean;
+  // Si ya está pagado: se pagó con lo apartado para el proyecto (baja lo
+  // apartado) o por fuera (no lo toca).
+  pagadoConApartado: boolean;
 };
 
-// Lo que una persona decidió apartar cada mes para un proyecto. Sin fila =
-// no lo ha decidido (se usa la sugerencia). Solo con Postgres.
-export type ProyectoAporte = {
+// Lo que una persona aparta para un proyecto en un mes concreto. "hecho" = ya
+// lo apartó y cuenta como apartado. Solo con Postgres.
+export type ProyectoAporteMes = {
   projectId: string;
   memberId: string;
   householdId: string;
+  month: string; // YYYY-MM
   montoCents: number;
+  hecho: boolean;
 };
