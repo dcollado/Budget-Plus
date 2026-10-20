@@ -19,7 +19,6 @@ import type { CategoriaDelMes } from "./presupuesto";
 
 const viaje = (parcial: Partial<ProyectoParaPlan> = {}): ProyectoParaPlan => ({
   fechaObjetivo: "2027-07-15",
-  objetivoCents: 0,
   ahorradoCents: 0,
   items: [
     { id: "1", concepto: "Vuelos", montoCents: 90000, fecha: "2027-01-15" },
@@ -108,26 +107,6 @@ describe("planDelProyecto", () => {
 
     // 10.000 / 3 = 3.333,33 -> 3.334.
     expect(plan.cuotaMensualCents).toBe(3334);
-  });
-
-  it("compara contra el presupuesto objetivo solo como referencia", () => {
-    const debajo = planDelProyecto(viaje({ objetivoCents: 400000 }), "2026-10");
-    expect(debajo.porAsignarCents).toBe(40000);
-    expect(debajo.sobreObjetivoCents).toBe(0);
-
-    const encima = planDelProyecto(viaje({ objetivoCents: 300000 }), "2026-10");
-    expect(encima.sobreObjetivoCents).toBe(60000);
-    expect(encima.porAsignarCents).toBe(0);
-
-    // El objetivo no cambia la cuota.
-    expect(encima.cuotaMensualCents).toBe(debajo.cuotaMensualCents);
-  });
-
-  it("sin objetivo no hay comparación", () => {
-    const plan = planDelProyecto(viaje(), "2026-10");
-
-    expect(plan.sobreObjetivoCents).toBe(0);
-    expect(plan.porAsignarCents).toBe(0);
   });
 
   it("un proyecto sin ítems no pide nada", () => {
@@ -263,24 +242,6 @@ describe("lo ya pagado", () => {
     expect(plan.apartadoDisponibleCents).toBe(0);
   });
 
-  it("el objetivo es del proyecto entero: lo pagado también cuenta", () => {
-    const plan = planDelProyecto(
-      viaje({ objetivoCents: 400000, pagadoCents: 90000, items: sinVuelos }),
-      "2026-10"
-    );
-
-    // 900 pagados + 2.700 pendientes = 3.600; quedan 400 por asignar.
-    expect(plan.porAsignarCents).toBe(40000);
-    expect(plan.sobreObjetivoCents).toBe(0);
-
-    const pasado = planDelProyecto(
-      viaje({ objetivoCents: 300000, pagadoCents: 90000, items: sinVuelos }),
-      "2026-10"
-    );
-
-    expect(pasado.sobreObjetivoCents).toBe(60000);
-  });
-
   it("la cobertura también parte de lo apartado que queda", () => {
     const c = cobertura(
       viaje({ ahorradoCents: 90000, pagadoCents: 90000, pagadoConApartadoCents: 90000, items: sinVuelos }),
@@ -376,7 +337,7 @@ describe("el mes del último pago cuenta a medias (pago del 16 en adelante)", ()
 
   it("la cuota mínima reparte entre los meses completos y el medio mes", () => {
     const plan = planDelProyecto(
-      { fechaObjetivo: "2026-12-26", objetivoCents: 0, ahorradoCents: 0, items: [{ id: "1", concepto: "x", montoCents: 100000, fecha: "" }] },
+      { fechaObjetivo: "2026-12-26", ahorradoCents: 0, items: [{ id: "1", concepto: "x", montoCents: 100000, fecha: "" }] },
       "2026-10"
     );
     expect(plan.cuotaMensualCents).toBe(40000); // 1000 / 2.5 meses
@@ -385,8 +346,7 @@ describe("el mes del último pago cuenta a medias (pago del 16 en adelante)", ()
   it("los aportes del mes del pago cuentan para llegar a tiempo", () => {
     const proyecto = {
       fechaObjetivo: "2026-12-26",
-      objetivoCents: 0,
-      ahorradoCents: 0,
+          ahorradoCents: 0,
       items: [{ id: "1", concepto: "x", montoCents: 100000, fecha: "" }],
     };
     const c = coberturaConAportes(proyecto, { "2026-10": 30000, "2026-11": 30000, "2026-12": 40000 }, "2026-10");

@@ -1010,10 +1010,6 @@ function TarjetaProyecto({
     });
   }
 
-  const hayObjetivo = proyecto.objetivoCents > 0;
-  const avance = hayObjetivo
-    ? Math.min(100, Math.round(((plan.pagadoCents + plan.comprometidoCents) / proyecto.objetivoCents) * 100))
-    : 0;
   // Pendientes primero; lo ya pagado al final.
   const itemsOrdenados = [...items].sort((a, b) => Number(a.pagado) - Number(b.pagado));
   // Si algún pago cae después de la fecha del proyecto, se avisa.
@@ -1067,7 +1063,7 @@ function TarjetaProyecto({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Dato
           label={t("proj.committed")}
           valor={formatearCentavos(plan.comprometidoCents)}
@@ -1076,24 +1072,6 @@ function TarjetaProyecto({
               texto={t("proj.committedHelp", { paid: formatearCentavos(plan.pagadoCents) })}
               etiqueta={t("proj.moreInfo", { name: t("proj.committed") })}
             />
-          }
-        />
-        <CampoMonto
-          key={`objetivo-${proyecto.objetivoCents}`}
-          id={`objetivo-${proyecto.id}`}
-          label={t("proj.target")}
-          cents={proyecto.objetivoCents}
-          placeholder={t("proj.optional")}
-          disabled={ocupado}
-          ayuda={
-            <InfoTip
-              texto={t("proj.targetHelp")}
-              etiqueta={t("proj.moreInfo", { name: t("proj.target") })}
-              className="right-0 sm:left-0 sm:right-auto"
-            />
-          }
-          onGuardar={(texto) =>
-            void hacer(() => enviar("/api/hogar/proyectos", "PATCH", { id: proyecto.id, objetivo: texto }))
           }
         />
         <Dato
@@ -1115,29 +1093,6 @@ function TarjetaProyecto({
         />
         <Dato label={t("proj.remaining")} valor={formatearCentavos(plan.faltaCents)} />
       </div>
-
-      {hayObjetivo ? (
-        <div className="mt-3">
-          <div
-            className="h-2 overflow-hidden rounded-full bg-surface-raised"
-            role="progressbar"
-            aria-valuenow={avance}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t("proj.committed")}
-          >
-            <div
-              className={`h-full rounded-full ${plan.sobreObjetivoCents > 0 ? "bg-rust" : "bg-gold"}`}
-              style={{ width: `${avance}%` }}
-            />
-          </div>
-          <p className={`${helperTextClass} ${plan.sobreObjetivoCents > 0 ? "text-rust-text" : ""}`}>
-            {plan.sobreObjetivoCents > 0
-              ? t("proj.overTarget", { amount: formatearCentavos(plan.sobreObjetivoCents) })
-              : t("proj.unassigned", { amount: formatearCentavos(plan.porAsignarCents) })}
-          </p>
-        </div>
-      ) : null}
 
       <AhorroMensual vista={vista} ocupado={ocupado} hacer={hacer} />
 

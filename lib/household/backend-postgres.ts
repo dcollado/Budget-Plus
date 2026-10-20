@@ -424,7 +424,7 @@ export async function eliminarTransaction(id: string, householdId: string): Prom
 
 // ---------- Proyectos ----------
 
-const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "objetivo_cents", "ahorrado_cents", "archived"];
+const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "ahorrado_cents", "archived"];
 const COLS_PROYECTO_ITEM = [
   "id",
   "project_id",
@@ -444,7 +444,6 @@ type FilaProyecto = {
   household_id: string;
   name: string;
   target_date: unknown;
-  objetivo_cents: string | number;
   ahorrado_cents: string | number;
   archived: boolean;
 };
@@ -453,7 +452,6 @@ const aProyecto = (r: FilaProyecto): Proyecto => ({
   householdId: r.household_id,
   name: r.name,
   targetDate: fecha(r.target_date),
-  objetivoCents: Number(r.objetivo_cents),
   ahorradoCents: Number(r.ahorrado_cents),
   archived: r.archived,
 });
@@ -510,7 +508,6 @@ export async function crearProyecto(
       household_id: input.householdId,
       name: input.name,
       target_date: input.targetDate,
-      objetivo_cents: input.objetivoCents,
       ahorrado_cents: input.ahorradoCents ?? 0,
     })}
     returning ${getSql()(COLS_PROYECTO)}`;
@@ -521,13 +518,12 @@ export async function crearProyecto(
 export async function actualizarProyecto(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "objetivoCents" | "ahorradoCents" | "archived">>
+  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "archived">>
 ): Promise<Proyecto | null> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
   if (cambios.name !== undefined) set.name = cambios.name;
   if (cambios.targetDate !== undefined) set.target_date = cambios.targetDate;
-  if (cambios.objetivoCents !== undefined) set.objetivo_cents = cambios.objetivoCents;
   if (cambios.ahorradoCents !== undefined) set.ahorrado_cents = cambios.ahorradoCents;
   if (cambios.archived !== undefined) set.archived = cambios.archived;
 

@@ -87,7 +87,6 @@ const paraPlan = (
   hechoCents: number
 ): ProyectoParaPlan => ({
   fechaObjetivo: proyecto.targetDate,
-  objetivoCents: proyecto.objetivoCents,
   // Lo apartado al empezar más lo que se fue marcando como hecho.
   ahorradoCents: proyecto.ahorradoCents + hechoCents,
   // Lo ya pagado dejó de ser algo por apartar.

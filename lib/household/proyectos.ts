@@ -3,8 +3,7 @@ import type { CategoriaDelMes } from "./presupuesto";
 import { quincena } from "./transferencias";
 
 // Un proyecto grande (viaje, remodelación…): lo que se va a pagar y cuándo.
-// "Comprometido" es la suma de los precios de los ítems; el "presupuesto
-// objetivo" es solo una referencia que escribe la persona (0 = sin objetivo).
+// "Comprometido" es la suma de los precios de los ítems.
 
 export type ItemProyecto = {
   id: string;
@@ -16,10 +15,9 @@ export type ItemProyecto = {
 
 export type ProyectoParaPlan = {
   fechaObjetivo: string; // YYYY-MM-DD
-  objetivoCents: number; // 0 = sin presupuesto objetivo
   // Total que se ha apartado hasta hoy, incluido lo que ya se usó para pagar.
   ahorradoCents: number;
-  // Suma de los ítems ya pagados (cuenta para el presupuesto objetivo). 0 si no viene.
+  // Suma de los ítems ya pagados. 0 si no viene.
   pagadoCents?: number;
   // De esos, lo que se pagó CON lo apartado para el proyecto: eso sí se
   // descuenta de lo apartado. Lo pagado por fuera no lo toca. 0 si no viene.
@@ -44,12 +42,6 @@ export type PlanProyecto = {
   // Lo que ya venció (o vence este mes) y no está cubierto: la cuota no lo
   // alcanza porque no queda ningún mes para apartarlo.
   urgenteCents: number;
-  // (Pagado + comprometido) - objetivo: positivo = por encima del objetivo;
-  // 0 si no hay objetivo. El objetivo es del proyecto entero, así que lo ya
-  // pagado también cuenta.
-  sobreObjetivoCents: number;
-  // Objetivo - (pagado + comprometido): lo que queda por asignar; 0 si no hay objetivo.
-  porAsignarCents: number;
 };
 
 // Lo apartado que queda después de pagar con ello lo que se pagó con lo
@@ -140,9 +132,6 @@ export function planDelProyecto(proyecto: ProyectoParaPlan, mesHoy: string): Pla
     }
   }
 
-  const hayObjetivo = proyecto.objetivoCents > 0;
-  const totalProyectoCents = pagadoCents + comprometidoCents;
-
   return {
     comprometidoCents,
     pagadoCents,
@@ -152,8 +141,6 @@ export function planDelProyecto(proyecto: ProyectoParaPlan, mesHoy: string): Pla
     cuotaQuincenalCents: quincena(cuotaMensualCents),
     fechaLimitante,
     urgenteCents,
-    sobreObjetivoCents: hayObjetivo ? Math.max(0, totalProyectoCents - proyecto.objetivoCents) : 0,
-    porAsignarCents: hayObjetivo ? Math.max(0, proyecto.objetivoCents - totalProyectoCents) : 0,
   };
 }
 

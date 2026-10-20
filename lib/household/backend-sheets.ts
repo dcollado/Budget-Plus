@@ -721,7 +721,7 @@ export async function crearProyecto(
 export async function actualizarProyecto(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "objetivoCents" | "ahorradoCents" | "archived">>
+  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "archived">>
 ): Promise<Proyecto | null> {
   void householdId;
   void id;

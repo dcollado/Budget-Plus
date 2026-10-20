@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "ajuste",
+        texto: {
+          en: "Projects no longer have a Target budget: it was only a reference and did not help the calculation.",
+          es: "Los proyectos ya no tienen Presupuesto objetivo: era solo una referencia y no ayudaba al cálculo.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "Fixed income can now be paid every 2 weeks: you pick a recent payday and the app counts every 14 days from it.",

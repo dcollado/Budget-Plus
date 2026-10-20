@@ -12,7 +12,7 @@ import { centavosDe, fechaValida } from "@/lib/validacion";
 const MAX_NOMBRE = 80;
 
 // Los proyectos del hogar, cada uno con sus ítems y el plan de ahorro ya
-// calculado (cuota mínima, lo que falta, comparación con el objetivo).
+// calculado (cuota mínima, lo que falta).
 export async function GET(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
@@ -35,9 +35,6 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as Record<string, unknown>;
     const name = String(body.name ?? "").trim();
     const targetDate = String(body.targetDate ?? "").trim();
-    // Vacío = sin presupuesto objetivo.
-    const objetivoCents =
-      body.objetivo === undefined || body.objetivo === "" ? 0 : centavosDe(body.objetivo);
     const ahorradoCents =
       body.ahorrado === undefined || body.ahorrado === "" ? 0 : centavosDe(body.ahorrado);
 
@@ -49,7 +46,7 @@ export async function POST(req: NextRequest) {
       return fallo("Pick a valid target date.", 400);
     }
 
-    if (objetivoCents === null || ahorradoCents === null) {
+    if (ahorradoCents === null) {
       return fallo("The amount is not valid.", 400);
     }
 
@@ -57,7 +54,6 @@ export async function POST(req: NextRequest) {
       householdId: contexto.householdId,
       name,
       targetDate,
-      objetivoCents,
       ahorradoCents,
     });
 
@@ -68,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Cambia lo que venga: nombre, fecha, objetivo, ahorrado o archivar.
+// Cambia lo que venga: nombre, fecha, ahorrado o archivar.
 export async function PATCH(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
@@ -93,12 +89,6 @@ export async function PATCH(req: NextRequest) {
     if (body.targetDate !== undefined) {
       if (!fechaValida(body.targetDate)) return fallo("Pick a valid target date.", 400);
       cambios.targetDate = body.targetDate;
-    }
-
-    if (body.objetivo !== undefined) {
-      const cents = body.objetivo === "" ? 0 : centavosDe(body.objetivo);
-      if (cents === null) return fallo("The amount is not valid.", 400);
-      cambios.objetivoCents = cents;
     }
 
     if (body.ahorrado !== undefined) {
