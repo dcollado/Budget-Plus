@@ -67,6 +67,9 @@ export default function CategoriaModal({
   const [dia, setDia] = useState("");
   const [quincenal, setQuincenal] = useState(false);
   const [dia2, setDia2] = useState("31");
+  // Ingresos que se cobran cada 2 semanas: una fecha de pago de referencia.
+  const [bisemanal, setBisemanal] = useState(false);
+  const [refPago, setRefPago] = useState("");
   const [dueno, setDueno] = useState("");
   const [cuentaId, setCuentaId] = useState("");
   const [nota, setNota] = useState("");
@@ -99,6 +102,8 @@ export default function CategoriaModal({
       setMonto(String(editar.plannedAmountCents / 100 / (dos ? 2 : 1)));
       setDia(c.dueDay ? String(c.dueDay) : "");
       setDia2(c.dueDay2 ? String(c.dueDay2) : "31");
+      setBisemanal(Boolean(c.bisemanalDesde));
+      setRefPago(c.bisemanalDesde ?? "");
       setDueno(c.ownerMemberId);
       setAhorro(c.ahorro);
       setFecha(editar.fechaPago);
@@ -111,6 +116,8 @@ export default function CategoriaModal({
       setDia("");
       setQuincenal(false);
       setDia2("31");
+      setBisemanal(false);
+      setRefPago("");
       setDueno(defaultOwner ?? "");
       setAhorro(false);
       setNota("");
@@ -146,16 +153,21 @@ export default function CategoriaModal({
       return;
     }
 
-    const dueDay = fixed && dia ? Number(dia) : null;
+    if (bisemanal && !/^\d{4}-\d{2}-\d{2}$/.test(refPago)) {
+      setError(t("cat.biweeklyNeedsDate"));
+      return;
+    }
 
-    if (fixed && dia && !(Number.isInteger(dueDay) && dueDay! >= 1 && dueDay! <= 31)) {
+    const dueDay = fixed && dia && !bisemanal ? Number(dia) : null;
+
+    if (fixed && dia && !bisemanal && !(Number.isInteger(dueDay) && dueDay! >= 1 && dueDay! <= 31)) {
       setError(t("cat.dayRange"));
       return;
     }
 
-    const dueDay2 = dosPagos ? Number(dia2) : null;
+    const dueDay2 = dosPagos && !bisemanal ? Number(dia2) : null;
 
-    if (dosPagos) {
+    if (dosPagos && !bisemanal) {
       const ok = (n: number | null) => n !== null && Number.isInteger(n) && n >= 1 && n <= 31;
       if (!ok(dueDay) || !ok(dueDay2)) {
         setError(t("cat.twiceDays"));
@@ -184,6 +196,7 @@ export default function CategoriaModal({
             quincenal: dosPagos,
             dueDay,
             dueDay2,
+            bisemanalDesde: bisemanal ? refPago : "",
             ...(conAhorro ? { ahorro } : {}),
           }),
         });
@@ -218,6 +231,7 @@ export default function CategoriaModal({
             quincenal: dosPagos,
             dueDay,
             dueDay2,
+            bisemanalDesde: bisemanal ? refPago : "",
             ...(conAhorro ? { ahorro } : {}),
           },
           // Con un cambio a futuro, el mes abierto conserva su monto.
@@ -238,6 +252,7 @@ export default function CategoriaModal({
           dueDay,
           quincenal: dosPagos,
           dueDay2,
+          bisemanalDesde: bisemanal ? refPago : "",
           ownerMemberId: dueno,
         }),
       });
@@ -343,16 +358,19 @@ export default function CategoriaModal({
             </label>
             <select
               id="cat-frecuencia"
-              value={quincenal ? "2" : "1"}
+              value={bisemanal ? "3" : quincenal ? "2" : "1"}
               onChange={(e) => {
-                const dos = e.target.value === "2";
-                setQuincenal(dos);
+                const valor = e.target.value;
+                const eraDos = quincenal;
+                const seraDos = valor !== "1";
+                setBisemanal(valor === "3");
+                setQuincenal(seraDos);
                 // Al pasar a dos pagos: el monto escrito sigue siendo el total
                 // del mes, repartido en dos; y días iniciales cómodos.
-                if (dos) {
-                  if (!dia) setDia("15");
+                if (seraDos && !eraDos) {
+                  if (valor === "2" && !dia) setDia("15");
                   if (monto) setMonto(String(Number(monto) / 2));
-                } else if (monto) {
+                } else if (!seraDos && eraDos && monto) {
                   setMonto(String(Number(monto) * 2));
                 }
               }}
@@ -360,6 +378,7 @@ export default function CategoriaModal({
             >
               <option value="1">{t("cat.freqMonthly")}</option>
               <option value="2">{t("cat.freqTwice")}</option>
+              {esIngreso ? <option value="3">{t("cat.freqBiweekly")}</option> : null}
             </select>
           </div>
         ) : null}
@@ -391,7 +410,21 @@ export default function CategoriaModal({
             </div>
           </div>
 
-          {fixed ? (
+          {fixed && bisemanal ? (
+            <div>
+              <label className={labelClass} htmlFor="cat-ref">
+                {t("cat.fieldBiweeklyFrom")}
+              </label>
+              <input
+                id="cat-ref"
+                type="date"
+                value={refPago}
+                onChange={(e) => setRefPago(e.target.value)}
+                required
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+          ) : fixed ? (
             <div>
               <label className={labelClass} htmlFor="cat-dia">
                 {dosPagos ? t("cat.fieldDay1") : t("cat.fieldDay")}
@@ -426,7 +459,9 @@ export default function CategoriaModal({
           )}
         </div>
 
-        {dosPagos ? (
+        {dosPagos && bisemanal ? (
+          <p className={`${helperTextClass} -mt-2`}>{t("cat.biweeklyHint")}</p>
+        ) : dosPagos ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="cat-dia2">
@@ -455,7 +490,11 @@ export default function CategoriaModal({
             <p className="font-medium text-text">
               {t("cat.summaryTotal", { total: formatearCentavos(totalCents) })}
             </p>
-            {dosPagos ? (
+            {dosPagos && bisemanal ? (
+              <p className="mt-1 text-text-muted">
+                {t("cat.summaryBiweekly", { each: formatearCentavos(porPagoCents) })}
+              </p>
+            ) : dosPagos ? (
               <p className="mt-1 text-text-muted">
                 {t("cat.summaryTwice", {
                   each: formatearCentavos(porPagoCents),

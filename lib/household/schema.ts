@@ -52,6 +52,10 @@ export type Category = {
   // (31 = último día del mes). El monto del mes sigue siendo el total.
   quincenal: boolean;
   dueDay2: number | null;
+  // Se cobra cada 2 semanas (ingresos): una fecha de pago de referencia (YYYY-MM-DD);
+  // de ahí salen todos los pagos, de 14 en 14 días. Cuenta como dos pagos al mes
+  // (quincenal = true, sin días). ""/undefined = no es bisemanal.
+  bisemanalDesde?: string;
   // De quién es el gasto (member id). "" = conjunto.
   ownerMemberId: string;
   // A qué cuenta va la plata de este fijo (Cuenta.id). "" = sin asignar.

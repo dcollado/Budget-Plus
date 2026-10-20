@@ -270,6 +270,7 @@ export async function crearCategory(
     quincenal?: boolean;
     dueDay2?: number | null;
     ownerMemberId?: string;
+    bisemanalDesde?: string;
   }
 ): Promise<Category> {
   const category: Category = {
@@ -350,6 +351,7 @@ export async function actualizarCategoria(
     dueDay?: number | null;
     quincenal?: boolean;
     dueDay2?: number | null;
+    bisemanalDesde?: string;
     cuentaId?: string;
     ahorro?: boolean;
   }

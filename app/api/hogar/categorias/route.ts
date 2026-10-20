@@ -15,6 +15,7 @@ import {
   sincronizarSinFallar,
 } from "@/lib/household/calendario";
 import { mesActual } from "@/lib/household/formato";
+import { fechaValida } from "@/lib/validacion";
 
 const KINDS: CategoryKind[] = ["expense", "income"];
 
@@ -39,8 +40,10 @@ export async function POST(req: NextRequest) {
     const fixed = Boolean(body.fixed);
     const dueDay = parseDueDay(body.dueDay);
     // Dos pagos al mes: solo para fijas, con los dos días elegidos.
-    const quincenal = fixed && body.quincenal === true;
-    const dueDay2 = quincenal ? parseDueDay(body.dueDay2) : null;
+    // Cada 2 semanas (ingresos fijos): una fecha de pago de referencia. Cuenta como dos pagos al mes.
+    const bisemanalDesde = fixed && fechaValida(body.bisemanalDesde) ? body.bisemanalDesde : "";
+    const quincenal = fixed && (body.quincenal === true || Boolean(bisemanalDesde));
+    const dueDay2 = quincenal && !bisemanalDesde ? parseDueDay(body.dueDay2) : null;
     const ownerMemberId = String(body.ownerMemberId ?? "").trim();
 
     if (!name) {
@@ -51,11 +54,15 @@ export async function POST(req: NextRequest) {
       return fallo("Invalid category type.", 400);
     }
 
-    if (quincenal && (dueDay === null || dueDay2 === null)) {
+    if (fixed && body.bisemanalDesde && !bisemanalDesde) {
+      return fallo("Pick a valid payday.", 400);
+    }
+
+    if (quincenal && !bisemanalDesde && (dueDay === null || dueDay2 === null)) {
       return fallo("Pick both payment days.", 400);
     }
 
-    if (quincenal && dueDay === dueDay2) {
+    if (quincenal && !bisemanalDesde && dueDay === dueDay2) {
       return fallo("The two payment days must be different.", 400);
     }
 
@@ -75,6 +82,7 @@ export async function POST(req: NextRequest) {
       dueDay,
       quincenal,
       dueDay2,
+      bisemanalDesde,
       ownerMemberId,
     });
 
@@ -137,6 +145,7 @@ export async function PATCH(req: NextRequest) {
       dueDay?: number | null;
       quincenal?: boolean;
       dueDay2?: number | null;
+      bisemanalDesde?: string;
       cuentaId?: string;
       ahorro?: boolean;
     } = {};
@@ -186,8 +195,26 @@ export async function PATCH(req: NextRequest) {
       cambios.dueDay2 = parseDueDay(body.dueDay2);
     }
 
+    if ("bisemanalDesde" in body) {
+      const desde = String(body.bisemanalDesde ?? "").trim();
+
+      if (desde && !fechaValida(desde)) {
+        return fallo("Pick a valid payday.", 400);
+      }
+
+      cambios.bisemanalDesde = desde;
+
+      // Cada 2 semanas cuenta como dos pagos al mes y no usa días fijos.
+      if (desde) {
+        cambios.quincenal = true;
+        cambios.dueDay = null;
+        cambios.dueDay2 = null;
+      }
+    }
+
     if (
       cambios.quincenal === true &&
+      !cambios.bisemanalDesde &&
       cambios.dueDay !== undefined &&
       cambios.dueDay !== null &&
       cambios.dueDay === cambios.dueDay2
@@ -219,6 +246,7 @@ export async function PATCH(req: NextRequest) {
     if (
       "dueDay" in cambios ||
       "dueDay2" in cambios ||
+      "bisemanalDesde" in cambios ||
       "quincenal" in cambios ||
       "name" in cambios
     ) {

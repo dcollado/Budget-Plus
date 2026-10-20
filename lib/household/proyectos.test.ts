@@ -405,6 +405,8 @@ describe("mesMasAjustado", () => {
     libreCents,
     conjunto: { ingresosCents: 0, gastosCents: 0 },
     fraccion: 1,
+    aprovechableCents: libreCents,
+    hastaFecha: "",
   });
 
   it("el tope es el mes con menos libre", () => {

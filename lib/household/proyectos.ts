@@ -1,3 +1,4 @@
+import { fechasDeCobro } from "./cobros";
 import type { CategoriaDelMes } from "./presupuesto";
 import { quincena } from "./transferencias";
 
@@ -188,6 +189,35 @@ export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string
   };
 }
 
+// Qué parte de un ítem del mes ocurre hasta `hasta` (YYYY-MM-DD): los pagos o
+// cobros con fecha cuentan si caen hasta ese día. Si no se sabe cuándo, se
+// supone la mitad (FRACCION_MES_PARCIAL).
+function parteHasta(item: CategoriaDelMes, mes: string, hasta: string): number {
+  const fechas = item.category.fixed
+    ? fechasDeCobro(item.category, mes)
+    : [item.fechaPago].filter(Boolean);
+
+  if (fechas.length === 0) return FRACCION_MES_PARCIAL;
+  return fechas.filter((f) => f <= hasta).length / fechas.length;
+}
+
+// Lo que una persona tiene disponible en el mes SOLO hasta `hasta`: sus ingresos
+// que ya habrán entrado y sus gastos que ya habrán salido para esa fecha. Sirve
+// para el mes del último pago de un proyecto: ahí no cuenta todo el mes, sino lo
+// que llega antes del pago (p. ej. un sueldo del 28 no sirve para un pago del 26).
+export function disponibleHastaFecha(items: CategoriaDelMes[], memberId: string, hasta: string): number {
+  const mes = hasta.slice(0, 7);
+  let total = 0;
+
+  for (const item of items) {
+    if (item.category.ownerMemberId !== memberId || item.plannedAmountCents <= 0) continue;
+    const signo = item.category.kind === "income" ? 1 : -1;
+    total += signo * Math.round(item.plannedAmountCents * parteHasta(item, mes, hasta));
+  }
+
+  return total;
+}
+
 // Lo máximo de lo libre que se SUGIERE apartar. El tope real (lo que se puede
 // escribir) es todo lo libre, pero no se sugiere llegar ahí: hay que dejar
 // margen para imprevistos.
@@ -316,8 +346,13 @@ export type MesLibre = {
   // Lo conjunto de ese mes (sin dueño): informativo, no entra en el libre.
   conjunto: ConjuntoDelMes;
   // Cuánto de ese mes se puede usar para apartar: 1, o 0.5 si es el mes del
-  // último pago y solo sirve su primera quincena.
+  // último pago y solo sirve lo que pasa antes de esa fecha.
   fraccion: number;
+  // Lo que se puede usar para apartar ese mes (= libreCents salvo en el mes del
+  // último pago, donde solo cuenta lo que entra y sale hasta `hastaFecha`).
+  aprovechableCents: number;
+  // "" = el mes completo; si no, el último día que cuenta (YYYY-MM-DD).
+  hastaFecha: string;
 };
 
 // El mes con menos libre manda: un aporte es un monto fijo por mes, así que

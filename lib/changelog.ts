@@ -31,6 +31,20 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "nuevo",
         texto: {
+          en: "Fixed income can now be paid every 2 weeks: you pick a recent payday and the app counts every 14 days from it.",
+          es: "Los ingresos fijos ahora pueden cobrarse cada 2 semanas: eliges un día de pago reciente y la app cuenta cada 14 días desde ahí.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "In Projects, the month of the last payment now counts only what comes in and goes out until that date, using the real paydays, instead of simply half the month.",
+          es: "En Proyectos, el mes del último pago ahora cuenta solo lo que entra y sale hasta esa fecha, con los días de cobro reales, en vez de simplemente la mitad del mes.",
+        },
+      },
+      {
+        tipo: "nuevo",
+        texto: {
           en: "In Projects, when you mark an item as paid outside your saved money, you choose who paid and when, and it is recorded in Budget as that person's expense, so what they have free that month goes down. Items already paid have a Record the expense button.",
           es: "En Proyectos, al marcar un gasto como pagado por fuera de lo apartado, eliges quién pagó y cuándo, y se registra en Presupuesto como gasto de esa persona, así que baja lo que tiene libre ese mes. Los gastos ya pagados tienen un botón Registrar el gasto.",
         },

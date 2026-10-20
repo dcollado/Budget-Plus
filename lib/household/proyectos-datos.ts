@@ -8,13 +8,14 @@ import {
   listProyectosArchivados,
 } from "./datos";
 import { mesActual } from "./formato";
-import { armarVistaMes } from "./presupuesto";
+import { armarVistaMes, type CategoriaDelMes } from "./presupuesto";
 import {
   capacidadSugerible,
   conjuntoDelMes,
   controlesDelPlan,
   coberturaConAportes,
   disponibleDeLaPersona,
+  disponibleHastaFecha,
   fraccionDelMes,
   planDelProyecto,
   repartirEnMeses,
@@ -133,10 +134,12 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
   // presupuesto (fijos heredados o propios del mes, y los extras que ya haya
   // cargado). No se supone nada: lo que no está cargado cuenta como está.
   const mesesALeer = new Set([mesHoy, ...[...ventanas.values()].flat()]);
+  const vistas = new Map<string, CategoriaDelMes[]>();
   const disponibles = new Map<string, Map<string, DisponiblePersona>>();
   const conjuntos = new Map<string, ConjuntoDelMes>();
   for (const mes of mesesALeer) {
     const vista = armarVistaMes(categorias, presupuestos, [], mes);
+    vistas.set(mes, vista);
     conjuntos.set(mes, conjuntoDelMes(vista));
     disponibles.set(mes, new Map(miembros.map((m) => [m.id, disponibleDeLaPersona(vista, m.id)])));
   }
@@ -166,6 +169,9 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
     return (ventana.length > 0 ? ventana : [mesHoy]).map((mes) => {
       const d = disponibles.get(mes)?.get(memberId) ?? disponibleDeLaPersona([], memberId);
       const otros = enOtros(memberId, projectId, mes);
+      const ultima = ultimas.get(projectId) ?? "";
+      const fraccion = fraccionDelMes(mes, mesHoy, ultima);
+      const libre = d.disponibleCents - otros;
 
       return {
         month: mes,
@@ -174,9 +180,13 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         fijosCents: d.fijosCents,
         extrasCents: d.extrasCents,
         otrosProyectosCents: otros,
-        libreCents: d.disponibleCents - otros,
+        libreCents: libre,
         conjunto: conjuntos.get(mes) ?? { ingresosCents: 0, gastosCents: 0 },
-        fraccion: fraccionDelMes(mes, mesHoy, ultimas.get(projectId) ?? ""),
+        fraccion,
+        // El mes del último pago solo cuenta lo que entra y sale hasta esa fecha.
+        aprovechableCents:
+          fraccion < 1 ? disponibleHastaFecha(vistas.get(mes) ?? [], memberId, ultima) - otros : libre,
+        hastaFecha: fraccion < 1 ? ultima : "",
       };
     });
   };
@@ -201,7 +211,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
       const aporteDe = new Map<string, { cents: number; definido: boolean; hecho: boolean; sugerido: number }>();
       const capDe = (memberId: string, mes: string) => {
         const m = librePorPersona.get(memberId)?.find((x) => x.month === mes);
-        return capacidadSugerible(Math.floor((m?.libreCents ?? 0) * (m?.fraccion ?? 1)));
+        return capacidadSugerible(m?.aprovechableCents ?? 0);
       };
       const controles = controlesDelPlan(datos, mesHoy);
 
@@ -305,8 +315,8 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
           definido: a?.definido ?? false,
           hecho: a?.hecho ?? false,
           sugeridoCents: a?.sugerido ?? 0,
-          // Un mes parcial (el del último pago) solo deja usar su primera quincena.
-          topeCents: Math.max(0, Math.floor(l.libreCents * l.fraccion)),
+          // En el mes del último pago solo cuenta lo que entra y sale hasta esa fecha.
+          topeCents: Math.max(0, l.aprovechableCents),
           totalMesCents: totalMes(l.month),
           otros: miembros
             .filter((m) => m.id !== yo)

@@ -837,8 +837,10 @@ function AhorroMensual({
                         : null}
                     </dl>
                   </details>
-                  {m.fraccion < 1 ? (
-                    <p className="mt-1 text-xs text-text-muted">{t("proj.halfMonth")}</p>
+                  {m.hastaFecha ? (
+                    <p className="mt-1 text-xs text-text-muted">
+                      {t("proj.untilDate", { date: fechaLarga(m.hastaFecha, t.locale) })}
+                    </p>
                   ) : null}
                   {m.conjunto.ingresosCents > 0 || m.conjunto.gastosCents > 0 ? (
                     <p
