@@ -34,6 +34,10 @@ const navLinks: { href: string; label: MessageKey }[] = [
     href: "/reporte",
     label: "nav.report",
   },
+  {
+    href: "/proyectos",
+    label: "nav.projects",
+  },
 ];
 
 // The profile page fires this event when the name changes, so the

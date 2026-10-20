@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "nuevo",
+        texto: {
+          en: "New Projects page for big expenses like a trip: list what you have to pay with its price and date, and see the minimum you need to save each month (and every two weeks) to pay everything on time. You can also set a target budget as a reference. Each person gets a suggested monthly amount to set aside, based on the time left and what they have free after fixed and extra expenses, and can change it up to what they have available.",
+          es: "Nueva página de Proyectos para gastos grandes, como un viaje: anota lo que hay que pagar con su precio y fecha, y mira el mínimo que necesitas ahorrar cada mes (y cada quincena) para pagar todo a tiempo. También puedes poner un presupuesto objetivo como referencia. A cada persona se le sugiere cuánto apartar al mes según el tiempo que falta y lo que le queda libre después de los gastos fijos y extra, y puede cambiarlo hasta lo que tiene disponible.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "Your transfers: when you open an account, each fixed item now shows its biweekly amount next to the monthly one.",

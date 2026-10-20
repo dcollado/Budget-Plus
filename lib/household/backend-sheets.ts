@@ -7,6 +7,9 @@ import type {
   Category,
   Household,
   Member,
+  Proyecto,
+  ProyectoAporte,
+  ProyectoItem,
   Transaction,
 } from "./schema";
 
@@ -688,4 +691,78 @@ export async function eliminarTransaction(
   invalidarLecturas();
 
   return true;
+}
+
+// ---------- Proyectos ----------
+// Los proyectos solo existen con Postgres. Con la hoja no hay proyectos y
+// crear uno avisa en vez de fallar en silencio.
+
+const SIN_PROYECTOS = "Projects need the Postgres backend.";
+
+export async function listProyectos(householdId: string): Promise<Proyecto[]> {
+  void householdId;
+  return [];
+}
+
+export async function crearProyecto(
+  input: Omit<Proyecto, "id" | "archived" | "ahorradoCents"> & { ahorradoCents?: number }
+): Promise<Proyecto> {
+  void input;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function actualizarProyecto(
+  householdId: string,
+  id: string,
+  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "objetivoCents" | "ahorradoCents" | "archived">>
+): Promise<Proyecto | null> {
+  void householdId;
+  void id;
+  void cambios;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function listProyectoItems(householdId: string): Promise<ProyectoItem[]> {
+  void householdId;
+  return [];
+}
+
+export async function crearProyectoItem(
+  input: Omit<ProyectoItem, "id" | "pagado">
+): Promise<ProyectoItem> {
+  void input;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function actualizarProyectoItem(
+  householdId: string,
+  id: string,
+  cambios: Partial<Pick<ProyectoItem, "concepto" | "montoCents" | "fecha" | "pagado">>
+): Promise<ProyectoItem | null> {
+  void householdId;
+  void id;
+  void cambios;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function eliminarProyectoItem(householdId: string, id: string): Promise<boolean> {
+  void householdId;
+  void id;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function eliminarProyecto(householdId: string, id: string): Promise<boolean> {
+  void householdId;
+  void id;
+  throw new Error(SIN_PROYECTOS);
+}
+
+export async function listProyectoAportes(householdId: string): Promise<ProyectoAporte[]> {
+  void householdId;
+  return [];
+}
+
+export async function guardarProyectoAporte(input: ProyectoAporte): Promise<void> {
+  void input;
+  throw new Error(SIN_PROYECTOS);
 }

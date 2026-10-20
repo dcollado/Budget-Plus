@@ -105,3 +105,37 @@ export type Transaction = {
   externalId: string;
   createdAt: string; // ISO
 };
+
+// Un proyecto grande del hogar (viaje, remodelación…). Lo que se va a pagar
+// son sus ítems; el objetivo es solo una referencia. Solo con Postgres.
+export type Proyecto = {
+  id: string;
+  householdId: string;
+  name: string;
+  targetDate: string; // YYYY-MM-DD (fecha del viaje o del último pago)
+  // Presupuesto objetivo de referencia; 0 = sin objetivo.
+  objetivoCents: number;
+  // Lo que ya se apartó para este proyecto.
+  ahorradoCents: number;
+  archived: boolean;
+};
+
+export type ProyectoItem = {
+  id: string;
+  projectId: string;
+  householdId: string;
+  concepto: string;
+  montoCents: number;
+  // YYYY-MM-DD; "" = sin fecha (se asume la del proyecto).
+  fecha: string;
+  pagado: boolean;
+};
+
+// Lo que una persona decidió apartar cada mes para un proyecto. Sin fila =
+// no lo ha decidido (se usa la sugerencia). Solo con Postgres.
+export type ProyectoAporte = {
+  projectId: string;
+  memberId: string;
+  householdId: string;
+  montoCents: number;
+};
