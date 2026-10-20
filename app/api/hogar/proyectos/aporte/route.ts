@@ -3,18 +3,20 @@ import { exito, fallo } from "@/lib/api";
 import { requerirHogar } from "@/lib/household/contexto";
 import {
   guardarProyectoAporteMes,
+  listMembers,
   listProyectos,
   marcarProyectoAporteHecho,
 } from "@/lib/household/datos";
 import { mesDeAporte } from "@/lib/household/proyectos-datos";
 import { centavosDe, mesValido } from "@/lib/validacion";
 
-// Cada persona fija SU aporte a un proyecto, mes a mes. Siempre es el de quien
-// tiene la sesión (no se puede escribir el de otra persona) y en cada mes no
-// puede pasar de lo que le queda libre.
+// El aporte de una persona a un proyecto, mes a mes. Por defecto es el de quien
+// tiene la sesión; con `memberId` es el de otra persona del hogar (en el hogar
+// todo se puede editar entre sí, como el presupuesto). En cada mes no puede
+// pasar de lo que a esa persona le queda libre.
 //
-//   { projectId, mes, monto }          el aporte de ese mes (0 lo quita)
-//   { projectId, mes, hecho }          marca o desmarca ese mes como hecho
+//   { projectId, mes, monto, memberId? }   el aporte de ese mes (0 lo quita)
+//   { projectId, mes, hecho, memberId? }   marca o desmarca ese mes como hecho
 export async function PUT(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
@@ -46,9 +48,23 @@ export async function PUT(req: NextRequest) {
       return fallo("That project is not part of this household.", 404);
     }
 
+    // De quién es el aporte: el mío, o el de otra persona de este hogar.
+    const pedido = typeof body.memberId === "string" ? body.memberId.trim() : "";
+    let memberId = contexto.member.id;
+
+    if (pedido && pedido !== memberId) {
+      const miembros = await listMembers(contexto.householdId);
+
+      if (!miembros.some((m) => m.id === pedido)) {
+        return fallo("That person is not part of this household.", 404);
+      }
+
+      memberId = pedido;
+    }
+
     const base = {
       projectId,
-      memberId: contexto.member.id,
+      memberId,
       householdId: contexto.householdId,
     };
 
@@ -56,7 +72,7 @@ export async function PUT(req: NextRequest) {
       return fallo("Invalid month.", 400);
     }
 
-    const delMes = await mesDeAporte(contexto.householdId, contexto.member.id, projectId, mes);
+    const delMes = await mesDeAporte(contexto.householdId, memberId, projectId, mes);
 
     if (!delMes) {
       return fallo("That month is not part of the saving period.", 400);
@@ -75,7 +91,7 @@ export async function PUT(req: NextRequest) {
       const ok = await marcarProyectoAporteHecho(
         contexto.householdId,
         projectId,
-        contexto.member.id,
+        memberId,
         mes,
         hecho
       );

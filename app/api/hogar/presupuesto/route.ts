@@ -12,6 +12,7 @@ import {
   upsertBudget,
 } from "@/lib/household/datos";
 import { mesActual } from "@/lib/household/formato";
+import { armarProyectosVista } from "@/lib/household/proyectos-datos";
 import { armarVistaMes } from "@/lib/household/presupuesto";
 import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
 import { validarReferencias } from "@/lib/household/pertenencia";
@@ -44,6 +45,8 @@ export async function GET(req: NextRequest) {
       memberId: string;
       montoCents: number;
       hecho: boolean;
+      // true = todavía es solo la sugerencia (no se ha confirmado ni cuenta en los totales).
+      sugerido?: boolean;
     }[] = [];
 
     try {
@@ -62,6 +65,33 @@ export async function GET(req: NextRequest) {
           montoCents: a.montoCents,
           hecho: a.hecho,
         }));
+
+      // El aporte sugerido de ese mes de cada persona que todavía no lo confirmó: así
+      // la meta del proyecto se ve en el presupuesto aunque aún no se haya fijado.
+      if (proyectos.length > 0) {
+        const vista = await armarProyectosVista(contexto.householdId, contexto.member.id);
+        for (const p of vista.proyectos) {
+          const mes = p.mio.meses.find((m) => m.month === month);
+          if (!mes) continue;
+
+          const sugeridos = [
+            { memberId: contexto.member.id, definido: mes.definido, aporteCents: mes.aporteCents },
+            ...mes.otros,
+          ];
+
+          for (const o of sugeridos) {
+            if (o.definido || o.aporteCents <= 0) continue;
+            aportesProyecto.push({
+              projectId: p.proyecto.id,
+              projectName: p.proyecto.name,
+              memberId: o.memberId,
+              montoCents: o.aporteCents,
+              hecho: false,
+              sugerido: true,
+            });
+          }
+        }
+      }
     } catch (error) {
       console.error("Could not read the project contributions:", error);
     }

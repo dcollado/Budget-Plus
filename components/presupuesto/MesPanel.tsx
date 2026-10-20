@@ -52,7 +52,6 @@ export default function MesPanel({ month, datos }: Props) {
     modificarCategoria,
     aportesProyecto,
     setAportesProyecto,
-    yo,
   } = datos;
   const [ocupadoAporte, setOcupadoAporte] = useState(false);
   const [errorAporte, setErrorAporte] = useState("");
@@ -78,7 +77,8 @@ export default function MesPanel({ month, datos }: Props) {
   const totalFijos = suma(gastosFijos);
   const totalVariables = suma(gastosVariables);
   // Lo que se aparta para proyectos ese mes (todas las personas): ya salió del flujo.
-  const ahorroProyectos = aportesProyecto.reduce((total, a) => total + a.montoCents, 0);
+  // Las sugerencias sin confirmar no cuentan todavía.
+  const ahorroProyectos = aportesProyecto.reduce((total, a) => total + (a.sugerido ? 0 : a.montoCents), 0);
   const porGastar = ingresos - totalFijos - totalVariables - ahorroProyectos;
 
   // Marcar un aporte como hecho actualiza lo apartado del proyecto.
@@ -90,7 +90,7 @@ export default function MesPanel({ month, datos }: Props) {
       const res = await fetch("/api/hogar/proyectos/aporte", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: aporte.projectId, mes: month, hecho }),
+        body: JSON.stringify({ projectId: aporte.projectId, mes: month, hecho, memberId: aporte.memberId }),
       });
       const data = await res.json();
 
@@ -101,6 +101,40 @@ export default function MesPanel({ month, datos }: Props) {
       setAportesProyecto((actuales) =>
         actuales.map((a) =>
           a.projectId === aporte.projectId && a.memberId === aporte.memberId ? { ...a, hecho } : a
+        )
+      );
+    } catch (err) {
+      setErrorAporte(err instanceof Error ? err.message : t("common.savingError"));
+    } finally {
+      setOcupadoAporte(false);
+    }
+  }
+
+  // Confirmar la sugerencia de este mes: queda como mi aporte (y ya cuenta).
+  async function confirmarSugerido(aporte: AporteProyectoMes) {
+    setOcupadoAporte(true);
+    setErrorAporte("");
+
+    try {
+      const res = await fetch("/api/hogar/proyectos/aporte", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: aporte.projectId,
+          mes: month,
+          monto: String(aporte.montoCents / 100),
+          memberId: aporte.memberId,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(t.msg(data.message, "common.saveError"));
+      }
+
+      setAportesProyecto((actuales) =>
+        actuales.map((a) =>
+          a.projectId === aporte.projectId && a.memberId === aporte.memberId ? { ...a, sugerido: false } : a
         )
       );
     } catch (err) {
@@ -185,9 +219,9 @@ export default function MesPanel({ month, datos }: Props) {
               key={`${a.projectId}:${a.memberId}`}
               aporte={a}
               members={members}
-              esMio={a.memberId === yo}
               ocupado={ocupadoAporte}
               onMarcar={(aporte, hecho) => void marcarAporte(aporte, hecho)}
+              onConfirmar={(aporte) => void confirmarSugerido(aporte)}
             />
           ))}
           {errorAporte ? <p className="px-4 pb-2 text-xs text-rust-text">{errorAporte}</p> : null}

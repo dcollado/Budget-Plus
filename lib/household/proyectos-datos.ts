@@ -54,7 +54,8 @@ export type MesAporteVista = MesLibre & {
   // Lo que aportan todas las personas ese mes.
   totalMesCents: number;
   // Lo que aportan las otras personas ese mes (solo montos: nunca su libre ni sus ingresos).
-  otros: { nombre: string; aporteCents: number; definido: boolean; hecho: boolean }[];
+  // Cualquier persona del hogar puede editarlos, igual que en el presupuesto.
+  otros: { memberId: string; nombre: string; aporteCents: number; definido: boolean; hecho: boolean }[];
 };
 
 export type MiAporteVista = {
@@ -312,6 +313,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
             .map((m) => {
               const otro = aporteDe.get(`${m.id}:${l.month}`);
               return {
+                memberId: m.id,
                 nombre: m.displayName,
                 aporteCents: otro?.cents ?? 0,
                 definido: otro?.definido ?? false,

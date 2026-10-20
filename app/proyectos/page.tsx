@@ -792,16 +792,44 @@ function AhorroMensual({
                   ) : !m.definido && m.aporteCents > 0 ? (
                     <p className="mt-1 text-xs text-text-muted">{t("proj.suggestedTag")}</p>
                   ) : null}
-                  {m.otros
-                    .filter((o) => o.aporteCents > 0)
-                    .map((o) => (
-                      <p key={o.nombre} className="mt-1 text-xs text-text-muted">
-                        {t(o.hecho ? "proj.otherDone" : o.definido ? "proj.otherSet" : "proj.otherSuggested", {
-                          name: o.nombre,
-                          amount: formatearCentavos(o.aporteCents),
-                        })}
+                  {m.otros.map((o) => (
+                    <div key={o.memberId} className="mt-2 border-t border-line pt-2">
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <CampoMonto
+                            key={`otro-${o.memberId}-${m.month}-${o.aporteCents}-${o.hecho}-${reinicio}`}
+                            id={`aporte-${proyecto.id}-${m.month}-${o.memberId}`}
+                            label={t("proj.otherContribution", { name: o.nombre })}
+                            cents={o.aporteCents}
+                            tono="text-gold"
+                            placeholder="0.00"
+                            disabled={ocupado || o.hecho}
+                            plano
+                            ocultarEtiqueta
+                            titulo={t("proj.otherContribution", { name: o.nombre })}
+                            onCambio={() => setAviso(null)}
+                            onGuardar={(texto) => poner({ mes: m.month, monto: texto, memberId: o.memberId })}
+                          />
+                        </div>
+                        {o.aporteCents > 0 ? (
+                          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-text">
+                            <input
+                              type="checkbox"
+                              checked={o.hecho}
+                              disabled={ocupado}
+                              onChange={(e) => poner({ mes: m.month, hecho: e.target.checked, memberId: o.memberId })}
+                              className="h-4 w-4 accent-[var(--color-sage)]"
+                            />
+                            {t("proj.doneLabel")}
+                          </label>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs text-text-muted">
+                        {t("proj.otherContribution", { name: o.nombre })}
+                        {!o.definido && o.aporteCents > 0 ? ` · ${t("proj.suggestedTag")}` : ""}
                       </p>
-                    ))}
+                    </div>
+                  ))}
                   {aviso?.month === m.month ? (
                     <p role="alert" className="mt-1 text-xs text-rust-text">
                       {aviso.texto}

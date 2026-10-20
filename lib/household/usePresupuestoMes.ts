@@ -13,6 +13,8 @@ export type AporteProyectoMes = {
   memberId: string;
   montoCents: number;
   hecho: boolean;
+  // Solo la sugerencia: no cuenta en los totales hasta que se confirma.
+  sugerido?: boolean;
 };
 
 export type TotalesMes = {

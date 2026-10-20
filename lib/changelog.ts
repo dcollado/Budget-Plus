@@ -31,6 +31,20 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "mejora",
         texto: {
+          en: "Budget now shows each month's suggested saving for your projects (marked Suggested, with a Confirm button). It does not count in the totals until it is confirmed.",
+          es: "Presupuesto ahora muestra el ahorro sugerido de cada mes para tus proyectos (marcado Sugerido, con botón Confirmar). No cuenta en los totales hasta que se confirma.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "In Projects and Budget you can now edit the other person's contribution to a project, or tick it as done, just like the rest of the budget.",
+          es: "En Proyectos y Presupuesto ahora puedes editar el aporte de la otra persona a un proyecto, o marcarlo como hecho, igual que el resto del presupuesto.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
           en: "Projects now use the first half of the month of the last payment: if a trip is on December 26th, half of December's free money counts for saving.",
           es: "Los proyectos ahora usan la primera quincena del mes del último pago: si el viaje es el 26 de diciembre, la mitad de lo libre de diciembre cuenta para apartar.",
         },
