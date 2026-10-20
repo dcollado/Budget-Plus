@@ -65,10 +65,16 @@ export default function CuadroTransferencias({ cuadro }: { cuadro: Cuadro }) {
             {estaAbierta ? (
               <ul className="pb-2 pl-10 pr-4 text-xs text-text-muted">
                 {fila.items.map((item) => (
-                  <li key={item.category.id} className="flex justify-between gap-2 py-0.5">
+                  <li
+                    key={item.category.id}
+                    className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 py-0.5"
+                  >
                     <span className="truncate">{item.category.name}</span>
-                    <span className="whitespace-nowrap">
+                    <span className="w-20 whitespace-nowrap text-right">
                       {formatearCentavos(item.plannedAmountCents)}
+                    </span>
+                    <span className="w-20 whitespace-nowrap text-right">
+                      {formatearCentavos(quincena(item.plannedAmountCents))}
                     </span>
                   </li>
                 ))}

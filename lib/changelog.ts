@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "Your transfers: when you open an account, each fixed item now shows its biweekly amount next to the monthly one.",
+          es: "Tus transferencias: al abrir una cuenta, cada gasto fijo ahora muestra también su monto quincenal junto al mensual.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "Price increases: when you change the amount of a fixed item, you choose when it starts: right away (to fix a mistake) or from any of the next 3 months, so the current month stays as it is.",
