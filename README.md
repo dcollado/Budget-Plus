@@ -54,6 +54,13 @@ One-time setup:
    `.env.local`.
 5. `npm run dev`.
 
+To test with real data, copy ONE household from production into the
+development database (read-only on production; passwords, emails and the
+calendar are blanked): `npm run db:copiar-hogar -- <userId> --ver` shows what
+would be copied and `npm run db:copiar-hogar -- <userId>` does it (running it
+again replaces that household, including its projects in development). It
+prints the `DEV_AUTO_LOGIN_*` values to use.
+
 Production migrations are still applied by hand (Supabase SQL editor), after a
 `npm run respaldo` backup.
 
