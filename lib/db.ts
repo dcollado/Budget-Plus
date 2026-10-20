@@ -8,6 +8,14 @@ export function getSql(): postgres.Sql {
   if (!global.__sql) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is missing from the environment variables.");
+
+    // `next dev` solo habla con una base declarada como de desarrollo: así un
+    // DATABASE_URL de producción copiado a .env.local no pasa desapercibido.
+    if (process.env.NODE_ENV === "development" && process.env.DATABASE_ENV !== "development") {
+      throw new Error(
+        "next dev only works with a development database. Point DATABASE_URL to a separate Supabase project and set DATABASE_ENV=development in .env.local (see README, 'Development database')."
+      );
+    }
     global.__sql = postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
   }
   return global.__sql;

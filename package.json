@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "respaldo": "node --env-file=.env.local scripts/respaldo-db.mjs"
+    "respaldo": "node --env-file=.env.local scripts/respaldo-db.mjs",
+    "db:migrar": "node --env-file=.env.local scripts/migrar-db.mjs",
+    "db:seed-dev": "node --env-file=.env.local scripts/seed-dev.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
