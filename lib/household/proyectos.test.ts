@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aportesSugeridos,
+  sugerirAportes,
   coberturaConAportes,
   disponibleDeLaPersona,
   mesesEntre,
@@ -316,5 +317,62 @@ describe("lo ya pagado", () => {
       29000,
       "2026-10"
     ).alcanza).toBe(false);
+  });
+});
+
+describe("sugerirAportes (con lo ya confirmado)", () => {
+  const dos = (david: number | null, caro: number | null) => [
+    { memberId: "david", libreCents: 172000, confirmadoCents: david },
+    { memberId: "caro", libreCents: 168000, confirmadoCents: caro },
+  ];
+
+  it("sin nadie confirmado reparte la cuota completa en proporción a lo libre", () => {
+    const r = sugerirAportes(28334, dos(null, null));
+
+    // 283,34 * 172/340 = 143,3 -> 144 ; * 168/340 = 140,0 -> 141.
+    expect(r).toEqual({ david: 14400, caro: 14100 });
+  });
+
+  it("si una persona baja su aporte, la sugerencia de la otra compensa", () => {
+    const r = sugerirAportes(28334, dos(10000, null));
+
+    // A Caro le toca lo que falta: 283,34 - 100 = 183,34 -> 184.
+    expect(r.caro).toBe(18400);
+    // A David (que ya confirmó) se le sugiere lo que le tocaría si Caro no hubiera confirmado nada.
+    expect(r.david).toBe(14400);
+  });
+
+  it("si la otra persona ya cubre la cuota, la sugerencia es cero", () => {
+    const r = sugerirAportes(28334, dos(null, 30000));
+
+    expect(r.david).toBe(0);
+  });
+
+  it("respeta el 70% de lo libre aunque falte mucho", () => {
+    const r = sugerirAportes(500000, dos(null, 10000));
+
+    // Faltan 4.900, pero a David nunca se le sugiere más del 70% de 1.720 = 1.204.
+    expect(r.david).toBe(120400);
+  });
+});
+
+describe("coberturaConAportes: pago ya vencido", () => {
+  it("marca que el problema es un pago ya vencido, que aportar más cada mes no arregla", () => {
+    const c = coberturaConAportes(
+      viaje({ items: [{ id: "1", concepto: "Depósito", montoCents: 5000, fecha: "2026-10-25" }] }),
+      30000,
+      "2026-10"
+    );
+
+    expect(c.alcanza).toBe(false);
+    expect(c.problemaYaVencido).toBe(true);
+    expect(c.fechaProblema).toBe("2026-10-25");
+  });
+
+  it("un faltante a futuro no es un pago vencido", () => {
+    const c = coberturaConAportes(viaje(), 30000, "2026-10");
+
+    expect(c.alcanza).toBe(false);
+    expect(c.problemaYaVencido).toBe(false);
   });
 });

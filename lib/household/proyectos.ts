@@ -155,7 +155,7 @@ export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string
 // Lo máximo de lo libre que se SUGIERE apartar. El tope real (lo que se puede
 // escribir) es todo lo libre, pero no se sugiere llegar ahí: hay que dejar
 // margen para imprevistos.
-export const FRACCION_MAXIMA_SUGERIDA = 0.7;
+export const PORCENTAJE_MAXIMO_SUGERIDO = 70;
 
 export type LibrePersona = { memberId: string; libreCents: number };
 
@@ -178,8 +178,42 @@ export function aportesSugeridos(
 
   for (const l of conLibre) {
     const parte = Math.ceil(((cuotaMensualCents * l.libreCents) / totalLibre) / 100) * 100;
-    const comodo = Math.floor((l.libreCents * FRACCION_MAXIMA_SUGERIDA) / 100) * 100;
+    // Con enteros: 172000 * 0.7 da 120399,99… y se perdería un dólar.
+    const comodo = Math.floor((l.libreCents * PORCENTAJE_MAXIMO_SUGERIDO) / 10000) * 100;
     resultado[l.memberId] = Math.min(parte, comodo);
+  }
+
+  return resultado;
+}
+
+export type PersonaAporte = {
+  memberId: string;
+  libreCents: number;
+  // Lo que ya confirmó; null = todavía no (se le sugiere).
+  confirmadoCents: number | null;
+};
+
+// Sugerencia para cada persona teniendo en cuenta lo que las demás YA
+// confirmaron: lo que falta de la cuota (después de lo confirmado por las
+// otras) se reparte entre ella y quienes aún no confirman. Así, si una persona
+// baja su aporte, la sugerencia de la otra sube para compensar (hasta su 70%).
+export function sugerirAportes(
+  cuotaMensualCents: number,
+  personas: PersonaAporte[]
+): Record<string, number> {
+  const resultado: Record<string, number> = {};
+
+  for (const p of personas) {
+    const confirmadoPorOtras = personas
+      .filter((o) => o.memberId !== p.memberId && o.confirmadoCents !== null)
+      .reduce((t, o) => t + (o.confirmadoCents ?? 0), 0);
+
+    const participantes = personas
+      .filter((o) => o.memberId === p.memberId || o.confirmadoCents === null)
+      .map((o) => ({ memberId: o.memberId, libreCents: o.libreCents }));
+
+    resultado[p.memberId] =
+      aportesSugeridos(Math.max(0, cuotaMensualCents - confirmadoPorOtras), participantes)[p.memberId] ?? 0;
   }
 
   return resultado;
@@ -197,6 +231,8 @@ export type CoberturaProyecto = {
   // Si no alcanza: la primera fecha en que falta plata, y cuánto.
   fechaProblema: string;
   faltanteEnFechaCents: number;
+  // Esa fecha es este mes o ya pasó: aportar más cada mes ya no la arregla.
+  problemaYaVencido: boolean;
   // Meses que tardan en juntar todo lo comprometido. null = no se aparta
   // nada, así que no se completa nunca; 0 = ya está cubierto.
   mesesParaCubrirTodo: number | null;
@@ -215,6 +251,7 @@ export function coberturaConAportes(
 
   let fechaProblema = "";
   let faltanteEnFechaCents = 0;
+  let problemaYaVencido = false;
 
   for (const fecha of [...new Set(items.map((i) => i.fecha))].sort()) {
     const vence = items.filter((i) => i.fecha <= fecha).reduce((t, i) => t + i.montoCents, 0);
@@ -224,6 +261,7 @@ export function coberturaConAportes(
     if (reunido < vence) {
       fechaProblema = fecha;
       faltanteEnFechaCents = vence - reunido;
+      problemaYaVencido = mesesEntre(mesHoy, fecha.slice(0, 7)) <= 0;
       break;
     }
   }
@@ -239,6 +277,7 @@ export function coberturaConAportes(
     alcanza: fechaProblema === "",
     fechaProblema,
     faltanteEnFechaCents,
+    problemaYaVencido,
     mesesParaCubrirTodo,
   };
 }

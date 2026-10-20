@@ -7,7 +7,7 @@ import { InfoTip } from "@/components/info-tip";
 import { Modal } from "@/components/modal";
 import { formatearCentavos } from "@/lib/household/formato";
 import type { ProyectoVista } from "@/lib/household/proyectos-datos";
-import type { ProyectoItem } from "@/lib/household/schema";
+import type { Proyecto, ProyectoItem } from "@/lib/household/schema";
 import { useT } from "@/lib/i18n/client";
 import { fieldBaseClass, fieldNormalClass, helperTextClass, labelClass, sectionCardClass } from "@/lib/ui";
 
@@ -57,6 +57,7 @@ function Dato({
 export default function ProyectosPage() {
   const t = useT();
   const [proyectos, setProyectos] = useState<ProyectoVista[] | null>(null);
+  const [archivados, setArchivados] = useState<Proyecto[]>([]);
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
 
@@ -64,11 +65,12 @@ export default function ProyectosPage() {
     try {
       const res = await fetch("/api/hogar/proyectos", { cache: "no-store" });
       const json = (await res.json()) as {
-        data?: { proyectos: ProyectoVista[] };
+        data?: { proyectos: ProyectoVista[]; archivados?: Proyecto[] };
         message?: string;
       };
       if (!res.ok || !json.data) throw new Error(t.msg(json.message, "proj.loadError"));
       setProyectos(json.data.proyectos);
+      setArchivados(json.data.archivados ?? []);
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("proj.loadError"));
@@ -116,23 +118,57 @@ export default function ProyectosPage() {
         ))}
       </div>
 
+      {archivados.length > 0 ? (
+        <details className="mt-8 rounded-2xl border border-line bg-surface px-5 py-3 text-sm">
+          <summary className="cursor-pointer font-medium text-text-muted">
+            {t("proj.archived", { n: archivados.length })}
+          </summary>
+          <ul className="mt-2 divide-y divide-line">
+            {archivados.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-3 py-2">
+                <span className="min-w-0 text-text">
+                  <span className="break-words">{a.name}</span>
+                  <span className="ml-2 text-xs text-text-muted">{fechaLarga(a.targetDate, t.locale)}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void enviar("/api/hogar/proyectos", "PATCH", { id: a.id, archived: false })
+                      .then(cargar)
+                      .catch((e) =>
+                        setError(e instanceof Error ? t.msg(e.message, "proj.saveError") : t("proj.saveError"))
+                      )
+                  }
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-surface-raised"
+                >
+                  {t("proj.restore")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       <NuevoProyecto abierto={creando} onCerrar={() => setCreando(false)} onCreado={cargar} />
     </Pagina>
   );
 }
 
+// Crea un proyecto o, con `editar`, cambia su nombre y su fecha.
 function NuevoProyecto({
   abierto,
   onCerrar,
   onCreado,
+  editar,
 }: {
   abierto: boolean;
   onCerrar: () => void;
   onCreado: () => Promise<void>;
+  editar?: Proyecto;
 }) {
   const t = useT();
-  const [nombre, setNombre] = useState("");
-  const [fecha, setFecha] = useState("");
+  const [nombre, setNombre] = useState(editar?.name ?? "");
+  const [fecha, setFecha] = useState(editar?.targetDate ?? "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -142,10 +178,11 @@ function NuevoProyecto({
     setError("");
 
     try {
-      await enviar("/api/hogar/proyectos", "POST", {
-        name: nombre,
-        targetDate: fecha,
-      });
+      await enviar(
+        "/api/hogar/proyectos",
+        editar ? "PATCH" : "POST",
+        editar ? { id: editar.id, name: nombre, targetDate: fecha } : { name: nombre, targetDate: fecha }
+      );
       setNombre("");
       setFecha("");
       await onCreado();
@@ -158,7 +195,7 @@ function NuevoProyecto({
   }
 
   return (
-    <Modal abierto={abierto} onCerrar={onCerrar} titulo={t("proj.new")}>
+    <Modal abierto={abierto} onCerrar={onCerrar} titulo={editar ? t("proj.edit") : t("proj.new")}>
       <form onSubmit={guardar} className="space-y-4">
         <div>
           <label className={labelClass} htmlFor="proj-nombre">
@@ -213,7 +250,7 @@ function NuevoProyecto({
             disabled={guardando}
             className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {guardando ? t("common.saving") : t("proj.create")}
+            {guardando ? t("common.saving") : editar ? t("common.save") : t("proj.create")}
           </button>
         </div>
       </form>
@@ -236,6 +273,7 @@ function FilaItemProyecto({
   const [concepto, setConcepto] = useState(item.concepto);
   const [monto, setMonto] = useState(String(item.montoCents / 100));
   const [fecha, setFecha] = useState(item.fecha);
+  const [borrando, setBorrando] = useState(false);
 
   function abrirEdicion() {
     setConcepto(item.concepto);
@@ -282,7 +320,7 @@ function FilaItemProyecto({
               id={`edit-monto-${item.id}`}
               type="number"
               step="0.01"
-              min="0"
+              min="0.01"
               inputMode="decimal"
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
@@ -340,30 +378,59 @@ function FilaItemProyecto({
       <div className={`min-w-0 flex-1 ${item.pagado ? "text-text-muted line-through" : "text-text"}`}>
         <p className="break-words">{item.concepto}</p>
         <p className="text-xs text-text-muted no-underline">
-          {item.fecha ? t("proj.dueOn", { date: fechaLarga(item.fecha, t.locale) }) : t("proj.noDate")}
+          {item.pagado
+            ? t("proj.paid")
+            : item.fecha
+              ? t("proj.dueOn", { date: fechaLarga(item.fecha, t.locale) })
+              : t("proj.noDate")}
         </p>
       </div>
       <span className="whitespace-nowrap font-medium">{formatearCentavos(item.montoCents)}</span>
-      <button
-        type="button"
-        disabled={ocupado}
-        aria-label={`${t("proj.editItem")}: ${item.concepto}`}
-        onClick={abrirEdicion}
-        className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
-      >
-        <Pencil size={15} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        disabled={ocupado}
-        aria-label={`${t("proj.deleteItem")}: ${item.concepto}`}
-        onClick={() =>
-          void hacer(() => enviar(`/api/hogar/proyectos/items?id=${encodeURIComponent(item.id)}`, "DELETE"))
-        }
-        className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-rust-text"
-      >
-        <Trash2 size={15} aria-hidden="true" />
-      </button>
+      {borrando ? (
+        <span className="flex items-center gap-1 text-xs">
+          <span className="text-text-muted">{t("proj.deleteItemQuestion")}</span>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() =>
+              void hacer(() =>
+                enviar(`/api/hogar/proyectos/items?id=${encodeURIComponent(item.id)}`, "DELETE")
+              )
+            }
+            className="rounded-lg px-2 py-1 font-medium text-rust-text transition hover:bg-rust-soft"
+          >
+            {t("proj.yes")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBorrando(false)}
+            className="rounded-lg px-2 py-1 font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
+          >
+            {t("proj.no")}
+          </button>
+        </span>
+      ) : (
+        <>
+          <button
+            type="button"
+            disabled={ocupado}
+            aria-label={`${t("proj.editItem")}: ${item.concepto}`}
+            onClick={abrirEdicion}
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
+          >
+            <Pencil size={15} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            disabled={ocupado}
+            aria-label={`${t("proj.deleteItem")}: ${item.concepto}`}
+            onClick={() => setBorrando(true)}
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-rust-text"
+          >
+            <Trash2 size={15} aria-hidden="true" />
+          </button>
+        </>
+      )}
     </li>
   );
 }
@@ -380,6 +447,7 @@ function CampoMonto({
   disabled,
   ayuda,
   plano = false,
+  onCambio,
   onGuardar,
 }: {
   id: string;
@@ -391,6 +459,8 @@ function CampoMonto({
   ayuda?: ReactNode;
   // Sin borde ni fondo propios: va dentro de otra caja.
   plano?: boolean;
+  // Se llama cada vez que se escribe (p. ej. para borrar un aviso viejo).
+  onCambio?: () => void;
   onGuardar: (texto: string) => void;
 }) {
   const inicial = cents > 0 ? String(cents / 100) : "";
@@ -427,7 +497,10 @@ function CampoMonto({
           value={texto}
           disabled={disabled}
           placeholder={placeholder}
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => {
+            setTexto(e.target.value);
+            onCambio?.();
+          }}
           onBlur={() => {
             if (texto !== inicial) onGuardar(texto);
           }}
@@ -523,6 +596,7 @@ function AhorroMensual({
             placeholder="0.00"
             disabled={ocupado || sinLibre}
             plano
+            onCambio={() => setAviso("")}
             ayuda={
               <InfoTip
                 texto={t("proj.myContributionHelp")}
@@ -609,6 +683,13 @@ function AhorroMensual({
                   }`
                 : ""}
             </p>
+          ) : cobertura.problemaYaVencido ? (
+            <p className="mt-2 text-rust-text">
+              {t("proj.coverOverdue", {
+                date: fechaLarga(cobertura.fechaProblema, t.locale),
+                short: formatearCentavos(cobertura.faltanteEnFechaCents),
+              })}
+            </p>
           ) : (
             <p className="mt-2 text-rust-text">
               {t("proj.coverShort", {
@@ -640,6 +721,7 @@ function TarjetaProyecto({
   const [error, setError] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [editandoProyecto, setEditandoProyecto] = useState(false);
 
   async function hacer(accion: () => Promise<void>) {
     setOcupado(true);
@@ -672,16 +754,39 @@ function TarjetaProyecto({
 
   const hayObjetivo = proyecto.objetivoCents > 0;
   const avance = hayObjetivo
-    ? Math.min(100, Math.round((plan.comprometidoCents / proyecto.objetivoCents) * 100))
+    ? Math.min(100, Math.round(((plan.pagadoCents + plan.comprometidoCents) / proyecto.objetivoCents) * 100))
     : 0;
   const hayCuota = plan.cuotaMensualCents > 0;
+  // Pendientes primero; lo ya pagado al final.
+  const itemsOrdenados = [...items].sort((a, b) => Number(a.pagado) - Number(b.pagado));
+  // Si algún pago cae después de la fecha del proyecto, se avisa.
+  const ultimoPago = items.reduce((max, i) => (i.fecha > max ? i.fecha : max), "");
 
   return (
     <section className={sectionCardClass} aria-label={proyecto.name}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="font-display text-2xl text-text">{proyecto.name}</h2>
-          <p className="text-sm text-text-muted">{fechaLarga(proyecto.targetDate, t.locale)}</p>
+          <div className="flex items-center gap-1">
+            <h2 className="font-display text-2xl text-text">{proyecto.name}</h2>
+            <button
+              type="button"
+              disabled={ocupado}
+              aria-label={t("proj.edit")}
+              onClick={() => setEditandoProyecto(true)}
+              className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
+            >
+              <Pencil size={15} aria-hidden="true" />
+            </button>
+          </div>
+          <p className="text-sm text-text-muted">
+            {fechaLarga(proyecto.targetDate, t.locale)}
+            {ultimoPago > proyecto.targetDate
+              ? ` · ${t("proj.lastPayment", { date: fechaLarga(ultimoPago, t.locale) })}`
+              : ""}
+          </p>
+          <p role="status" aria-live="polite" className="min-h-4 text-xs text-text-muted">
+            {ocupado ? t("common.saving") : ""}
+          </p>
         </div>
         <div className="flex gap-1">
           <button
@@ -805,7 +910,11 @@ function TarjetaProyecto({
           </>
         ) : (
           <p className="mt-0.5 text-sm text-text-muted">
-            {plan.comprometidoCents === 0 && plan.pagadoCents === 0 ? t("proj.noItems") : t("proj.covered")}
+            {plan.comprometidoCents === 0 && plan.pagadoCents === 0
+              ? t("proj.noItems")
+              : plan.comprometidoCents === 0
+                ? t("proj.allPaid")
+                : t("proj.covered")}
           </p>
         )}
         {plan.urgenteCents > 0 ? (
@@ -823,7 +932,7 @@ function TarjetaProyecto({
         <p className="mt-2 text-sm text-text-muted">{t("proj.noItems")}</p>
       ) : (
         <ul className="mt-2 divide-y divide-line text-sm">
-          {items.map((item) => (
+          {itemsOrdenados.map((item) => (
             <FilaItemProyecto key={item.id} item={item} ocupado={ocupado} hacer={hacer} />
           ))}
         </ul>
@@ -853,7 +962,7 @@ function TarjetaProyecto({
             id={`item-monto-${proyecto.id}`}
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             inputMode="decimal"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
@@ -890,6 +999,15 @@ function TarjetaProyecto({
         >
           {error}
         </p>
+      ) : null}
+
+      {editandoProyecto ? (
+        <NuevoProyecto
+          abierto
+          editar={proyecto}
+          onCerrar={() => setEditandoProyecto(false)}
+          onCreado={onCambio}
+        />
       ) : null}
 
       <Modal abierto={confirmando} onCerrar={() => setConfirmando(false)} titulo={t("proj.deleteTitle")}>

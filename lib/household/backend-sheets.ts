@@ -704,6 +704,11 @@ export async function listProyectos(householdId: string): Promise<Proyecto[]> {
   return [];
 }
 
+export async function listProyectosArchivados(householdId: string): Promise<Proyecto[]> {
+  void householdId;
+  return [];
+}
+
 export async function crearProyecto(
   input: Omit<Proyecto, "id" | "archived" | "ahorradoCents"> & { ahorradoCents?: number }
 ): Promise<Proyecto> {

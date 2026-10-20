@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
       return fallo("The amount is not valid.", 400);
     }
 
+    if (montoCents <= 0) {
+      return fallo("The amount must be greater than zero.", 400);
+    }
+
     if (fecha && !fechaValida(fecha)) {
       return fallo("Pick a valid target date.", 400);
     }
@@ -83,6 +87,7 @@ export async function PATCH(req: NextRequest) {
     if (body.monto !== undefined) {
       const cents = centavosDe(body.monto);
       if (cents === null) return fallo("The amount is not valid.", 400);
+      if (cents <= 0) return fallo("The amount must be greater than zero.", 400);
       cambios.montoCents = cents;
     }
 

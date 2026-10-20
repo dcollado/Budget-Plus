@@ -5,11 +5,12 @@ import {
   listProyectoAportes,
   listProyectoItems,
   listProyectos,
+  listProyectosArchivados,
 } from "./datos";
 import { mesActual } from "./formato";
 import { armarVistaMes } from "./presupuesto";
 import {
-  aportesSugeridos,
+  sugerirAportes,
   coberturaConAportes,
   disponibleDeLaPersona,
   planDelProyecto,
@@ -55,6 +56,8 @@ export type ProyectoVista = {
 export type ProyectosVista = {
   mesHoy: string;
   proyectos: ProyectoVista[];
+  // Para poder verlos y restaurarlos.
+  archivados: Proyecto[];
 };
 
 const paraPlan = (proyecto: Proyecto, items: ProyectoItem[]): ProyectoParaPlan => ({
@@ -72,11 +75,12 @@ const paraPlan = (proyecto: Proyecto, items: ProyectoItem[]): ProyectoParaPlan =
 export async function armarProyectosVista(householdId: string, yo: string): Promise<ProyectosVista> {
   const mesHoy = mesActual();
 
-  const [categorias, presupuestos, miembros, proyectos, items, aportes] = await Promise.all([
+  const [categorias, presupuestos, miembros, proyectos, archivados, items, aportes] = await Promise.all([
     listCategories(householdId),
     listBudgets(householdId),
     listMembers(householdId),
     listProyectos(householdId),
+    listProyectosArchivados(householdId),
     listProyectoItems(householdId),
     listProyectoAportes(householdId),
   ]);
@@ -104,14 +108,20 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
 
   return {
     mesHoy,
+    archivados,
     proyectos: proyectos.map((proyecto) => {
       const suyos = items.filter((i) => i.projectId === proyecto.id);
       const datos = paraPlan(proyecto, suyos);
       const plan = planDelProyecto(datos, mesHoy);
 
-      const sugeridos = aportesSugeridos(
+      // La sugerencia de cada persona tiene en cuenta lo que las demás ya confirmaron.
+      const sugeridos = sugerirAportes(
         plan.cuotaMensualCents,
-        miembros.map((m) => ({ memberId: m.id, libreCents: libreDe(m.id, proyecto.id) }))
+        miembros.map((m) => ({
+          memberId: m.id,
+          libreCents: libreDe(m.id, proyecto.id),
+          confirmadoCents: guardados.get(`${proyecto.id}:${m.id}`) ?? null,
+        }))
       );
 
       const lista: AporteVista[] = miembros.map((m) => {

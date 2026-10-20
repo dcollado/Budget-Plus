@@ -467,6 +467,14 @@ export async function listProyectos(householdId: string): Promise<Proyecto[]> {
   return filas.map(aProyecto);
 }
 
+export async function listProyectosArchivados(householdId: string): Promise<Proyecto[]> {
+  const filas = await getSql()<FilaProyecto[]>`
+    select ${getSql()(COLS_PROYECTO)} from proyectos
+    where household_id = ${householdId} and archived
+    order by target_date, created_at`;
+  return filas.map(aProyecto);
+}
+
 export async function crearProyecto(
   input: Omit<Proyecto, "id" | "archived" | "ahorradoCents"> & { ahorradoCents?: number }
 ): Promise<Proyecto> {

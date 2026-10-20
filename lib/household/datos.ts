@@ -40,6 +40,7 @@ export const listTransactions = elegir("listTransactions");
 export const crearTransaction = elegir("crearTransaction");
 export const eliminarTransaction = elegir("eliminarTransaction");
 export const listProyectos = elegir("listProyectos");
+export const listProyectosArchivados = elegir("listProyectosArchivados");
 export const crearProyecto = elegir("crearProyecto");
 export const actualizarProyecto = elegir("actualizarProyecto");
 export const listProyectoItems = elegir("listProyectoItems");
