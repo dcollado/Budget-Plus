@@ -15,7 +15,7 @@ import { centavosDe, mesValido } from "@/lib/validacion";
 // todo se puede editar entre sí, como el presupuesto). En cada mes no puede
 // pasar de lo que a esa persona le queda libre.
 //
-//   { projectId, mes, monto, memberId? }   el aporte de ese mes (0 lo quita)
+//   { projectId, mes, monto, memberId? }   el aporte de ese mes ("" lo quita; 0 es válido)
 //   { projectId, mes, hecho, memberId? }   marca o desmarca ese mes como hecho
 export async function PUT(req: NextRequest) {
   try {
@@ -27,8 +27,9 @@ export async function PUT(req: NextRequest) {
     const projectId = String(body.projectId ?? "").trim();
     const mes = body.mes === undefined || body.mes === "" ? null : String(body.mes).trim();
     const hecho = typeof body.hecho === "boolean" ? body.hecho : null;
-    // Vacío = 0.
-    const montoCents = body.monto === undefined || body.monto === "" ? 0 : centavosDe(body.monto);
+    // Vacío = quitar el aporte (vuelve la sugerencia); 0 = "este mes no aporto".
+    const quitar = body.monto === "";
+    const montoCents = body.monto === undefined || quitar ? 0 : centavosDe(body.monto);
 
     if (!projectId) {
       return fallo("Project is missing.", 400);
@@ -112,7 +113,7 @@ export async function PUT(req: NextRequest) {
       return fallo("That is more than you have available.", 400);
     }
 
-    await guardarProyectoAporteMes({ ...base, month: mes, montoCents });
+    await guardarProyectoAporteMes({ ...base, month: mes, montoCents, quitar });
 
     return exito({ montoCents, mes });
   } catch (error) {

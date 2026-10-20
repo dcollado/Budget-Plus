@@ -223,8 +223,11 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         const resultado = new Map<string, number>();
         const sinConfirmar = (memberId: string, mes: string) => {
           const fila = filaDe(proyecto.id, memberId, mes);
+          // Un aporte confirmado en 0 es "este mes no aporto": no cambia lo que se
+          // sugiere a los demás (cada quien responde por lo suyo).
           return (
             fila === undefined ||
+            (fila.montoCents === 0 && !fila.hecho) ||
             (excepcion !== null && excepcion.memberId === memberId && excepcion.mes === mes && !fila.hecho)
           );
         };
@@ -275,7 +278,10 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
             hecho: fila?.hecho ?? false,
             // Mi sugerido de un mes que ya confirmé se calcula solo para ese mes.
             sugerido:
-              m.id === yo && fila && !fila.hecho
+              // Con un 0 confirmado no se sugiere nada más ese mes.
+              fila && fila.montoCents === 0
+                ? 0
+                : m.id === yo && fila && !fila.hecho
                 ? (sugerir({ memberId: yo, mes }).get(clave) ?? fila.montoCents)
                 : fila?.hecho
                   ? fila.montoCents

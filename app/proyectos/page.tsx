@@ -607,6 +607,7 @@ function CampoMonto({
   plano = false,
   ocultarEtiqueta = false,
   titulo,
+  mostrarCero = false,
   onCambio,
   onGuardar,
 }: {
@@ -623,11 +624,13 @@ function CampoMonto({
   ocultarEtiqueta?: boolean;
   // Texto que sale al dejar el mouse encima del campo.
   titulo?: string;
+  // Un 0 confirmado se muestra como "0" (vacío = sin definir).
+  mostrarCero?: boolean;
   // Se llama cada vez que se escribe (p. ej. para borrar un aviso viejo).
   onCambio?: () => void;
   onGuardar: (texto: string) => void;
 }) {
-  const inicial = cents > 0 ? String(cents / 100) : "";
+  const inicial = cents > 0 ? String(cents / 100) : mostrarCero ? "0" : "";
   const [texto, setTexto] = useState(inicial);
 
   return (
@@ -821,8 +824,8 @@ function AhorroMensual({
                 <div className="text-sm">
                   <p className="flex justify-between gap-3 font-semibold">
                     <span className="text-text">{formatearMes(m.month, t.locale)}</span>
-                    <span className={m.libreCents < 0 ? "text-rust-text" : "text-sage"}>
-                      {formatearCentavos(m.libreCents)}
+                    <span className={(m.hastaFecha ? m.aprovechableCents : m.libreCents) < 0 ? "text-rust-text" : "text-sage"}>
+                      {formatearCentavos(m.hastaFecha ? m.aprovechableCents : m.libreCents)}
                     </span>
                   </p>
                   <details className="mt-1">
@@ -836,6 +839,12 @@ function AhorroMensual({
                         ? fila(t("proj.otherProjects"), m.otrosProyectosCents, "-")
                         : null}
                     </dl>
+                    {m.hastaFecha ? (
+                      <p className="mt-1 flex justify-between gap-3 border-t border-line pt-1 text-xs font-medium text-text">
+                        <span>{t("proj.countedUntil", { date: fechaLarga(m.hastaFecha, t.locale) })}</span>
+                        <span className="whitespace-nowrap">{formatearCentavos(m.aprovechableCents)}</span>
+                      </p>
+                    ) : null}
                   </details>
                   {m.hastaFecha ? (
                     <p className="mt-1 text-xs text-text-muted">
@@ -857,6 +866,7 @@ function AhorroMensual({
                         disabled={ocupado || m.hecho || sinLibre}
                         plano
                         ocultarEtiqueta
+                        mostrarCero={m.definido && m.aporteCents === 0}
                         titulo={t("proj.monthLimits", {
                           max: formatearCentavos(m.topeCents),
                           suggested: formatearCentavos(m.sugeridoCents),
@@ -904,6 +914,7 @@ function AhorroMensual({
                             disabled={ocupado || o.hecho}
                             plano
                             ocultarEtiqueta
+                            mostrarCero={o.definido && o.aporteCents === 0}
                             titulo={t("proj.otherContribution", { name: o.nombre })}
                             onCambio={() => setAviso(null)}
                             onGuardar={(texto) => poner({ mes: m.month, monto: texto, memberId: o.memberId })}

@@ -29,6 +29,20 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "In Projects you can now set a contribution of 0 for a month (you cannot contribute that month). It only affects your own amounts, not the other person's. Leave the field empty to go back to the suggestion.",
+          es: "En Proyectos ahora puedes poner un aporte de 0 en un mes (ese mes no puedes aportar). Solo afecta tus montos, no los de la otra persona. Deja el campo vacío para volver a la sugerencia.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "In Projects, the big number of the last payment's month now shows what actually counts until that date.",
+          es: "En Proyectos, el número grande del mes del último pago ahora muestra lo que de verdad cuenta hasta esa fecha.",
+        },
+      },
+      {
         tipo: "ajuste",
         texto: {
           en: "Projects no longer have a Target budget: it was only a reference and did not help the calculation.",

@@ -388,6 +388,7 @@ export const es: Record<MessageKey, string> = {
   "cat.biweeklyHint": "Elige cualquier día de pago reciente. La app cuenta cada 14 días desde ahí (algunos meses tienen 3 pagos).",
   "cat.biweeklyNeedsDate": "Elige una fecha de pago reciente.",
   "cat.summaryBiweekly": "{each} cada 2 semanas, contado como 2 pagos al mes",
+  "proj.countedUntil": "Cuenta hasta el {date}",
   "proj.untilDate": "En este mes solo cuenta lo que entra y sale hasta el {date} (el último pago)",
   "nav.changes": "Novedades",
   "nav.closeMenu": "Cerrar menú",

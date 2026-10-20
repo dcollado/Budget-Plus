@@ -627,11 +627,12 @@ export async function listProyectoAportesMes(householdId: string): Promise<Proye
 
 // Crea o cambia lo que una persona aparta en un mes (no toca "hecho"); con 0 lo borra.
 export async function guardarProyectoAporteMes(
-  input: Omit<ProyectoAporteMes, "hecho">
+  input: Omit<ProyectoAporteMes, "hecho"> & { quitar?: boolean }
 ): Promise<void> {
   const sql = getSql();
 
-  if (input.montoCents <= 0) {
+  // quitar = volver a la sugerencia (se borra la fila). Un 0 sí se guarda: es "este mes no aporto".
+  if (input.quitar) {
     await sql`delete from proyecto_aportes_mes
       where project_id = ${input.projectId} and member_id = ${input.memberId}
         and month = ${input.month} and household_id = ${input.householdId}`;

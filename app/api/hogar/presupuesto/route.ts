@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       const nombres = new Map(proyectos.map((p) => [p.id, p.name]));
 
       aportesProyecto = aportes
-        .filter((a) => a.month === month && nombres.has(a.projectId))
+        .filter((a) => a.month === month && a.montoCents > 0 && nombres.has(a.projectId))
         .map((a) => ({
           projectId: a.projectId,
           projectName: nombres.get(a.projectId) ?? "",

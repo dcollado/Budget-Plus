@@ -775,7 +775,7 @@ export async function listProyectoAportesMes(householdId: string): Promise<Proye
 }
 
 export async function guardarProyectoAporteMes(
-  input: Omit<ProyectoAporteMes, "hecho">
+  input: Omit<ProyectoAporteMes, "hecho"> & { quitar?: boolean }
 ): Promise<void> {
   void input;
   throw new Error(SIN_PROYECTOS);

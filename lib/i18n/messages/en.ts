@@ -387,6 +387,7 @@ export const en = {
   "cat.biweeklyHint": "Pick any recent payday. The app counts every 14 days from it (some months have 3 paydays).",
   "cat.biweeklyNeedsDate": "Pick a recent payday.",
   "cat.summaryBiweekly": "{each} every 2 weeks, counted as 2 payments a month",
+  "proj.countedUntil": "Counts until {date}",
   "proj.untilDate": "In this month only what comes in and goes out until {date} counts (the last payment)",
   "nav.changes": "What's new",
   "nav.closeMenu": "Close menu",
