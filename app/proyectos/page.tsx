@@ -323,11 +323,14 @@ function FilaItemProyecto({
   item,
   personas,
   ocupado,
+  error,
   hacer,
 }: {
   item: ProyectoItem;
   personas: { id: string; nombre: string; esMio: boolean }[];
   ocupado: boolean;
+  // El error del proyecto: se muestra dentro de la ventana de edición.
+  error: string;
   hacer: (accion: () => Promise<void>) => Promise<void>;
 }) {
   const t = useT();
@@ -384,77 +387,6 @@ function FilaItemProyecto({
       await enviar("/api/hogar/proyectos/items", "PATCH", { id: item.id, concepto, monto, fecha });
       setEditando(false);
     });
-  }
-
-  if (editando) {
-    return (
-      <li className="py-3">
-        <form
-          onSubmit={guardar}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end"
-        >
-          <div>
-            <label className={labelClass} htmlFor={`edit-nombre-${item.id}`}>
-              {t("proj.itemName")}
-            </label>
-            <input
-              id={`edit-nombre-${item.id}`}
-              type="text"
-              value={concepto}
-              onChange={(e) => setConcepto(e.target.value)}
-              maxLength={120}
-              required
-              autoFocus
-              className={`${fieldBaseClass} ${fieldNormalClass}`}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor={`edit-monto-${item.id}`}>
-              {t("proj.itemAmount")}
-            </label>
-            <input
-              id={`edit-monto-${item.id}`}
-              type="number"
-              step="0.01"
-              min="0.01"
-              inputMode="decimal"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              required
-              className={`${fieldBaseClass} ${fieldNormalClass}`}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor={`edit-fecha-${item.id}`}>
-              {t("proj.itemDate")}
-            </label>
-            <input
-              id={`edit-fecha-${item.id}`}
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className={`${fieldBaseClass} ${fieldNormalClass}`}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={ocupado}
-              className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t("common.save")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditando(false)}
-              className="rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
-            >
-              {t("common.cancel")}
-            </button>
-          </div>
-        </form>
-      </li>
-    );
   }
 
   return (
@@ -649,6 +581,82 @@ function FilaItemProyecto({
           </div>
         </form>
       ) : null}
+
+      <Modal abierto={editando} onCerrar={() => setEditando(false)} titulo={t("proj.editItem")}>
+        <form onSubmit={guardar} className="space-y-4">
+          <div>
+            <label className={labelClass} htmlFor={`edit-nombre-${item.id}`}>
+              {t("proj.itemName")}
+            </label>
+            <input
+              id={`edit-nombre-${item.id}`}
+              type="text"
+              value={concepto}
+              onChange={(e) => setConcepto(e.target.value)}
+              maxLength={120}
+              required
+              autoFocus
+              className={`${fieldBaseClass} ${fieldNormalClass}`}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor={`edit-monto-${item.id}`}>
+                {t("proj.itemAmount")}
+              </label>
+              <input
+                id={`edit-monto-${item.id}`}
+                type="number"
+                step="0.01"
+                min="0.01"
+                inputMode="decimal"
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                required
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor={`edit-fecha-${item.id}`}>
+                {t("proj.itemDate")}
+              </label>
+              <input
+                id={`edit-fecha-${item.id}`}
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setEditando(false)}
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={ocupado}
+              className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {ocupado ? t("common.saving") : t("common.save")}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </li>
   );
 }
@@ -1298,22 +1306,30 @@ function TarjetaProyecto({
       <Seccion
         titulo={t("proj.items")}
         resumen={t("proj.itemsSummary", { pending: pendientes.length, paid: pagados.length })}
+        ayuda={
+          <button
+            type="button"
+            onClick={() => setAgregando(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-sm font-semibold text-ink transition hover:brightness-110"
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t("proj.addExpense")}
+          </button>
+        }
       >
-        <button
-          type="button"
-          onClick={() => setAgregando(true)}
-          className="mb-1 flex items-center gap-1.5 text-sm font-medium text-gold transition hover:underline"
-        >
-          <Plus size={14} aria-hidden="true" />
-          {t("proj.addExpense")}
-        </button>
-
         {items.length === 0 ? (
           <p className="text-sm text-text-muted">{t("proj.noItems")}</p>
         ) : (
           <ul className="divide-y divide-line text-sm">
             {(verPagados ? itemsOrdenados : pendientes).map((item) => (
-              <FilaItemProyecto key={item.id} item={item} personas={personas} ocupado={ocupado} hacer={hacer} />
+              <FilaItemProyecto
+                key={item.id}
+                item={item}
+                personas={personas}
+                ocupado={ocupado}
+                error={error}
+                hacer={hacer}
+              />
             ))}
           </ul>
         )}

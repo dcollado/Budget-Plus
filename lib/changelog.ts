@@ -38,8 +38,8 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "ajuste",
         texto: {
-          en: "In Projects, Add expense now sits above the list and opens a window.",
-          es: "En Proyectos, Agregar gasto ahora está arriba de la lista y abre una ventana.",
+          en: "In Projects, Add expense is now a button on the right of What you have to pay and opens a window, and editing an expense also opens a window.",
+          es: "En Proyectos, Agregar gasto ahora es un botón a la derecha de Lo que hay que pagar y abre una ventana, y al editar un gasto también se abre una ventana.",
         },
       },
       {
