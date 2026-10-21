@@ -52,6 +52,7 @@ export default function MesPanel({ month, datos }: Props) {
     modificarCategoria,
     aportesProyecto,
     setAportesProyecto,
+    yo,
   } = datos;
   const [ocupadoAporte, setOcupadoAporte] = useState(false);
   const [errorAporte, setErrorAporte] = useState("");
@@ -181,8 +182,17 @@ export default function MesPanel({ month, datos }: Props) {
               onAgregado={agregarItem}
               variant="boton"
               cuentas={cuentas}
+              members={members}
+              defaultOwner={yo}
             />
-            <AgregarCategoria kind="income" month={month} onAgregado={agregarItem} variant="boton" />
+            <AgregarCategoria
+              kind="income"
+              month={month}
+              onAgregado={agregarItem}
+              variant="boton"
+              members={members}
+              defaultOwner={yo}
+            />
           </div>
         </div>
 

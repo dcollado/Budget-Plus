@@ -1299,6 +1299,15 @@ function TarjetaProyecto({
         titulo={t("proj.items")}
         resumen={t("proj.itemsSummary", { pending: pendientes.length, paid: pagados.length })}
       >
+        <button
+          type="button"
+          onClick={() => setAgregando(true)}
+          className="mb-1 flex items-center gap-1.5 text-sm font-medium text-gold transition hover:underline"
+        >
+          <Plus size={14} aria-hidden="true" />
+          {t("proj.addExpense")}
+        </button>
+
         {items.length === 0 ? (
           <p className="text-sm text-text-muted">{t("proj.noItems")}</p>
         ) : (
@@ -1319,27 +1328,27 @@ function TarjetaProyecto({
           </button>
         ) : null}
 
-        {agregando ? (
-          <form
-            onSubmit={agregar}
-            className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end"
-          >
-            <div>
-              <label className={labelClass} htmlFor={`item-nombre-${proyecto.id}`}>
-                {t("proj.itemName")}
-              </label>
-              <input
-                id={`item-nombre-${proyecto.id}`}
-                type="text"
-                value={concepto}
-                onChange={(e) => setConcepto(e.target.value)}
-                placeholder={t("proj.itemExample")}
-                maxLength={120}
-                required
-                autoFocus
-                className={`${fieldBaseClass} ${fieldNormalClass}`}
-              />
-            </div>
+      </Seccion>
+
+      <Modal abierto={agregando} onCerrar={() => setAgregando(false)} titulo={t("proj.addExpense")}>
+        <form onSubmit={agregar} className="space-y-4">
+          <div>
+            <label className={labelClass} htmlFor={`item-nombre-${proyecto.id}`}>
+              {t("proj.itemName")}
+            </label>
+            <input
+              id={`item-nombre-${proyecto.id}`}
+              type="text"
+              value={concepto}
+              onChange={(e) => setConcepto(e.target.value)}
+              placeholder={t("proj.itemExample")}
+              maxLength={120}
+              required
+              autoFocus
+              className={`${fieldBaseClass} ${fieldNormalClass}`}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor={`item-monto-${proyecto.id}`}>
                 {t("proj.itemAmount")}
@@ -1369,36 +1378,37 @@ function TarjetaProyecto({
                 className={`${fieldBaseClass} ${fieldNormalClass}`}
               />
             </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={ocupado}
-                className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("proj.add")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setAgregando(false)}
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
-              >
-                {t("common.cancel")}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setAgregando(true)}
-            className="mt-3 flex items-center gap-1.5 text-sm font-medium text-gold transition hover:underline"
-          >
-            <Plus size={14} aria-hidden="true" />
-            {t("proj.addExpense")}
-          </button>
-        )}
-      </Seccion>
+          </div>
 
-      {error ? (
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setAgregando(false)}
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={ocupado}
+              className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {ocupado ? t("common.saving") : t("proj.add")}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {error && !agregando ? (
         <p
           role="alert"
           className="mt-3 rounded-xl border border-rust/30 bg-rust-soft px-4 py-3 text-sm text-rust-text"

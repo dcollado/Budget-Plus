@@ -31,6 +31,20 @@ export const CHANGELOG: EntradaChangelog[] = [
       {
         tipo: "mejora",
         texto: {
+          en: "In Budget, when you add a variable income or expense you now choose whose it is right there (it starts as you), so you do not have to edit it afterwards.",
+          es: "En Presupuesto, al agregar un ingreso o gasto variable ahora eliges de quién es en el mismo formulario (empieza siendo tuyo), para no tener que editarlo después.",
+        },
+      },
+      {
+        tipo: "ajuste",
+        texto: {
+          en: "In Projects, Add expense now sits above the list and opens a window.",
+          es: "En Proyectos, Agregar gasto ahora está arriba de la lista y abre una ventana.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
           en: "Projects is much shorter now: tabs to switch between projects (it remembers the one you were on), foldable sections, one compact row per month (the first 4 show, with a button for the rest), paid expenses tucked away, and an Add expense button instead of an always-open form.",
           es: "Proyectos ahora es mucho más corto: pestañas para cambiar entre proyectos (recuerda en cuál estabas), secciones que se pliegan, una fila compacta por mes (se ven los primeros 4, con un botón para el resto), los gastos pagados escondidos y un botón Agregar gasto en vez de un formulario siempre abierto.",
         },
