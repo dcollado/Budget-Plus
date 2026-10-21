@@ -1,20 +1,36 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Pagina } from "@/components/pagina";
-import { getT } from "@/lib/i18n/server";
-import { moduloActivo } from "@/lib/modulos-datos";
-import type { ModuloClave } from "@/lib/modulos";
+import { useT } from "@/lib/i18n/client";
+import type { ModuloClave, Modulos } from "@/lib/modulos";
 
-// Envuelve la página de un módulo: si el super-admin lo apagó, muestra un aviso
-// en vez de la página. Se vuelve a revisar en cada visita.
-export default async function PorModulo({
-  clave,
-  children,
-}: {
-  clave: ModuloClave;
-  children: React.ReactNode;
-}) {
-  if (await moduloActivo(clave)) return <>{children}</>;
+// Envuelve la página de un módulo: si está apagado para el hogar de quien la abre,
+// muestra un aviso en vez de la página. El estado sale de /api/me (el del hogar).
+// Mientras se sabe, no se muestra nada para no enseñar la página de un módulo apagado.
+export default function PorModulo({ clave, children }: { clave: ModuloClave; children: React.ReactNode }) {
+  const t = useT();
+  const [encendido, setEncendido] = useState<boolean | null>(null);
 
-  const { t } = await getT();
+  useEffect(() => {
+    let vigente = true;
+
+    fetch("/api/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        const modulos = json?.data?.modulos as Partial<Modulos> | undefined;
+        if (vigente) setEncendido(modulos?.[clave] !== false);
+      })
+      // Si no se puede saber, se deja pasar: la API igual protege los datos.
+      .catch(() => vigente && setEncendido(true));
+
+    return () => {
+      vigente = false;
+    };
+  }, [clave]);
+
+  if (encendido === null) return null;
+  if (encendido) return <>{children}</>;
 
   return (
     <Pagina className="space-y-3">

@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("proyectos");
+    const apagado = await moduloApagado("proyectos", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 

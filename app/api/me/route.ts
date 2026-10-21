@@ -18,14 +18,22 @@ export async function GET(req: NextRequest) {
   let nombre = identidad?.nombre ?? "";
   let email: string | null = null;
   let hogar: string | null = null;
+  let hogarId: string | null = null;
   let usuario = identidad?.nombre ?? "";
   let idioma: string | null = null;
 
   if (usaPostgres()) {
     const [fila] = await getSql()<
-      { nombre: string; usuario: string; email: string | null; hogar: string | null; idioma: string | null }[]
+      {
+        nombre: string;
+        usuario: string;
+        email: string | null;
+        hogar: string | null;
+        hogar_id: string | null;
+        idioma: string | null;
+      }[]
     >`
-      select u.nombre, u.usuario, u.email, h.name as hogar, u.idioma
+      select u.nombre, u.usuario, u.email, h.name as hogar, h.id as hogar_id, u.idioma
       from usuarios u
       left join members m on m.user_id = u.id
       left join households h on h.id = m.household_id
@@ -36,6 +44,7 @@ export async function GET(req: NextRequest) {
       usuario = fila.usuario;
       email = fila.email;
       hogar = fila.hogar;
+      hogarId = fila.hogar_id;
       idioma = fila.idioma;
     }
   }
@@ -51,7 +60,7 @@ export async function GET(req: NextRequest) {
       esSuperadmin: acceso.esSuperadmin,
       rol: acceso.rol,
       // Qué módulos están encendidos (el menú oculta los apagados).
-      modulos: await listarModulos(),
+      modulos: await listarModulos(hogarId),
     },
   });
 }

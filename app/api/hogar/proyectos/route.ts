@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("proyectos");
+    const apagado = await moduloApagado("proyectos", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("proyectos");
+    const apagado = await moduloApagado("proyectos", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("proyectos");
+    const apagado = await moduloApagado("proyectos", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 
@@ -127,7 +127,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("proyectos");
+    const apagado = await moduloApagado("proyectos", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 

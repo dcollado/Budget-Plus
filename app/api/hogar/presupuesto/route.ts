@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     try {
       // Con el módulo de Proyectos apagado, el presupuesto no muestra sus líneas.
-      const [aportes, proyectos] = (await moduloActivo("proyectos"))
+      const [aportes, proyectos] = (await moduloActivo("proyectos", contexto.householdId))
         ? await Promise.all([
             listProyectoAportesMes(contexto.householdId),
             listProyectos(contexto.householdId),

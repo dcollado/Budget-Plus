@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   try {
     const r = await requerirHogar(req);
     if (!r.ok) return r.response;
-    const apagado = await moduloApagado("reportes");
+    const apagado = await moduloApagado("reportes", r.contexto.householdId);
     if (apagado) return apagado;
     const { contexto } = r;
 

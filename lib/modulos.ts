@@ -12,6 +12,23 @@ export type Modulos = Record<ModuloClave, boolean>;
 
 export const TODOS_ENCENDIDOS: Modulos = { proyectos: true, reportes: true };
 
+// Lo que ve el super-admin: el valor por defecto de todos los hogares y, por hogar,
+// sus excepciones (solo los módulos que tienen una).
+export type EstadoDeModulos = {
+  porDefecto: Modulos;
+  hogares: { id: string; nombre: string; excepciones: Partial<Modulos> }[];
+};
+
+// Lo que ve un hogar: su excepción si la tiene, y si no, el valor por defecto.
+export function combinarModulos(porDefecto: Modulos, excepciones: Partial<Modulos> = {}): Modulos {
+  const salida = { ...porDefecto };
+  for (const m of MODULOS) {
+    const valor = excepciones[m.clave];
+    if (typeof valor === "boolean") salida[m.clave] = valor;
+  }
+  return salida;
+}
+
 export function esModulo(valor: unknown): valor is ModuloClave {
   return MODULOS.some((m) => m.clave === valor);
 }
