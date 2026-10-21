@@ -17,6 +17,7 @@ import {
   disponibleDeLaPersona,
   disponibleHastaFecha,
   fraccionDelMes,
+  mesInicioDeAhorro,
   planDelProyecto,
   repartirEnMeses,
   ultimaFechaDelProyecto,
@@ -118,13 +119,17 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
   // pendiente no piden ahorro: su ventana queda vacía).
   const ventanas = new Map<string, string[]>();
   const ultimas = new Map<string, string>();
+  // El mes desde el que cuenta el ahorro de cada proyecto (este mes, o uno futuro).
+  const inicios = new Map<string, string>();
   for (const p of proyectos) {
+    const inicio = mesInicioDeAhorro(mesHoy, p.ahorroDesde);
+    inicios.set(p.id, inicio);
     const pendientes = items.filter((i) => i.projectId === p.id && !i.pagado);
     ultimas.set(p.id, ultimaFechaDelProyecto(pendientes.map((i) => i.fecha), p.targetDate));
     ventanas.set(
       p.id,
       pendientes.length > 0
-        ? ventanaDeAhorro(mesHoy, pendientes.map((i) => i.fecha), p.targetDate)
+        ? ventanaDeAhorro(inicio, pendientes.map((i) => i.fecha), p.targetDate)
         : []
     );
   }
@@ -169,7 +174,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
       const d = disponibles.get(mes)?.get(memberId) ?? disponibleDeLaPersona([], memberId);
       const otros = enOtros(memberId, projectId, mes);
       const ultima = ultimas.get(projectId) ?? "";
-      const fraccion = fraccionDelMes(mes, mesHoy, ultima);
+      const fraccion = fraccionDelMes(mes, inicios.get(projectId) ?? mesHoy, ultima);
       const libre = d.disponibleCents - otros;
 
       return {
@@ -203,7 +208,8 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         .reduce((t, a) => t + a.montoCents, 0);
 
       const datos = paraPlan(proyecto, suyos, hechoCents);
-      const plan = planDelProyecto(datos, mesHoy);
+      const inicio = inicios.get(proyecto.id) ?? mesHoy;
+      const plan = planDelProyecto(datos, inicio);
 
       // Para cada persona y mes: lo libre y lo que aporta (confirmado o sugerido).
       const librePorPersona = new Map(miembros.map((m) => [m.id, mesesDe(m.id, proyecto.id)]));
@@ -212,7 +218,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         const m = librePorPersona.get(memberId)?.find((x) => x.month === mes);
         return capacidadSugerible(m?.aprovechableCents ?? 0);
       };
-      const controles = controlesDelPlan(datos, mesHoy);
+      const controles = controlesDelPlan(datos, inicio);
 
       // El plan sugerido: lo que falta por apartar se reparte entre los meses según
       // la capacidad de cada uno (sus ingresos y gastos, fijos y extra) y cumpliendo
@@ -344,7 +350,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         proyecto,
         items: suyos,
         plan,
-        cobertura: coberturaConAportes(datos, planeadoPorMes, mesHoy),
+        cobertura: coberturaConAportes(datos, planeadoPorMes, inicio),
         aportes: lista,
         hechoCents,
         mio: { meses: mios },

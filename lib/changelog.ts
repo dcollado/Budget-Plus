@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "nuevo",
+        texto: {
+          en: "When you create or edit a project you can now pick the month to start saving from, so it does not spread over months where you are already saving for another project.",
+          es: "Al crear o editar un proyecto ahora puedes elegir desde qué mes empezar a ahorrar, para que no se reparta en meses en los que ya ahorras para otro proyecto.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "In Budget, when you add a variable income or expense you now choose whose it is right there (it starts as you), so you do not have to edit it afterwards.",

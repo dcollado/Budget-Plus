@@ -12,6 +12,9 @@ import { centavosDe, fechaValida } from "@/lib/validacion";
 
 const MAX_NOMBRE = 80;
 
+// "" (desde este mes) o un mes "YYYY-MM".
+const mesDeInicioValido = (v: unknown): v is string => v === "" || (typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v));
+
 // Los proyectos del hogar, cada uno con sus ítems y el plan de ahorro ya
 // calculado (cuota mínima, lo que falta).
 export async function GET(req: NextRequest) {
@@ -40,6 +43,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as Record<string, unknown>;
     const name = String(body.name ?? "").trim();
     const targetDate = String(body.targetDate ?? "").trim();
+    const ahorroDesde = String(body.ahorroDesde ?? "").trim();
     const ahorradoCents =
       body.ahorrado === undefined || body.ahorrado === "" ? 0 : centavosDe(body.ahorrado);
 
@@ -55,11 +59,16 @@ export async function POST(req: NextRequest) {
       return fallo("The amount is not valid.", 400);
     }
 
+    if (!mesDeInicioValido(ahorroDesde)) {
+      return fallo("Pick a valid month to start saving.", 400);
+    }
+
     const proyecto = await crearProyecto({
       householdId: contexto.householdId,
       name,
       targetDate,
       ahorradoCents,
+      ahorroDesde,
     });
 
     return exito(proyecto);
@@ -96,6 +105,12 @@ export async function PATCH(req: NextRequest) {
     if (body.targetDate !== undefined) {
       if (!fechaValida(body.targetDate)) return fallo("Pick a valid target date.", 400);
       cambios.targetDate = body.targetDate;
+    }
+
+    if (body.ahorroDesde !== undefined) {
+      const desde = String(body.ahorroDesde).trim();
+      if (!mesDeInicioValido(desde)) return fallo("Pick a valid month to start saving.", 400);
+      cambios.ahorroDesde = desde;
     }
 
     if (body.ahorrado !== undefined) {

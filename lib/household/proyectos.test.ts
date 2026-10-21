@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   capacidadSugerible,
   controlesDelPlan,
+  mesInicioDeAhorro,
   fraccionDelMes,
   mesesParaApartar,
   repartirEnMeses,
@@ -351,6 +352,33 @@ describe("el mes del último pago cuenta a medias (pago del 16 en adelante)", ()
     };
     const c = coberturaConAportes(proyecto, { "2026-10": 30000, "2026-11": 30000, "2026-12": 40000 }, "2026-10");
     expect(c.alcanza).toBe(true);
+  });
+});
+
+describe("empezar a ahorrar desde un mes futuro", () => {
+  it("el mes de inicio es el elegido si es futuro; si no, este mes", () => {
+    expect(mesInicioDeAhorro("2026-10", "2027-01")).toBe("2027-01");
+    expect(mesInicioDeAhorro("2026-10", "")).toBe("2026-10");
+    expect(mesInicioDeAhorro("2026-10", "2026-08")).toBe("2026-10");
+    expect(mesInicioDeAhorro("2026-10", "2026-10")).toBe("2026-10");
+  });
+
+  it("la ventana de ahorro empieza en ese mes y no en los de en medio", () => {
+    const fechas = ["2027-04-10"];
+    expect(ventanaDeAhorro("2026-10", fechas, "2027-04-10")).toEqual([
+      "2026-10", "2026-11", "2026-12", "2027-01", "2027-02", "2027-03",
+    ]);
+    expect(ventanaDeAhorro("2027-01", fechas, "2027-04-10")).toEqual(["2027-01", "2027-02", "2027-03"]);
+  });
+
+  it("la cuota mínima se reparte solo entre los meses desde el inicio", () => {
+    const proyecto = {
+      fechaObjetivo: "2027-04-10",
+      ahorradoCents: 0,
+      items: [{ id: "1", concepto: "x", montoCents: 300000, fecha: "" }],
+    };
+    expect(planDelProyecto(proyecto, "2026-10").cuotaMensualCents).toBe(50000); // 6 meses
+    expect(planDelProyecto(proyecto, "2027-01").cuotaMensualCents).toBe(100000); // 3 meses
   });
 });
 

@@ -119,6 +119,8 @@ export type Proyecto = {
   targetDate: string; // YYYY-MM-DD (fecha del viaje o del último pago)
   // Lo que ya se apartó para este proyecto.
   ahorradoCents: number;
+  // Desde qué mes se empieza a ahorrar (YYYY-MM); "" = desde este mes.
+  ahorroDesde: string;
   archived: boolean;
 };
 

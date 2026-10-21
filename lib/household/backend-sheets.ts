@@ -712,7 +712,10 @@ export async function listProyectosArchivados(householdId: string): Promise<Proy
 }
 
 export async function crearProyecto(
-  input: Omit<Proyecto, "id" | "archived" | "ahorradoCents"> & { ahorradoCents?: number }
+  input: Omit<Proyecto, "id" | "archived" | "ahorradoCents" | "ahorroDesde"> & {
+    ahorradoCents?: number;
+    ahorroDesde?: string;
+  }
 ): Promise<Proyecto> {
   void input;
   throw new Error(SIN_PROYECTOS);
@@ -721,7 +724,7 @@ export async function crearProyecto(
 export async function actualizarProyecto(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "archived">>
+  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "ahorroDesde" | "archived">>
 ): Promise<Proyecto | null> {
   void householdId;
   void id;

@@ -56,6 +56,12 @@ export function apartadoDisponible(proyecto: ProyectoParaPlan): number {
 export const DIA_SEGUNDA_QUINCENA = 16;
 export const FRACCION_MES_PARCIAL = 0.5;
 
+// El mes en que empieza a contar el ahorro de un proyecto: el que eligió la
+// persona si es futuro, y si no, este mes. `ahorroDesde` "" = desde este mes.
+export function mesInicioDeAhorro(mesHoy: string, ahorroDesde: string): string {
+  return ahorroDesde && ahorroDesde > mesHoy ? ahorroDesde : mesHoy;
+}
+
 // Meses completos entre dos "YYYY-MM" (b - a).
 export function mesesEntre(a: string, b: string): number {
   const [ay, am] = a.split("-").map(Number);

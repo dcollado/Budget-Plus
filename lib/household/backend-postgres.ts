@@ -424,7 +424,7 @@ export async function eliminarTransaction(id: string, householdId: string): Prom
 
 // ---------- Proyectos ----------
 
-const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "ahorrado_cents", "archived"];
+const COLS_PROYECTO = ["id", "household_id", "name", "target_date", "ahorrado_cents", "ahorro_desde", "archived"];
 const COLS_PROYECTO_ITEM = [
   "id",
   "project_id",
@@ -445,6 +445,7 @@ type FilaProyecto = {
   name: string;
   target_date: unknown;
   ahorrado_cents: string | number;
+  ahorro_desde: string | null;
   archived: boolean;
 };
 const aProyecto = (r: FilaProyecto): Proyecto => ({
@@ -453,6 +454,7 @@ const aProyecto = (r: FilaProyecto): Proyecto => ({
   name: r.name,
   targetDate: fecha(r.target_date),
   ahorradoCents: Number(r.ahorrado_cents),
+  ahorroDesde: r.ahorro_desde ?? "",
   archived: r.archived,
 });
 
@@ -500,7 +502,10 @@ export async function listProyectosArchivados(householdId: string): Promise<Proy
 }
 
 export async function crearProyecto(
-  input: Omit<Proyecto, "id" | "archived" | "ahorradoCents"> & { ahorradoCents?: number }
+  input: Omit<Proyecto, "id" | "archived" | "ahorradoCents" | "ahorroDesde"> & {
+    ahorradoCents?: number;
+    ahorroDesde?: string;
+  }
 ): Promise<Proyecto> {
   const sql = getSql();
   const [fila] = await sql<FilaProyecto[]>`
@@ -509,6 +514,7 @@ export async function crearProyecto(
       name: input.name,
       target_date: input.targetDate,
       ahorrado_cents: input.ahorradoCents ?? 0,
+      ahorro_desde: nulo(input.ahorroDesde),
     })}
     returning ${getSql()(COLS_PROYECTO)}`;
   return aProyecto(fila);
@@ -518,13 +524,14 @@ export async function crearProyecto(
 export async function actualizarProyecto(
   householdId: string,
   id: string,
-  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "archived">>
+  cambios: Partial<Pick<Proyecto, "name" | "targetDate" | "ahorradoCents" | "ahorroDesde" | "archived">>
 ): Promise<Proyecto | null> {
   const sql = getSql();
   const set: Record<string, unknown> = {};
   if (cambios.name !== undefined) set.name = cambios.name;
   if (cambios.targetDate !== undefined) set.target_date = cambios.targetDate;
   if (cambios.ahorradoCents !== undefined) set.ahorrado_cents = cambios.ahorradoCents;
+  if (cambios.ahorroDesde !== undefined) set.ahorro_desde = nulo(cambios.ahorroDesde);
   if (cambios.archived !== undefined) set.archived = cambios.archived;
 
   if (Object.keys(set).length === 0) return null;

@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, CircleAlert, CircleCheck, Pencil, Plus, Tras
 import { Pagina } from "@/components/pagina";
 import { InfoTip } from "@/components/info-tip";
 import { Modal } from "@/components/modal";
-import { formatearCentavos, formatearMes } from "@/lib/household/formato";
+import { formatearCentavos, formatearMes, mesActual } from "@/lib/household/formato";
 import type { MesAporteVista, ProyectoVista } from "@/lib/household/proyectos-datos";
 import type { Proyecto, ProyectoItem } from "@/lib/household/schema";
 import { useT } from "@/lib/i18n/client";
@@ -229,6 +229,8 @@ function NuevoProyecto({
   const t = useT();
   const [nombre, setNombre] = useState(editar?.name ?? "");
   const [fecha, setFecha] = useState(editar?.targetDate ?? "");
+  // Desde qué mes se empieza a ahorrar ("" = este mes).
+  const [desde, setDesde] = useState(editar?.ahorroDesde ?? "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -241,10 +243,13 @@ function NuevoProyecto({
       await enviar(
         "/api/hogar/proyectos",
         editar ? "PATCH" : "POST",
-        editar ? { id: editar.id, name: nombre, targetDate: fecha } : { name: nombre, targetDate: fecha }
+        editar
+          ? { id: editar.id, name: nombre, targetDate: fecha, ahorroDesde: desde }
+          : { name: nombre, targetDate: fecha, ahorroDesde: desde }
       );
       setNombre("");
       setFecha("");
+      setDesde("");
       await onCreado();
       onCerrar();
     } catch (err) {
@@ -286,6 +291,21 @@ function NuevoProyecto({
             required
             className={`${fieldBaseClass} ${fieldNormalClass}`}
           />
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="proj-desde">
+            {t("proj.fieldSavingFrom")}
+          </label>
+          <input
+            id="proj-desde"
+            type="month"
+            value={desde}
+            min={mesActual()}
+            onChange={(e) => setDesde(e.target.value)}
+            className={`${fieldBaseClass} ${fieldNormalClass}`}
+          />
+          <p className={helperTextClass}>{t("proj.savingFromHelp")}</p>
         </div>
 
         {error ? (
@@ -1199,6 +1219,9 @@ function TarjetaProyecto({
             {fechaLarga(proyecto.targetDate, t.locale)}
             {ultimoPago > proyecto.targetDate
               ? ` · ${t("proj.lastPayment", { date: fechaLarga(ultimoPago, t.locale) })}`
+              : ""}
+            {proyecto.ahorroDesde && proyecto.ahorroDesde > mesActual()
+              ? ` · ${t("proj.savingFrom", { month: formatearMes(proyecto.ahorroDesde, t.locale) })}`
               : ""}
           </p>
           <p role="status" aria-live="polite" className="min-h-4 text-xs text-text-muted">
