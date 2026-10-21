@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Respaldos locales de la base (datos personales)
 /backups/
+
+# Base Postgres local de desarrollo (npm run db:local)
+/.local-db/

@@ -17,6 +17,7 @@ npm test            # vitest (budget logic, report, validation, hash)
 npm run build       # production build
 npm run db:migrar   # apply supabase/migrations to the DEVELOPMENT database
 npm run db:seed-dev # example data (made-up household) in the development database
+npm run db:local    # LOCAL Postgres for development (leave it running)
 ```
 
 ## Environment variables
@@ -60,6 +61,31 @@ calendar are blanked): `npm run db:copiar-hogar -- <userId> --ver` shows what
 would be copied and `npm run db:copiar-hogar -- <userId>` does it (running it
 again replaces that household, including its projects in development). It
 prints the `DEV_AUTO_LOGIN_*` values to use.
+
+### Local database (recommended for day-to-day development)
+
+The Supabase development project is far away and can be slow or hang. A real
+Postgres can run on your own machine instead, with no Docker and nothing
+installed on the system (it runs from `node_modules`; data lives in
+`.local-db/`, ignored by git):
+
+1. Terminal 1: `npm run db:local` (leave it open; Ctrl+C stops it).
+2. Create `.env.development.local` (never in the repo; Next.js reads it after
+   `.env.local` in `next dev`, so it wins):
+
+   ```
+   DATABASE_URL=postgres://postgres:postgres@localhost:54329/budget_dev
+   DATABASE_ENV=development
+   DEV_AUTO_LOGIN_ID=dev-david
+   DEV_AUTO_LOGIN_USER=david-dev
+   ```
+
+3. `npm run db:local:migrar` (again whenever there are new migrations), then
+   `npm run db:local:seed` for the example household.
+4. Terminal 2: `npm run dev`.
+
+To go back to the Supabase development database, delete
+`.env.development.local`.
 
 Production migrations are still applied by hand (Supabase SQL editor), after a
 `npm run respaldo` backup.

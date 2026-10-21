@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from "react";
-import { CircleAlert, CircleCheck, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, CircleAlert, CircleCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import { Pagina } from "@/components/pagina";
 import { InfoTip } from "@/components/info-tip";
 import { Modal } from "@/components/modal";
@@ -68,6 +68,26 @@ export default function ProyectosPage() {
   const [archivados, setArchivados] = useState<Proyecto[]>([]);
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
+  // Qué proyecto se ve (se recuerda en este navegador).
+  const [seleccion, setSeleccion] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSeleccion(localStorage.getItem("bp.proyecto"));
+    } catch {
+      /* sin almacenamiento: se ve el primero */
+    }
+  }, []);
+
+  function elegir(id: string) {
+    setSeleccion(id);
+    try {
+      localStorage.setItem("bp.proyecto", id);
+    } catch {
+      /* sin almacenamiento: solo vale esta vez */
+    }
+  }
 
   const cargar = useCallback(async () => {
     try {
@@ -89,6 +109,8 @@ export default function ProyectosPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void cargar();
   }, [cargar]);
+
+  const elegido = proyectos?.find((p) => p.proyecto.id === seleccion) ?? proyectos?.[0];
 
   return (
     <Pagina ancho="normal">
@@ -120,11 +142,41 @@ export default function ProyectosPage() {
         <p className={`${sectionCardClass} text-sm text-text-muted`}>{t("proj.empty")}</p>
       ) : null}
 
-      <div className="space-y-6">
-        {proyectos?.map((p) => (
-          <TarjetaProyecto key={p.proyecto.id} vista={p} onCambio={cargar} />
-        ))}
-      </div>
+      {proyectos && proyectos.length > 1 ? (
+        <div role="tablist" aria-label={t("proj.title")} className="mb-4 flex gap-2 overflow-x-auto overflow-y-hidden pb-1">
+          {proyectos.map((p) => {
+            const activo = p.proyecto.id === elegido?.proyecto.id;
+            const bien =
+              p.plan.faltaCents === 0 || (p.cobertura.alcanza && p.cobertura.planeadoCents > 0);
+
+            return (
+              <button
+                key={p.proyecto.id}
+                type="button"
+                role="tab"
+                aria-selected={activo}
+                onClick={() => elegir(p.proyecto.id)}
+                className={`shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition ${
+                  activo
+                    ? "border-gold bg-gold-soft text-text"
+                    : "border-line bg-surface text-text-muted hover:border-gold/50 hover:text-text"
+                }`}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 rounded-full ${bien ? "bg-sage" : "bg-rust"}`}
+                  />
+                  {p.proyecto.name}
+                </span>
+                <span className="block text-xs text-text-muted">{fechaLarga(p.proyecto.targetDate, t.locale)}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {elegido ? <TarjetaProyecto key={elegido.proyecto.id} vista={elegido} onCambio={cargar} /> : null}
 
       {archivados.length > 0 ? (
         <details className="mt-8 rounded-2xl border border-line bg-surface px-5 py-3 text-sm">
@@ -659,7 +711,7 @@ function CampoMonto({
         {ayuda}
       </div>
       <div
-        className={`${ocultarEtiqueta ? "" : "mt-1.5"} flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30 ${
+        className={`${ocultarEtiqueta ? "" : "mt-1.5"} flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 ${plano ? "py-1" : "py-1.5"} transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30 ${
           disabled ? "opacity-60" : "hover:border-gold"
         }`}
       >
@@ -686,9 +738,50 @@ function CampoMonto({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className={`w-full min-w-0 bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-text-muted ${tono || "text-text"}`}
+          className={`w-full min-w-0 bg-transparent ${plano ? "text-sm" : "text-base"} font-semibold outline-none placeholder:font-normal placeholder:text-text-muted ${tono || "text-text"}`}
         />
       </div>
+    </div>
+  );
+}
+
+// Una sección que se abre y se cierra, con un resumen en la cabecera para no
+// tener que abrirla para saber cómo va.
+function Seccion({
+  titulo,
+  resumen,
+  ayuda,
+  abiertaInicial = true,
+  children,
+}: {
+  titulo: string;
+  resumen?: string;
+  ayuda?: ReactNode;
+  abiertaInicial?: boolean;
+  children: ReactNode;
+}) {
+  const [abierta, setAbierta] = useState(abiertaInicial);
+
+  return (
+    <div className="mt-5">
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-expanded={abierta}
+          onClick={() => setAbierta((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left transition hover:text-gold"
+        >
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`shrink-0 text-text-muted transition ${abierta ? "" : "-rotate-90"}`}
+          />
+          <h3 className="shrink-0 text-sm font-semibold text-text">{titulo}</h3>
+          {resumen ? <span className="min-w-0 truncate text-xs text-text-muted">{resumen}</span> : null}
+        </button>
+        {ayuda}
+      </div>
+      {abierta ? <div className="mt-2">{children}</div> : null}
     </div>
   );
 }
@@ -711,6 +804,9 @@ function AhorroMensual({
   const { proyecto, plan, cobertura, aportes, mio } = vista;
   const [aviso, setAviso] = useState<{ month: string; texto: string } | null>(null);
   const [reinicio, setReinicio] = useState(0);
+  // Los meses se ven de 4 en 4; el detalle de cada mes se abre al tocarlo.
+  const [verTodos, setVerTodos] = useState(false);
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
   const total = cobertura.planeadoCents;
 
   const poner = (cuerpo: Record<string, unknown>) =>
@@ -757,18 +853,24 @@ function AhorroMensual({
     );
   }
 
+  const MESES_VISIBLES = 4;
+  const visibles = verTodos ? mio.meses : mio.meses.slice(0, MESES_VISIBLES);
+  const ocultos = mio.meses.length - MESES_VISIBLES;
+  const otrosNombres = mio.meses[0]?.otros.map((o) => o.nombre).join(" · ") ?? "";
+
   return (
-    <div className="mt-6">
-      <div className="flex items-center gap-1">
-        <h3 className="text-sm font-semibold text-text">{t("proj.savingTitle")}</h3>
+    <Seccion
+      titulo={t("proj.savingTitle")}
+      resumen={aportes.map((a) => `${a.nombre} ${formatearCentavos(a.totalCents)}`).join(" · ")}
+      ayuda={
         <InfoTip
           texto={t("proj.myContributionHelp")}
           etiqueta={t("proj.moreInfo", { name: t("proj.savingTitle") })}
-          className="left-0"
+          className="right-0"
         />
-      </div>
-
-      <div className="mt-2 rounded-xl border border-line bg-surface-raised px-4 py-3">
+      }
+    >
+      <div className="rounded-xl border border-line bg-surface-raised px-4 py-3">
         <p className="text-xs uppercase tracking-wide text-text-muted">{t("proj.minSaving")}</p>
         {plan.cuotaMensualCents > 0 ? (
           <>
@@ -815,54 +917,48 @@ function AhorroMensual({
       </div>
 
       <div className="mt-3 rounded-xl border border-line bg-surface-raised px-4 py-1">
-        <div className="hidden gap-6 border-b border-line py-2 text-xs uppercase tracking-wide text-text-muted lg:grid lg:grid-cols-2">
-          <p>{t("proj.freeEachMonth")}</p>
-          <p>{t("proj.myContributionEachMonth")}</p>
+        <div className="hidden gap-3 border-b border-line py-2 text-xs uppercase tracking-wide text-text-muted lg:grid lg:grid-cols-[15rem_minmax(0,1fr)_minmax(0,1fr)]">
+          <p>{t("proj.colMonth")}</p>
+          <p>{t("proj.myContribution")}</p>
+          <p>{otrosNombres ? t("proj.otherContribution", { name: otrosNombres }) : ""}</p>
         </div>
 
         <ul>
-          {mio.meses.map((m) => {
+          {visibles.map((m) => {
             const sinLibre = m.topeCents <= 0 && m.aporteCents === 0;
+            const libre = m.hastaFecha ? m.aprovechableCents : m.libreCents;
+            const detalle = abiertos[m.month] === true;
 
             return (
               <li
                 key={m.month}
-                className="grid items-start gap-2 border-b border-line py-3 last:border-0 lg:grid-cols-2 lg:gap-6"
+                className="grid grid-cols-2 items-start gap-x-3 gap-y-1 border-b border-line py-1.5 last:border-0 lg:grid-cols-[15rem_minmax(0,1fr)_minmax(0,1fr)]"
               >
-                <div className="text-sm">
-                  <p className="flex justify-between gap-3 font-semibold">
-                    <span className="text-text">{formatearMes(m.month, t.locale)}</span>
-                    <span className={(m.hastaFecha ? m.aprovechableCents : m.libreCents) < 0 ? "text-rust-text" : "text-sage"}>
-                      {formatearCentavos(m.hastaFecha ? m.aprovechableCents : m.libreCents)}
-                    </span>
-                  </p>
-                  <details className="mt-1">
-                    <summary className="cursor-pointer text-xs font-medium text-gold">{t("proj.seeDetail")}</summary>
-                    <dl className="mt-1 space-y-0.5 text-xs">
-                      {fila(t("proj.fixedIncome"), m.salarioCents, "+")}
-                      {m.ingresosExtraCents > 0 ? fila(t("proj.extraIncome"), m.ingresosExtraCents, "+") : null}
-                      {fila(t("proj.fixedExpenses"), m.fijosCents, "-")}
-                      {fila(t("proj.extraExpenses"), m.extrasCents, "-")}
-                      {m.otrosProyectosCents > 0
-                        ? fila(t("proj.otherProjects"), m.otrosProyectosCents, "-")
-                        : null}
-                    </dl>
-                    {m.hastaFecha ? (
-                      <p className="mt-1 flex justify-between gap-3 border-t border-line pt-1 text-xs font-medium text-text">
-                        <span>{t("proj.countedUntil", { date: fechaLarga(m.hastaFecha, t.locale) })}</span>
-                        <span className="whitespace-nowrap">{formatearCentavos(m.aprovechableCents)}</span>
-                      </p>
-                    ) : null}
-                  </details>
-                  {m.hastaFecha ? (
-                    <p className="mt-1 text-xs text-text-muted">
-                      {t("proj.untilDate", { date: fechaLarga(m.hastaFecha, t.locale) })}
-                    </p>
-                  ) : null}
+                <div className="col-span-2 flex items-center justify-between gap-3 pr-2 text-sm lg:col-span-1">
+                  <button
+                    type="button"
+                    aria-expanded={detalle}
+                    onClick={() => setAbiertos((previos) => ({ ...previos, [m.month]: !previos[m.month] }))}
+                    className="flex items-center gap-1 whitespace-nowrap text-left font-semibold text-text transition hover:text-gold"
+                  >
+                    <ChevronRight
+                      size={14}
+                      aria-hidden="true"
+                      className={`shrink-0 text-gold transition ${detalle ? "rotate-90" : ""}`}
+                    />
+                    {formatearMes(m.month, t.locale)}
+                    <span className="sr-only">{t("proj.seeDetail")}</span>
+                  </button>
+                  <span className={`whitespace-nowrap font-semibold ${libre < 0 ? "text-rust-text" : "text-sage"}`}>
+                    {formatearCentavos(libre)}
+                  </span>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-3">
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[11px] uppercase tracking-wide text-text-muted lg:hidden">
+                    {t("proj.myContribution")}
+                  </p>
+                  <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <CampoMonto
                         key={`aporte-${m.month}-${m.aporteCents}-${m.hecho}-${reinicio}`}
@@ -883,8 +979,14 @@ function AhorroMensual({
                         onGuardar={(texto) => guardar(m, texto)}
                       />
                     </div>
+                    {!m.definido && m.aporteCents > 0 && m.sugeridoCents === m.aporteCents ? (
+                      <span className="hidden shrink-0 text-[11px] text-text-muted lg:inline">{t("proj.suggestedTag")}</span>
+                    ) : null}
                     {m.aporteCents > 0 ? (
-                      <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-text">
+                      <label
+                        className="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-text"
+                        title={t("proj.doneLabel")}
+                      >
                         <input
                           type="checkbox"
                           checked={m.hecho}
@@ -892,7 +994,7 @@ function AhorroMensual({
                           onChange={(e) => poner({ mes: m.month, hecho: e.target.checked })}
                           className="h-4 w-4 accent-[var(--color-sage)]"
                         />
-                        {t("proj.doneLabel")}
+                        <span className="hidden sm:inline">{t("proj.doneLabel")}</span>
                       </label>
                     ) : null}
                   </div>
@@ -901,16 +1003,20 @@ function AhorroMensual({
                       type="button"
                       disabled={ocupado}
                       onClick={() => poner({ mes: m.month, monto: String(m.sugeridoCents / 100) })}
-                      className="mt-1 text-xs font-medium text-gold hover:underline disabled:opacity-60"
+                      className="mt-0.5 text-[11px] font-medium text-gold hover:underline disabled:opacity-60"
                     >
                       {t("proj.suggestedChip", { amount: formatearCentavos(m.sugeridoCents) })}
                     </button>
                   ) : !m.definido && m.aporteCents > 0 ? (
-                    <p className="mt-1 text-xs text-text-muted">{t("proj.suggestedTag")}</p>
+                    <p className="mt-0.5 text-[11px] text-text-muted lg:hidden">{t("proj.suggestedTag")}</p>
                   ) : null}
+                </div>
+
+                <div className="min-w-0 space-y-1">
                   {m.otros.map((o) => (
-                    <div key={o.memberId} className="mt-2 border-t border-line pt-2">
-                      <div className="flex items-center gap-3">
+                    <div key={o.memberId} className="min-w-0">
+                      <p className="mb-0.5 truncate text-[11px] uppercase tracking-wide text-text-muted lg:hidden">{o.nombre}</p>
+                      <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
                           <CampoMonto
                             key={`otro-${o.memberId}-${m.month}-${o.aporteCents}-${o.hecho}-${reinicio}`}
@@ -928,8 +1034,14 @@ function AhorroMensual({
                             onGuardar={(texto) => poner({ mes: m.month, monto: texto, memberId: o.memberId })}
                           />
                         </div>
+                        {!o.definido && o.aporteCents > 0 ? (
+                          <span className="hidden shrink-0 text-[11px] text-text-muted lg:inline">{t("proj.suggestedTag")}</span>
+                        ) : null}
                         {o.aporteCents > 0 ? (
-                          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-text">
+                          <label
+                            className="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-text"
+                            title={t("proj.doneLabel")}
+                          >
                             <input
                               type="checkbox"
                               checked={o.hecho}
@@ -937,34 +1049,63 @@ function AhorroMensual({
                               onChange={(e) => poner({ mes: m.month, hecho: e.target.checked, memberId: o.memberId })}
                               className="h-4 w-4 accent-[var(--color-sage)]"
                             />
-                            {t("proj.doneLabel")}
+                            <span className="hidden sm:inline">{t("proj.doneLabel")}</span>
                           </label>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-text-muted">
-                        {t("proj.otherContribution", { name: o.nombre })}
-                        {!o.definido && o.aporteCents > 0 ? ` · ${t("proj.suggestedTag")}` : ""}
-                      </p>
+                      {!o.definido && o.aporteCents > 0 ? (
+                        <p className="mt-0.5 text-[11px] text-text-muted lg:hidden">{t("proj.suggestedTag")}</p>
+                      ) : null}
                     </div>
                   ))}
-                  {aviso?.month === m.month ? (
-                    <p role="alert" className="mt-1 text-xs text-rust-text">
-                      {aviso.texto}
-                    </p>
-                  ) : null}
                 </div>
+
+                {m.hastaFecha ? (
+                  <p className="col-span-full text-[11px] text-text-muted">
+                    {t("proj.untilDate", { date: fechaLarga(m.hastaFecha, t.locale) })}
+                  </p>
+                ) : null}
+
+                {detalle ? (
+                  <div className="col-span-full rounded-lg bg-surface px-3 py-2">
+                    <dl className="space-y-0.5 text-xs">
+                      {fila(t("proj.fixedIncome"), m.salarioCents, "+")}
+                      {m.ingresosExtraCents > 0 ? fila(t("proj.extraIncome"), m.ingresosExtraCents, "+") : null}
+                      {fila(t("proj.fixedExpenses"), m.fijosCents, "-")}
+                      {fila(t("proj.extraExpenses"), m.extrasCents, "-")}
+                      {m.otrosProyectosCents > 0 ? fila(t("proj.otherProjects"), m.otrosProyectosCents, "-") : null}
+                    </dl>
+                    {m.hastaFecha ? (
+                      <p className="mt-1 flex justify-between gap-3 border-t border-line pt-1 text-xs font-medium text-text">
+                        <span>{t("proj.countedUntil", { date: fechaLarga(m.hastaFecha, t.locale) })}</span>
+                        <span className="whitespace-nowrap">{formatearCentavos(m.aprovechableCents)}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {aviso?.month === m.month ? (
+                  <p role="alert" className="col-span-full text-xs text-rust-text">
+                    {aviso.texto}
+                  </p>
+                ) : null}
               </li>
             );
           })}
         </ul>
+
+        {ocultos > 0 ? (
+          <button
+            type="button"
+            onClick={() => setVerTodos((v) => !v)}
+            className="w-full border-t border-line py-2 text-center text-xs font-medium text-gold transition hover:underline"
+          >
+            {verTodos ? t("proj.hideMonths") : t("proj.showMonths", { n: ocultos })}
+          </button>
+        ) : null}
       </div>
 
-      <p className={`${helperTextClass} mt-2`}>
-        {t("proj.plannedBy", {
-          list: aportes.map((a) => `${a.nombre} ${formatearCentavos(a.totalCents)}`).join(" · "),
-        })}
-      </p>
-    </div>
+    </Seccion>
   );
 }
 
@@ -984,6 +1125,8 @@ function TarjetaProyecto({
   const [ocupado, setOcupado] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [editandoProyecto, setEditandoProyecto] = useState(false);
+  const [agregando, setAgregando] = useState(false);
+  const [verPagados, setVerPagados] = useState(false);
 
   async function hacer(accion: () => Promise<void>) {
     setOcupado(true);
@@ -1011,6 +1154,7 @@ function TarjetaProyecto({
       setConcepto("");
       setMonto("");
       setFecha("");
+      setAgregando(false);
     });
   }
 
@@ -1019,8 +1163,11 @@ function TarjetaProyecto({
   // falta sumar; si es mayor, se pasan.
   const presupuestado = plan.apartadoDisponibleCents + vista.cobertura.planeadoCents;
   const diferencia = presupuestado - plan.comprometidoCents;
-  // Pendientes primero; lo ya pagado al final.
+  // Pendientes primero; lo ya pagado se esconde detrás de un botón.
   const itemsOrdenados = [...items].sort((a, b) => Number(a.pagado) - Number(b.pagado));
+  const pendientes = itemsOrdenados.filter((i) => !i.pagado);
+  const pagados = itemsOrdenados.filter((i) => i.pagado);
+  const personas = vista.aportes.map((a) => ({ id: a.memberId, nombre: a.nombre, esMio: a.esMio }));
   // Si algún pago cae después de la fecha del proyecto, se avisa.
   const ultimoPago = items.reduce((max, i) => (i.fecha > max ? i.fecha : max), "");
 
@@ -1148,77 +1295,108 @@ function TarjetaProyecto({
 
       <AhorroMensual vista={vista} ocupado={ocupado} hacer={hacer} />
 
-      <h3 className="mt-6 text-sm font-semibold text-text">{t("proj.items")}</h3>
+      <Seccion
+        titulo={t("proj.items")}
+        resumen={t("proj.itemsSummary", { pending: pendientes.length, paid: pagados.length })}
+      >
+        {items.length === 0 ? (
+          <p className="text-sm text-text-muted">{t("proj.noItems")}</p>
+        ) : (
+          <ul className="divide-y divide-line text-sm">
+            {(verPagados ? itemsOrdenados : pendientes).map((item) => (
+              <FilaItemProyecto key={item.id} item={item} personas={personas} ocupado={ocupado} hacer={hacer} />
+            ))}
+          </ul>
+        )}
 
-      {items.length === 0 ? (
-        <p className="mt-2 text-sm text-text-muted">{t("proj.noItems")}</p>
-      ) : (
-        <ul className="mt-2 divide-y divide-line text-sm">
-          {itemsOrdenados.map((item) => (
-            <FilaItemProyecto
-              key={item.id}
-              item={item}
-              personas={vista.aportes.map((a) => ({ id: a.memberId, nombre: a.nombre, esMio: a.esMio }))}
-              ocupado={ocupado}
-              hacer={hacer}
-            />
-          ))}
-        </ul>
-      )}
+        {pagados.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setVerPagados((v) => !v)}
+            className="mt-1 text-xs font-medium text-gold hover:underline"
+          >
+            {verPagados ? t("proj.hidePaid") : t("proj.showPaid", { n: pagados.length })}
+          </button>
+        ) : null}
 
-      <form onSubmit={agregar} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end">
-        <div>
-          <label className={labelClass} htmlFor={`item-nombre-${proyecto.id}`}>
-            {t("proj.itemName")}
-          </label>
-          <input
-            id={`item-nombre-${proyecto.id}`}
-            type="text"
-            value={concepto}
-            onChange={(e) => setConcepto(e.target.value)}
-            placeholder={t("proj.itemExample")}
-            maxLength={120}
-            required
-            className={`${fieldBaseClass} ${fieldNormalClass}`}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor={`item-monto-${proyecto.id}`}>
-            {t("proj.itemAmount")}
-          </label>
-          <input
-            id={`item-monto-${proyecto.id}`}
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-            placeholder="0.00"
-            required
-            className={`${fieldBaseClass} ${fieldNormalClass}`}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor={`item-fecha-${proyecto.id}`}>
-            {t("proj.itemDate")}
-          </label>
-          <input
-            id={`item-fecha-${proyecto.id}`}
-            type="date"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-            className={`${fieldBaseClass} ${fieldNormalClass}`}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={ocupado}
-          className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {t("proj.add")}
-        </button>
-      </form>
+        {agregando ? (
+          <form
+            onSubmit={agregar}
+            className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_10rem_auto] sm:items-end"
+          >
+            <div>
+              <label className={labelClass} htmlFor={`item-nombre-${proyecto.id}`}>
+                {t("proj.itemName")}
+              </label>
+              <input
+                id={`item-nombre-${proyecto.id}`}
+                type="text"
+                value={concepto}
+                onChange={(e) => setConcepto(e.target.value)}
+                placeholder={t("proj.itemExample")}
+                maxLength={120}
+                required
+                autoFocus
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor={`item-monto-${proyecto.id}`}>
+                {t("proj.itemAmount")}
+              </label>
+              <input
+                id={`item-monto-${proyecto.id}`}
+                type="number"
+                step="0.01"
+                min="0.01"
+                inputMode="decimal"
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                placeholder="0.00"
+                required
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor={`item-fecha-${proyecto.id}`}>
+                {t("proj.itemDate")}
+              </label>
+              <input
+                id={`item-fecha-${proyecto.id}`}
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className={`${fieldBaseClass} ${fieldNormalClass}`}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={ocupado}
+                className="rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("proj.add")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAgregando(false)}
+                className="rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-raised hover:text-text"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAgregando(true)}
+            className="mt-3 flex items-center gap-1.5 text-sm font-medium text-gold transition hover:underline"
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t("proj.addExpense")}
+          </button>
+        )}
+      </Seccion>
 
       {error ? (
         <p

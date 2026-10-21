@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "Projects is much shorter now: tabs to switch between projects (it remembers the one you were on), foldable sections, one compact row per month (the first 4 show, with a button for the rest), paid expenses tucked away, and an Add expense button instead of an always-open form.",
+          es: "Proyectos ahora es mucho más corto: pestañas para cambiar entre proyectos (recuerda en cuál estabas), secciones que se pliegan, una fila compacta por mes (se ven los primeros 4, con un botón para el resto), los gastos pagados escondidos y un botón Agregar gasto en vez de un formulario siempre abierto.",
+        },
+      },
+      {
         tipo: "ajuste",
         texto: {
           en: "Fixed a date field in Projects that went outside its box on phones.",
