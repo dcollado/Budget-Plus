@@ -1,5 +1,14 @@
-import { fechaDelDia } from "./presupuesto";
 import type { Category } from "./schema";
+
+// La fecha del día `dueDay` en `month` ("YYYY-MM"), acotada al último día del mes.
+// "" si no hay día.
+export function fechaDelDia(month: string, dueDay: number | null): string {
+  if (!dueDay) return "";
+  const [anio, mes] = month.split("-").map(Number);
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+  const dia = Math.min(dueDay, ultimoDia);
+  return `${month}-${String(dia).padStart(2, "0")}`;
+}
 
 const DIA_MS = 86_400_000;
 export const DIAS_ENTRE_PAGOS_BISEMANAL = 14;
@@ -39,4 +48,12 @@ export function fechasDeCobro(
     .map((d) => fechaDelDia(month, d))
     .filter(Boolean)
     .sort();
+}
+
+// Qué tanto vale el mes para un ingreso cada 2 semanas frente a su monto guardado.
+// El monto del mes equivale a 2 pagos, así que un mes normal vale 1 y un mes con
+// 3 pagos (pasa 2 veces al año) vale 1.5. Para lo demás, siempre 1.
+export function factorDePagos(category: Pick<Category, "quincenal" | "dueDay" | "dueDay2" | "bisemanalDesde">, month: string): number {
+  if (!category.bisemanalDesde) return 1;
+  return fechasDeCobro(category, month).length / 2;
 }

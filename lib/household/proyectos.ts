@@ -1,4 +1,4 @@
-import { fechasDeCobro } from "./cobros";
+import { factorDePagos, fechasDeCobro } from "./cobros";
 import type { CategoriaDelMes } from "./presupuesto";
 import { quincena } from "./transferencias";
 
@@ -159,16 +159,27 @@ export type DisponiblePersona = {
   extrasCents: number; // gastos extra (variables) a su nombre en el mes
   // salario + ingresos extra - fijos - extras; puede ser negativo.
   disponibleCents: number;
+  // Algún ingreso fijo suyo cae en 3 pagos este mes (cobro cada 2 semanas).
+  tresPagos: boolean;
 };
 
 // Lo que le queda a una persona en el mes: sus ingresos (fijos y extra) menos
 // sus gastos fijos y sus gastos extra, tal como los presupuestó. Solo cuenta lo
-// que está a su nombre (lo conjunto no se le suma ni se le resta a nadie).
-export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string): DisponiblePersona {
+// que está a su nombre (lo conjunto no se le suma ni se le resta a nadie). Con `mes`
+// ("YYYY-MM"), un ingreso que se cobra cada 2 semanas cuenta todos sus pagos de ese
+// mes: en un mes con 3 pagos entra la mitad más.
+export function disponibleDeLaPersona(
+  items: CategoriaDelMes[],
+  memberId: string,
+  mes?: string
+): DisponiblePersona {
   const mios = items.filter((i) => i.category.ownerMemberId === memberId);
   const suma = (lista: CategoriaDelMes[]) => lista.reduce((t, i) => t + i.plannedAmountCents, 0);
 
-  const salarioCents = suma(mios.filter((i) => i.category.fixed && i.category.kind === "income"));
+  const ingresosFijos = mios.filter((i) => i.category.fixed && i.category.kind === "income");
+  const factor = (i: CategoriaDelMes) => (mes ? factorDePagos(i.category, mes) : 1);
+  const salarioCents = ingresosFijos.reduce((t, i) => t + Math.round(i.plannedAmountCents * factor(i)), 0);
+  const tresPagos = ingresosFijos.some((i) => i.plannedAmountCents > 0 && factor(i) > 1);
   const ingresosExtraCents = suma(mios.filter((i) => !i.category.fixed && i.category.kind === "income"));
   const fijosCents = suma(mios.filter((i) => i.category.fixed && i.category.kind === "expense"));
   const extrasCents = suma(mios.filter((i) => !i.category.fixed && i.category.kind === "expense"));
@@ -179,6 +190,7 @@ export function disponibleDeLaPersona(items: CategoriaDelMes[], memberId: string
     fijosCents,
     extrasCents,
     disponibleCents: salarioCents + ingresosExtraCents - fijosCents - extrasCents,
+    tresPagos,
   };
 }
 
@@ -191,7 +203,10 @@ function parteHasta(item: CategoriaDelMes, mes: string, hasta: string): number {
     : [item.fechaPago].filter(Boolean);
 
   if (fechas.length === 0) return FRACCION_MES_PARCIAL;
-  return fechas.filter((f) => f <= hasta).length / fechas.length;
+  const hechos = fechas.filter((f) => f <= hasta).length;
+  // Cada pago de un ingreso cada 2 semanas es la mitad del monto del mes (un mes con 3 pagos suma 1.5).
+  if (item.category.bisemanalDesde) return hechos / 2;
+  return hechos / fechas.length;
 }
 
 // Lo que una persona tiene disponible en el mes SOLO hasta `hasta`: sus ingresos
@@ -346,6 +361,8 @@ export type MesLibre = {
   aprovechableCents: number;
   // "" = el mes completo; si no, el último día que cuenta (YYYY-MM-DD).
   hastaFecha: string;
+  // Un ingreso fijo suyo cae en 3 pagos ese mes (cobro cada 2 semanas).
+  tresPagos: boolean;
 };
 
 // El mes con menos libre manda: un aporte es un monto fijo por mes, así que

@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "mejora",
+        texto: {
+          en: "Months with 3 paydays (for income paid every 2 weeks) now count all 3 payments by themselves: in Budget the Income card and Left to spend include the extra payday and say so, in the yearly Report too, and in Projects what you have free counts all 3 and the month's breakdown says so. You do not type anything extra.",
+          es: "Los meses con 3 pagos (en ingresos que se cobran cada 2 semanas) ahora cuentan los 3 pagos solos: en Presupuesto, la tarjeta de Ingresos y Por gastar incluyen el pago de más y lo indican, también el Reporte anual, y en Proyectos lo que tienes libre cuenta los 3 y el desglose del mes lo indica. No escribes nada extra.",
+        },
+      },
+      {
         tipo: "nuevo",
         texto: {
           en: "When you create or edit a project you can now pick the month to start saving from, so it does not spread over months where you are already saving for another project.",

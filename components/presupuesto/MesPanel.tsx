@@ -22,17 +22,21 @@ function Widget({
   valor,
   color,
   ancho = false,
+  nota,
 }: {
   label: string;
   valor: number;
   color: string;
   // Ocupa las dos columnas (cuando queda un widget solo en su fila).
   ancho?: boolean;
+  // Una línea más debajo del valor.
+  nota?: string;
 }) {
   return (
     <div className={`rounded-xl border border-line bg-surface px-3 py-2.5 ${ancho ? "col-span-2" : ""}`}>
       <p className="text-xs uppercase tracking-wide text-text-muted">{label}</p>
       <p className={`mt-0.5 text-base font-semibold ${color}`}>{formatearCentavos(valor)}</p>
+      {nota ? <p className="text-xs text-text-muted">{nota}</p> : null}
     </div>
   );
 }
@@ -74,7 +78,9 @@ export default function MesPanel({ month, datos }: Props) {
   const gastosVariables = variables.filter((i) => i.category.kind === "expense");
   const ingresosVariables = variables.filter((i) => i.category.kind === "income");
 
-  const ingresos = suma(ingresosFijos) + suma(ingresosVariables);
+  // En los meses con 3 pagos (cobro cada 2 semanas) entra el pago de más, sin escribirlo a mano.
+  const pagoDeMas = ingresosFijos.reduce((total, i) => total + (i.extraPorPagosCents ?? 0), 0);
+  const ingresos = suma(ingresosFijos) + pagoDeMas + suma(ingresosVariables);
   const totalFijos = suma(gastosFijos);
   const totalVariables = suma(gastosVariables);
   // Lo que se aparta para proyectos ese mes (todas las personas): ya salió del flujo.
@@ -158,7 +164,12 @@ export default function MesPanel({ month, datos }: Props) {
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-2">
-        <Widget label={t("report.income")} valor={ingresos} color="text-sage" />
+        <Widget
+          label={t("report.income")}
+          valor={ingresos}
+          color="text-sage"
+          nota={pagoDeMas !== 0 ? t("month.thirdPay", { amount: formatearCentavos(pagoDeMas) }) : undefined}
+        />
         <Widget label={t("report.fixedExpenses")} valor={totalFijos} color="text-text" />
         <Widget label={t("month.variableExpenses")} valor={totalVariables} color="text-rust-text" />
         {ahorroProyectos > 0 ? (

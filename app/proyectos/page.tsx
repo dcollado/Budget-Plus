@@ -1097,7 +1097,11 @@ function AhorroMensual({
                 {detalle ? (
                   <div className="col-span-full rounded-lg bg-surface px-3 py-2">
                     <dl className="space-y-0.5 text-xs">
-                      {fila(t("proj.fixedIncome"), m.salarioCents, "+")}
+                      {fila(
+                        m.tresPagos ? `${t("proj.fixedIncome")} · ${t("proj.threePays")}` : t("proj.fixedIncome"),
+                        m.salarioCents,
+                        "+"
+                      )}
                       {m.ingresosExtraCents > 0 ? fila(t("proj.extraIncome"), m.ingresosExtraCents, "+") : null}
                       {fila(t("proj.fixedExpenses"), m.fijosCents, "-")}
                       {fila(t("proj.extraExpenses"), m.extrasCents, "-")}

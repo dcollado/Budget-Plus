@@ -1,4 +1,7 @@
+import { fechaDelDia, fechasDeCobro } from "./cobros";
 import type { Budget, Category, Transaction } from "./schema";
+
+export { fechaDelDia };
 
 export type CategoriaDelMes = {
   category: Category;
@@ -18,14 +21,30 @@ export type CategoriaDelMes = {
   // Nota y marca de "pagado" de este mes (viene del Budget del mes).
   nota: string;
   pagado: boolean;
+  // Ingresos fijos que se cobran cada 2 semanas: cuántos pagos caen en este mes (2 o
+  // 3) y lo que suma el pago de más sobre el monto guardado (que equivale a 2 pagos).
+  // No se guarda ni se edita: se calcula con los días de cobro.
+  pagosDelMes?: number;
+  extraPorPagosCents?: number;
 };
 
-export function fechaDelDia(month: string, dueDay: number | null): string {
-  if (!dueDay) return "";
-  const [anio, mes] = month.split("-").map(Number);
-  const ultimoDia = new Date(anio, mes, 0).getDate();
-  const dia = Math.min(dueDay, ultimoDia);
-  return `${month}-${String(dia).padStart(2, "0")}`;
+// Lo que de verdad entra o sale ese mes: el monto guardado más el pago de más de los
+// meses con 3 pagos.
+export function montoRealDelMes(item: CategoriaDelMes): number {
+  return item.plannedAmountCents + (item.extraPorPagosCents ?? 0);
+}
+
+// Agrega los datos de los meses con 3 pagos a un ingreso fijo cada 2 semanas.
+function conPagosDelMes(item: CategoriaDelMes, month: string): CategoriaDelMes {
+  const c = item.category;
+  if (!(c.fixed && c.kind === "income" && c.bisemanalDesde)) return item;
+
+  const pagos = fechasDeCobro(c, month).length;
+  return {
+    ...item,
+    pagosDelMes: pagos,
+    extraPorPagosCents: Math.round(item.plannedAmountCents * (pagos / 2 - 1)),
+  };
 }
 
 // Segundo pago de un gasto fijo quincenal en este mes ("" si no aplica).
@@ -79,7 +98,8 @@ export function armarVistaMes(
     lista.sort((a, b) => a.month.localeCompare(b.month));
   }
 
-  return categories.map((category) => {
+  return categories
+    .map((category): CategoriaDelMes => {
     const actualCents = actualPorCategoria.get(category.id) ?? 0;
     const budgetsDeCategoria = presupuestosPorCategoria.get(category.id) ?? [];
 
@@ -127,5 +147,6 @@ export function armarVistaMes(
       nota: "",
       pagado: false,
     };
-  });
+    })
+    .map((item) => conPagosDelMes(item, month));
 }

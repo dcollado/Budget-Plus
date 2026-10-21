@@ -14,7 +14,7 @@ import {
 import { mesActual } from "@/lib/household/formato";
 import { moduloActivo } from "@/lib/modulos-datos";
 import { armarProyectosVista } from "@/lib/household/proyectos-datos";
-import { armarVistaMes } from "@/lib/household/presupuesto";
+import { armarVistaMes, montoRealDelMes } from "@/lib/household/presupuesto";
 import { sincronizarDosMeses, sincronizarSinFallar } from "@/lib/household/calendario";
 import { validarReferencias } from "@/lib/household/pertenencia";
 import { centavosDe, fechaValida, mesValido } from "@/lib/validacion";
@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
     const totales = items.reduce(
       (acc, item) => {
         if (item.category.kind === "income") {
-          acc.plannedIncomeCents += item.plannedAmountCents;
+          acc.plannedIncomeCents += montoRealDelMes(item);
           acc.actualIncomeCents += item.actualCents;
         } else {
           acc.plannedExpenseCents += item.plannedAmountCents;

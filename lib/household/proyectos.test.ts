@@ -9,6 +9,7 @@ import {
   coberturaConAportes,
   conjuntoDelMes,
   disponibleDeLaPersona,
+  disponibleHastaFecha,
   mesesEntre,
   mesMasAjustado,
   sumarMeses,
@@ -165,6 +166,7 @@ describe("disponibleDeLaPersona", () => {
       fijosCents: 120000,
       extrasCents: 20000,
       disponibleCents: 210000,
+      tresPagos: false,
     });
   });
 
@@ -382,6 +384,40 @@ describe("empezar a ahorrar desde un mes futuro", () => {
   });
 });
 
+describe("ingreso cada 2 semanas: meses con 3 pagos", () => {
+  // 1.000 por pago, 2.000 al mes (el monto guardado equivale a 2 pagos).
+  const sueldo = (extra = {}) => ({
+    category: {
+      id: "s", householdId: "h", name: "Sueldo", kind: "income" as const, archived: false, fixed: true,
+      dueDay: null, quincenal: true, dueDay2: null, bisemanalDesde: "2027-05-01",
+      ownerMemberId: "david", cuentaId: "", ahorro: false, ...extra,
+    },
+    plannedAmountCents: 200000, inherited: false, actualCents: 0, fechaPago: "", fechaPago2: "", nota: "", pagado: false,
+  });
+
+  it("un mes con 3 pagos cuenta los 3; uno normal, 2", () => {
+    // 2027-05-01 + 14k: 1, 15 y 29 de mayo (3 pagos); abril: 3 y 17 (2 pagos).
+    const mayo = disponibleDeLaPersona([sueldo()], "david", "2027-05");
+    expect(mayo.salarioCents).toBe(300000);
+    expect(mayo.tresPagos).toBe(true);
+
+    const abril = disponibleDeLaPersona([sueldo()], "david", "2027-04");
+    expect(abril.salarioCents).toBe(200000);
+    expect(abril.tresPagos).toBe(false);
+  });
+
+  it("sin el mes se usa el monto guardado, y lo que no es cada 2 semanas no cambia", () => {
+    expect(disponibleDeLaPersona([sueldo()], "david").salarioCents).toBe(200000);
+    expect(disponibleDeLaPersona([sueldo({ bisemanalDesde: "" })], "david", "2027-05").salarioCents).toBe(200000);
+  });
+
+  it("hasta una fecha entran los pagos que ya cayeron, de 1.000 cada uno", () => {
+    expect(disponibleHastaFecha([sueldo()], "david", "2027-05-14")).toBe(100000);
+    expect(disponibleHastaFecha([sueldo()], "david", "2027-05-20")).toBe(200000);
+    expect(disponibleHastaFecha([sueldo()], "david", "2027-05-31")).toBe(300000);
+  });
+});
+
 describe("mesMasAjustado", () => {
   const mes = (month: string, libreCents: number) => ({
     month,
@@ -395,6 +431,7 @@ describe("mesMasAjustado", () => {
     fraccion: 1,
     aprovechableCents: libreCents,
     hastaFecha: "",
+    tresPagos: false,
   });
 
   it("el tope es el mes con menos libre", () => {

@@ -1,4 +1,4 @@
-import { armarVistaMes } from "./presupuesto";
+import { armarVistaMes, montoRealDelMes } from "./presupuesto";
 import type { Budget, Category } from "./schema";
 
 // Reporte anual (V1): todo sale del PLAN (presupuesto), con la misma lógica
@@ -92,8 +92,10 @@ export function armarReporteAnual(
       const dueno = persona(item.category.ownerMemberId);
 
       if (item.category.kind === "income") {
-        fila.ingresosCents += monto;
-        dueno.ingresosCents += monto;
+        // En los meses con 3 pagos (cobro cada 2 semanas) entra el pago de más.
+        const real = montoRealDelMes(item);
+        fila.ingresosCents += real;
+        dueno.ingresosCents += real;
         continue;
       }
 

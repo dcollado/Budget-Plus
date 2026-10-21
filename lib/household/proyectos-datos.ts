@@ -145,7 +145,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
     const vista = armarVistaMes(categorias, presupuestos, [], mes);
     vistas.set(mes, vista);
     conjuntos.set(mes, conjuntoDelMes(vista));
-    disponibles.set(mes, new Map(miembros.map((m) => [m.id, disponibleDeLaPersona(vista, m.id)])));
+    disponibles.set(mes, new Map(miembros.map((m) => [m.id, disponibleDeLaPersona(vista, m.id, mes)])));
   }
 
   // Lo que cada persona aparta, por proyecto, persona y mes.
@@ -191,6 +191,7 @@ export async function armarProyectosVista(householdId: string, yo: string): Prom
         aprovechableCents:
           fraccion < 1 ? disponibleHastaFecha(vistas.get(mes) ?? [], memberId, ultima) - otros : libre,
         hastaFecha: fraccion < 1 ? ultima : "",
+        tresPagos: d.tresPagos,
       };
     });
   };
