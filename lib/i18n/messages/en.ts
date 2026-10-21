@@ -417,6 +417,8 @@ export const en = {
   "modules.householdSaved": "{name} updated for {household}.",
   "modules.intro": "Turn parts of the app on or off. Turning one off hides it from the menu and blocks its page and data access; nothing is deleted and it all comes back when you turn it on again.",
   "month.thirdPay": "Includes a 3rd payday: +{amount}",
+  "row.biweeklySummary": "2 × {each} · every 2 weeks",
+  "row.biweeklyShort": "2 wk",
   "nav.changes": "What's new",
   "nav.closeMenu": "Close menu",
   "nav.members": "Members",

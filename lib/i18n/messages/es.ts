@@ -418,6 +418,8 @@ export const es: Record<MessageKey, string> = {
   "modules.householdSaved": "{name} actualizado para {household}.",
   "modules.intro": "Enciende o apaga partes de la app. Al apagar un módulo desaparece del menú y se bloquean su página y el acceso a sus datos; no se borra nada y todo vuelve al encenderlo.",
   "month.thirdPay": "Incluye un 3er pago: +{amount}",
+  "row.biweeklySummary": "2 × {each} · cada 2 semanas",
+  "row.biweeklyShort": "2 sem",
   "nav.changes": "Novedades",
   "nav.closeMenu": "Cerrar menú",
   "nav.members": "Miembros",

@@ -792,12 +792,13 @@ function Seccion({
 
   return (
     <div className="mt-5">
-      <div className="flex items-center gap-1">
+      {/* En pantallas angostas el botón de la derecha baja a su propia línea en vez de tapar el título. */}
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
         <button
           type="button"
           aria-expanded={abierta}
           onClick={() => setAbierta((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left transition hover:text-gold"
+          className="flex min-w-[13rem] flex-1 items-center gap-2 rounded-lg py-1 text-left transition hover:text-gold"
         >
           <ChevronDown
             size={16}
@@ -807,7 +808,7 @@ function Seccion({
           <h3 className="shrink-0 text-sm font-semibold text-text">{titulo}</h3>
           {resumen ? <span className="min-w-0 truncate text-xs text-text-muted">{resumen}</span> : null}
         </button>
-        {ayuda}
+        {ayuda ? <div className="ml-auto flex shrink-0 items-center">{ayuda}</div> : null}
       </div>
       {abierta ? <div className="mt-2">{children}</div> : null}
     </div>

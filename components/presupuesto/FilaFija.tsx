@@ -122,13 +122,16 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
     }
   }
 
+  const cadaDosSemanas = Boolean(c.bisemanalDesde);
+
   return (
     <div className="border-b border-line px-3 py-2 last:border-0">
-      <div className={`grid ${COLUMNAS_FIJOS} items-center gap-2`}>
+      {/* Celular: nombre y acciones arriba, monto y día debajo. Desde sm: cuatro columnas en una fila. */}
+      <div className={`grid grid-cols-[minmax(0,1fr)_auto] ${COLUMNAS_FIJOS} items-center gap-x-2 gap-y-1.5`}>
         <button
           type="button"
           onClick={() => onEditar(item)}
-          className="min-w-0 text-left"
+          className="order-1 min-w-0 text-left"
           aria-label={t("row.edit", { name: c.name })}
         >
           <span className="flex items-center gap-1.5">
@@ -139,50 +142,64 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
           </span>
           {dosPagos ? (
             <span className="block text-xs text-gold">
-              {t("row.splitSummary", {
-                each: formatearCentavos(porPago),
-                d1: textoDia(c.dueDay),
-                d2: textoDia(c.dueDay2),
-              })}
+              {cadaDosSemanas
+                ? t("row.biweeklySummary", { each: formatearCentavos(porPago) })
+                : t("row.splitSummary", {
+                    each: formatearCentavos(porPago),
+                    d1: textoDia(c.dueDay),
+                    d2: textoDia(c.dueDay2),
+                  })}
             </span>
           ) : null}
         </button>
 
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          inputMode="decimal"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          aria-label={t("row.amountOf", { name: c.name })}
-          className={`${fieldBaseClass} ${fieldNormalClass} px-2! py-1! text-right text-sm`}
-        />
+        <div className="order-3 col-span-2 grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-2 sm:contents">
+          <label className="block sm:order-2">
+            <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-text-muted sm:hidden">
+              {t("settings.amountMonth")}
+            </span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              aria-label={t("row.amountOf", { name: c.name })}
+              className={`${fieldBaseClass} ${fieldNormalClass} px-2! py-1! text-right text-sm`}
+            />
+          </label>
 
-        {dosPagos ? (
-          <button
-            type="button"
-            onClick={() => onEditar(item)}
-            className="rounded-lg border border-line px-1 py-1 text-center text-xs text-text transition hover:border-gold/50"
-            aria-label={t("row.edit", { name: c.name })}
-          >
-            {textoDia(c.dueDay)} · {textoDia(c.dueDay2)}
-          </button>
-        ) : (
-          <input
-            type="number"
-            min="1"
-            max="31"
-            inputMode="numeric"
-            value={dia}
-            onChange={(e) => setDia(e.target.value)}
-            placeholder="—"
-            aria-label={t("row.paymentDayOf", { name: c.name })}
-            className={`${fieldBaseClass} ${fieldNormalClass} px-1! py-1! text-center text-sm`}
-          />
-        )}
+          <div className="sm:order-2">
+            <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-text-muted sm:hidden">
+              {t("settings.dayShort")}
+            </span>
+            {dosPagos ? (
+              <button
+                type="button"
+                onClick={() => onEditar(item)}
+                className="block w-full whitespace-nowrap rounded-lg border border-line px-1 py-1 text-center text-xs text-text transition hover:border-gold/50"
+                aria-label={t("row.edit", { name: c.name })}
+              >
+                {cadaDosSemanas ? t("row.biweeklyShort") : `${textoDia(c.dueDay)} · ${textoDia(c.dueDay2)}`}
+              </button>
+            ) : (
+              <input
+                type="number"
+                min="1"
+                max="31"
+                inputMode="numeric"
+                value={dia}
+                onChange={(e) => setDia(e.target.value)}
+                placeholder="—"
+                aria-label={t("row.paymentDayOf", { name: c.name })}
+                className={`${fieldBaseClass} ${fieldNormalClass} px-1! py-1! text-center text-sm`}
+              />
+            )}
+          </div>
+        </div>
 
-        <span className="flex items-center justify-end gap-0.5">
+        <span className="order-2 flex items-center justify-end gap-0.5 sm:order-3">
           <button
             type="button"
             onClick={guardar}

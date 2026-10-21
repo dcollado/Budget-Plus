@@ -29,6 +29,13 @@ export const CHANGELOG: EntradaChangelog[] = [
     },
     cambios: [
       {
+        tipo: "ajuste",
+        texto: {
+          en: "Fixed fixed-expenses and income rows that looked cramped on phones (name on top, amount and day below), the Add expense button in Projects that covered its title, and income paid every 2 weeks now says so in its row instead of showing empty days.",
+          es: "Arregladas las filas de gastos e ingresos fijos que se veían apretadas en el celular (nombre arriba, monto y día debajo), el botón Agregar gasto de Proyectos que tapaba su título, y los ingresos que se cobran cada 2 semanas ahora lo dicen en su fila en vez de mostrar días vacíos.",
+        },
+      },
+      {
         tipo: "mejora",
         texto: {
           en: "Months with 3 paydays (for income paid every 2 weeks) now count all 3 payments by themselves: in Budget the Income card and Left to spend include the extra payday and say so, in the yearly Report too, and in Projects what you have free counts all 3 and the month's breakdown says so. You do not type anything extra.",
