@@ -199,7 +199,7 @@ export default function FilaFija({ item, month, onGuardado, onEditar, onEliminar
           </div>
         </div>
 
-        <span className="order-2 flex items-center justify-end gap-0.5 sm:order-3">
+        <span className="order-2 flex items-center justify-end gap-3 sm:order-3 sm:gap-0.5">
           <button
             type="button"
             onClick={guardar}

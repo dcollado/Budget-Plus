@@ -38,6 +38,46 @@ input[type="month"] {
   appearance: none;
 }
 
+/* En pantallas táctiles (y en el celular) los campos escriben a 16px: con menos,
+   iOS Safari hace zoom al enfocarlos y deja la pantalla corrida. Va fuera de
+   las capas para ganarle a text-sm sin tocar cada campo. */
+@media (max-width: 639px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Área táctil mínima de 44x44 en botones, resúmenes y casillas con etiqueta,
+   aunque se vean pequeños (íconos de editar/borrar, casillas de pagado, etc.):
+   un recuadro invisible alrededor. En los enlaces sueltos se pide con .tap. */
+@layer base {
+  button,
+  [role="button"],
+  summary,
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]),
+  .tap {
+    position: relative;
+  }
+
+  button::after,
+  [role="button"]::after,
+  summary::after,
+  label:has(> input[type="checkbox"])::after,
+  label:has(> input[type="radio"])::after,
+  .tap::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* El ícono del selector nativo de fecha/mes lo dibuja el navegador, no
    sigue el color del texto — sin esto se ve negro sobre nuestro fondo
    oscuro. invert(1) lo vuelve claro; brightness baja un poco la

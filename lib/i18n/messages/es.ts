@@ -334,6 +334,7 @@ export const es: Record<MessageKey, string> = {
   "nav.admin": "Admin",
   "nav.budget": "Presupuesto",
   "nav.guide": "Guía",
+  "nav.skipToContent": "Saltar al contenido",
   "nav.guideHelp": "Ayuda: cómo funciona esta pantalla",
   "guide.metaTitle": "Guía - Budget Plus",
   "guide.metaDescription": "Cómo funciona cada parte de Budget Plus.",

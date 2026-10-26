@@ -42,7 +42,7 @@ export default async function CambiosPage() {
   const { t, locale } = await getT();
 
   return (
-    <main className="min-h-screen bg-ink px-5 py-10 text-text">
+    <main id="contenido" tabIndex={-1} className="min-h-screen outline-none bg-ink px-5 py-10 text-text">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-4 flex items-center justify-between gap-3">
           <BackButton />

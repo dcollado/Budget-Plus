@@ -333,6 +333,7 @@ export const en = {
   "nav.admin": "Admin",
   "nav.budget": "Budget",
   "nav.guide": "Guide",
+  "nav.skipToContent": "Skip to content",
   "nav.guideHelp": "Help: how this screen works",
   "guide.metaTitle": "Guide - Budget Plus",
   "guide.metaDescription": "How each part of Budget Plus works.",

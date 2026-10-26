@@ -412,23 +412,26 @@ function FilaItemProyecto({
   return (
     <li className="py-2">
       <div className="flex items-center gap-3">
-      <input
-        type="checkbox"
-        checked={item.pagado}
-        disabled={ocupado}
-        aria-label={t("proj.paid")}
-        onChange={(e) => {
-          // Para marcarlo se pregunta cómo se pagó; para desmarcarlo no.
-          if (e.target.checked) {
-            setEligiendoPago(true);
-            return;
-          }
-          void hacer(() =>
-            enviar("/api/hogar/proyectos/items", "PATCH", { id: item.id, pagado: false })
-          );
-        }}
-        className="h-4 w-4 shrink-0 accent-[var(--color-sage)]"
-      />
+      {/* La etiqueta de 44x44 (con margen negativo para no agrandar la fila) da el área táctil. */}
+      <label className="-m-3 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
+        <input
+          type="checkbox"
+          checked={item.pagado}
+          disabled={ocupado}
+          aria-label={t("proj.paid")}
+          onChange={(e) => {
+            // Para marcarlo se pregunta cómo se pagó; para desmarcarlo no.
+            if (e.target.checked) {
+              setEligiendoPago(true);
+              return;
+            }
+            void hacer(() =>
+              enviar("/api/hogar/proyectos/items", "PATCH", { id: item.id, pagado: false })
+            );
+          }}
+          className="h-4 w-4 accent-[var(--color-sage)]"
+        />
+      </label>
       <div className={`min-w-0 flex-1 ${item.pagado ? "text-text-muted line-through" : "text-text"}`}>
         <p className="break-words">{item.concepto}</p>
         <p className="text-xs text-text-muted no-underline">
@@ -739,7 +742,7 @@ function CampoMonto({
         {ayuda}
       </div>
       <div
-        className={`${ocultarEtiqueta ? "" : "mt-1.5"} flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 ${plano ? "py-1" : "py-1.5"} transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30 ${
+        className={`${ocultarEtiqueta ? "" : "mt-1.5"} flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 ${plano ? "py-2.5 sm:py-1" : "py-2.5 sm:py-1.5"} transition focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30 ${
           disabled ? "opacity-60" : "hover:border-gold"
         }`}
       >

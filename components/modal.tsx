@@ -119,7 +119,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className="relative max-h-[92vh] w-full overflow-y-auto outline-none rounded-t-3xl border border-line bg-surface p-5 shadow-2xl shadow-black/40 sm:max-w-lg sm:rounded-3xl sm:p-6"
+        className="relative max-h-[92dvh] w-full overflow-y-auto outline-none rounded-t-3xl border border-line bg-surface p-5 shadow-2xl shadow-black/40 sm:max-w-lg sm:rounded-3xl sm:p-6"
       >
         <div className="mb-5 flex items-start justify-between gap-4">
           <h2 className="font-display text-xl font-semibold tracking-[-0.02em] text-text">
@@ -129,9 +129,9 @@ export function Modal({
             type="button"
             onClick={onCerrar}
             aria-label={t("common.close")}
-            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-raised hover:text-text"
+            className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-raised hover:text-text"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 

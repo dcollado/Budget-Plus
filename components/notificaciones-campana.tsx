@@ -19,6 +19,8 @@ export function NotificacionesCampana() {
   const t = useT();
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
+  const campanaRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [abierta, setAbierta] = useState(false);
   const [items, setItems] = useState<Notificacion[]>([]);
@@ -49,17 +51,24 @@ export function NotificacionesCampana() {
   useEffect(() => {
     if (!abierta) return;
 
-    function alClicAfuera(event: MouseEvent) {
+    // Al abrir, el foco pasa al primer botón del panel (o se queda en la campana
+    // si está vacío); con Escape se cierra y el foco vuelve a la campana.
+    panelRef.current?.querySelector<HTMLElement>("button")?.focus();
+
+    // pointerdown cubre mouse y toque (en pantallas táctiles mousedown no siempre llega).
+    function alClicAfuera(event: PointerEvent) {
       if (!ref.current?.contains(event.target as Node)) setAbierta(false);
     }
     function alTeclear(event: KeyboardEvent) {
-      if (event.key === "Escape") setAbierta(false);
+      if (event.key !== "Escape") return;
+      setAbierta(false);
+      campanaRef.current?.focus();
     }
 
-    document.addEventListener("mousedown", alClicAfuera);
+    document.addEventListener("pointerdown", alClicAfuera);
     document.addEventListener("keydown", alTeclear);
     return () => {
-      document.removeEventListener("mousedown", alClicAfuera);
+      document.removeEventListener("pointerdown", alClicAfuera);
       document.removeEventListener("keydown", alTeclear);
     };
   }, [abierta]);
@@ -110,6 +119,7 @@ export function NotificacionesCampana() {
   return (
     <div ref={ref} className="relative">
       <button
+        ref={campanaRef}
         type="button"
         onClick={() => {
           setAbierta((v) => !v);
@@ -117,7 +127,7 @@ export function NotificacionesCampana() {
         }}
         aria-label={t("notif.title")}
         aria-expanded={abierta}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text"
+        className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text"
       >
         <Bell size={18} />
         {noLeidas > 0 ? (
@@ -128,7 +138,7 @@ export function NotificacionesCampana() {
       </button>
 
       {abierta ? (
-        <div className="fixed left-4 right-4 top-[4.25rem] z-50 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80">
+        <div ref={panelRef} className="fixed left-4 right-4 top-[4.25rem] z-50 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <p className="text-sm font-medium text-text">{t("notif.title")}</p>
             {noLeidas > 0 ? (

@@ -38,7 +38,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { locale } = await getT();
+  const { locale, t } = await getT();
 
   return (
     <html
@@ -46,6 +46,13 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}
     >
       <body className="bg-ink font-body text-text">
+        {/* Con teclado, evita recorrer todo el encabezado en cada página. */}
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-gold focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink"
+        >
+          {t("nav.skipToContent")}
+        </a>
         <I18nProvider locale={locale}>
           <AppShell>{children}</AppShell>
         </I18nProvider>

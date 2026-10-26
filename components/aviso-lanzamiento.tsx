@@ -71,7 +71,7 @@ export function AvisoLanzamiento() {
           <Link
             href={anuncio.enlace}
             onClick={() => void marcarLeida()}
-            className="font-medium text-gold underline-offset-2 hover:underline"
+            className="tap font-medium text-gold underline-offset-2 hover:underline"
           >
             {t("banner.open")}
           </Link>

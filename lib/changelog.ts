@@ -22,6 +22,29 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-26",
+    titulo: {
+      en: "Easier to use on your phone",
+      es: "Más fácil de usar en el celular",
+    },
+    cambios: [
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Small buttons (mark as paid, edit, delete, close, the info icons and the header buttons) are now easier to tap with your thumb, and typing in a field no longer zooms the screen on iPhone.",
+          es: "Los botones pequeños (marcar como pagado, editar, borrar, cerrar, los íconos de información y los botones del encabezado) ahora son más fáciles de tocar con el pulgar, y al escribir en un campo la pantalla ya no se agranda en el iPhone.",
+        },
+      },
+      {
+        tipo: "mejora",
+        texto: {
+          en: "Better keyboard and screen reader support: a Skip to content link, the menu and the bell now move the focus when they open and close with Escape, and the notifications panel closes when you tap outside it.",
+          es: "Mejor uso con teclado y lector de pantalla: un enlace para saltar al contenido, el menú y la campana ahora mueven el foco al abrirse y se cierran con Escape, y el panel de notificaciones se cierra al tocar fuera.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-20",
     titulo: {
       en: "A guide inside the app",

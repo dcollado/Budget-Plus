@@ -125,7 +125,7 @@ export default function GestionCuentas({ items, cuentas, setCuentas, yo, asignar
 
         <ul className="flex flex-col gap-1">
           {cuentas.map((cuenta) => (
-            <li key={cuenta.id} className="flex items-center gap-2">
+            <li key={cuenta.id} className="flex items-center gap-4">
               {editando === cuenta.id ? (
                 <>
                   <span className="flex-1">

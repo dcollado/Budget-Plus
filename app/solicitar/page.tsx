@@ -44,7 +44,7 @@ export default function SolicitarPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink px-5 py-10 text-text">
+    <main id="contenido" tabIndex={-1} className="flex min-h-screen outline-none items-center justify-center bg-ink px-5 py-10 text-text">
       <div className="w-full max-w-md">
         <div className="mb-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">

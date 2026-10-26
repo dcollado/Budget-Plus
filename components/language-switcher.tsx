@@ -38,7 +38,7 @@ export function LanguageSwitcher({ persist = false }: { persist?: boolean }) {
           onClick={() => choose(code)}
           aria-pressed={code === locale}
           title={LOCALE_LABELS[code]}
-          className={`rounded-md px-2 py-1 font-medium uppercase transition ${
+          className={`rounded-md px-3 py-2 font-medium uppercase transition ${
             code === locale ? "bg-gold-soft text-gold" : "text-text-muted hover:text-text"
           }`}
         >

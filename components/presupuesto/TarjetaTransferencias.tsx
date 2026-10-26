@@ -98,7 +98,7 @@ export default function TarjetaTransferencias({ cuadro }: { cuadro: Cuadro | nul
         {abierta ? (
           <Link
             href="/configuracion?tab=cuentas"
-            className="shrink-0 text-xs text-gold hover:underline"
+            className="tap shrink-0 text-xs text-gold hover:underline"
           >
             {t("transfers.editAccounts")}
           </Link>

@@ -117,6 +117,26 @@ export function AppShell({
     return () => window.removeEventListener(EVENTO_PERFIL, cargarPerfil);
   }, [isLoginPage, cargarPerfil]);
 
+  // Mobile menu: focus moves to its first link when it opens; Escape closes it
+  // and returns the focus to the button that opened it.
+  const burgerRef = useRef<HTMLButtonElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    mobileNavRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+
+    function alTeclear(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      burgerRef.current?.focus();
+    }
+
+    document.addEventListener("keydown", alTeclear);
+    return () => document.removeEventListener("keydown", alTeclear);
+  }, [menuOpen]);
+
   // The user menu closes on outside click or Escape.
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -205,7 +225,7 @@ export function AppShell({
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="font-display text-xl font-semibold text-text"
+            className="tap font-display text-xl font-semibold text-text"
           >
             Budget Plus
           </Link>
@@ -230,7 +250,7 @@ export function AppShell({
                 href={`/guia#${seccionDeLaGuia(pathname)}`}
                 aria-label={t("nav.guideHelp")}
                 title={t("nav.guideHelp")}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text"
               >
                 <CircleHelp size={18} aria-hidden="true" />
               </Link>
@@ -312,6 +332,7 @@ export function AppShell({
           </div>
 
           <button
+            ref={burgerRef}
             type="button"
             onClick={() =>
               setMenuOpen((value) => !value)
@@ -322,7 +343,7 @@ export function AppShell({
                 : t("nav.openMenu")
             }
             aria-expanded={menuOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface-raised text-text-muted transition hover:border-gold/50 hover:text-text md:hidden"
           >
             {menuOpen ? (
               <X size={18} />
@@ -334,7 +355,7 @@ export function AppShell({
         </div>
 
         {menuOpen ? (
-          <nav className="border-t border-line bg-surface px-4 py-3 md:hidden">
+          <nav ref={mobileNavRef} className="border-t border-line bg-surface px-4 py-3 md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col">
               {enlaces.map((link) => (
                 <Link

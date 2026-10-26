@@ -21,7 +21,7 @@ export function AuthCard({
 }) {
   const t = useT();
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink px-5 py-10 text-text">
+    <main id="contenido" tabIndex={-1} className="flex min-h-screen outline-none items-center justify-center bg-ink px-5 py-10 text-text">
       <div className="w-full max-w-md">
         <div className="mb-3 flex justify-end">
           <LanguageSwitcher />

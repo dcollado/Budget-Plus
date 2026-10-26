@@ -91,7 +91,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-ink px-5 py-10 text-text">
+    <main id="contenido" tabIndex={-1} className="relative min-h-screen outline-none overflow-hidden bg-ink px-5 py-10 text-text">
       <div className="absolute right-4 top-4 z-10">
         <LanguageSwitcher />
       </div>

@@ -230,7 +230,7 @@ export default function FilaCompacta({
           ) : null}
         </span>
 
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-2 [&>button+button]:ml-3">
           <span
             className={`whitespace-nowrap text-sm font-medium ${
               item.pagado ? "text-text-muted" : esIngreso ? "text-sage" : "text-text"

@@ -25,7 +25,7 @@ export function Pagina({
   children: React.ReactNode;
 }) {
   return (
-    <main className={`mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${ANCHOS[ancho]} ${className}`}>
+    <main id="contenido" tabIndex={-1} className={`outline-none mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 ${ANCHOS[ancho]} ${className}`}>
       {children}
     </main>
   );

@@ -56,7 +56,7 @@ export function InfoTip({
         aria-expanded={visible}
         aria-describedby={visible ? id : undefined}
         onClick={() => setFijo((v) => !v)}
-        className="rounded-full p-0.5 text-text-muted transition hover:text-text"
+        className="rounded-full p-1 text-text-muted transition hover:text-text"
       >
         <Info size={13} aria-hidden="true" />
       </button>
