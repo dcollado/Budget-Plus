@@ -15,6 +15,8 @@ export default function PresupuestoPage() {
   const t = useT();
   const [hogarConfigurado, setHogarConfigurado] = useState<boolean | null>(null);
   const [month, setMonth] = useState(mesActual);
+  // Household view (default) or only what is mine: my income, my expenses.
+  const [soloMios, setSoloMios] = useState(false);
 
   // One load per month. The first one also feeds "Your transfers".
   const primerMes = usePresupuestoMes(month);
@@ -36,6 +38,29 @@ export default function PresupuestoPage() {
           <h1 className="font-serif text-3xl font-semibold text-text">{t("budget.householdPlan")}</h1>
         </div>
 
+        <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-muted">
+            {t("budget.viewLabel")}
+          </span>
+          <div role="group" aria-label={t("budget.viewLabel")} className="flex rounded-xl border border-line bg-surface-raised p-0.5">
+            {([false, true] as const).map((mios) => (
+              <button
+                key={String(mios)}
+                type="button"
+                aria-pressed={soloMios === mios}
+                disabled={mios && !primerMes.yo}
+                onClick={() => setSoloMios(mios)}
+                className={`min-h-11 rounded-[0.65rem] px-3 text-sm font-medium transition disabled:opacity-50 sm:min-h-9 ${
+                  soloMios === mios ? "bg-sage text-white" : "text-text-muted hover:text-text"
+                }`}
+              >
+                {t(mios ? "budget.viewMine" : "budget.viewHousehold")}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <label>
           <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-muted">
             {t("budget.from")}
@@ -47,6 +72,7 @@ export default function PresupuestoPage() {
             className="rounded-xl border border-line bg-surface-raised px-3 py-2.5 text-sm text-text outline-none transition focus:border-sage focus:ring-4 focus:ring-sage/10"
           />
         </label>
+        </div>
       </div>
 
       {hogarConfigurado === false ? <SinHogar /> : null}
@@ -74,8 +100,8 @@ export default function PresupuestoPage() {
           {/* Two months at a time: the selected one and the next. Side by side on
               desktop, stacked on mobile. */}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <MesPanel month={month} datos={primerMes} />
-            <MesPanel month={mesSiguiente(month)} datos={segundoMes} />
+            <MesPanel month={month} datos={primerMes} soloMios={soloMios} />
+            <MesPanel month={mesSiguiente(month)} datos={segundoMes} soloMios={soloMios} />
           </div>
         </div>
       ) : null}

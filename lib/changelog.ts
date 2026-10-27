@@ -22,6 +22,22 @@ export type EntradaChangelog = {
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    fecha: "2026-10-27",
+    titulo: {
+      en: "See just your own budget",
+      es: "Mira solo tu presupuesto",
+    },
+    cambios: [
+      {
+        tipo: "nuevo",
+        texto: {
+          en: "In Budget, a new switch next to the date lets you go from the whole household to Just mine. The cards adapt: only your income, your expenses and your project savings, and what you have left to spend.",
+          es: "En Presupuesto, un interruptor nuevo junto a la fecha te deja pasar de todo el hogar a Solo lo mío. Las tarjetas se adaptan: solo tus ingresos, tus gastos y tu ahorro en proyectos, y lo que te queda por gastar.",
+        },
+      },
+    ],
+  },
+  {
     fecha: "2026-10-26",
     titulo: {
       en: "Easier to use on your phone",

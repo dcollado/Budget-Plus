@@ -15,6 +15,8 @@ type Props = {
   // Los datos los carga la página (usePresupuestoMes), así el primer mes
   // se comparte con "Tus transferencias" sin pedirle dos veces a la hoja.
   datos: ReturnType<typeof usePresupuestoMes>;
+  // Solo lo mío: mis ingresos, mis gastos y mis aportes; los totales se adaptan.
+  soloMios?: boolean;
 };
 
 function Widget({
@@ -41,10 +43,9 @@ function Widget({
   );
 }
 
-export default function MesPanel({ month, datos }: Props) {
+export default function MesPanel({ month, datos, soloMios = false }: Props) {
   const t = useT();
   const {
-    items,
     cuentas,
     cargando,
     error,
@@ -54,10 +55,12 @@ export default function MesPanel({ month, datos }: Props) {
     asignarCuenta,
     members,
     modificarCategoria,
-    aportesProyecto,
     setAportesProyecto,
     yo,
   } = datos;
+  const filtrar = soloMios && Boolean(yo);
+  const items = filtrar ? datos.items.filter((i) => i.category.ownerMemberId === yo) : datos.items;
+  const aportesProyecto = filtrar ? datos.aportesProyecto.filter((a) => a.memberId === yo) : datos.aportesProyecto;
   const [ocupadoAporte, setOcupadoAporte] = useState(false);
   const [errorAporte, setErrorAporte] = useState("");
 
@@ -83,7 +86,7 @@ export default function MesPanel({ month, datos }: Props) {
   const ingresos = suma(ingresosFijos) + pagoDeMas + suma(ingresosVariables);
   const totalFijos = suma(gastosFijos);
   const totalVariables = suma(gastosVariables);
-  // Lo que se aparta para proyectos ese mes (todas las personas): ya salió del flujo.
+  // Lo que se aparta para proyectos ese mes (todas las personas, o solo yo en "Solo lo mío"): ya salió del flujo.
   // Las sugerencias sin confirmar no cuentan todavía.
   const ahorroProyectos = aportesProyecto.reduce((total, a) => total + (a.sugerido ? 0 : a.montoCents), 0);
   const porGastar = ingresos - totalFijos - totalVariables - ahorroProyectos;

@@ -51,7 +51,7 @@ export const GUIA: SeccionGuia[] = [
     puntos: {
       en: [
         "**Your transfers** (at the top) shows how much you send to each account, per month and every two weeks, from your fixed expenses. Open an account to see which expenses make it up. **Salary** and **Remainder** (what is left of your salary after your fixed expenses) are at the bottom.",
-        "The **From** picker changes the first month shown.",
+        "The **From** picker changes the first month shown. Next to it, the **Household / Just mine** switch limits the cards and lists to your own income, expenses and project savings, and **Left to spend** adapts to them.",
         "Each month has four numbers: **Income**, **Fixed expenses**, **Variable expenses** and **Left to spend**. If you set money aside for projects, **Project savings** appears too and is subtracted.",
         "**Extra expenses this month**: use **+ Variable expense** or **+ Variable income** for something that only happens this month. In the form you also choose **whose it is** (it starts as you). Tick the box when it is done, use the pencil to change the amount, date, note, account or whose it is, and the bin to delete it.",
         "**Savings for projects**: a line per person with what they set aside that month for a project. Anyone in the household can tick it as set aside (that updates the project). What is only **suggested** shows too, marked **Suggested**, with a **Confirm** button, and it does not count in the totals until it is confirmed. To change an amount, go to Projects.",
@@ -59,7 +59,7 @@ export const GUIA: SeccionGuia[] = [
       ],
       es: [
         "**Tus transferencias** (arriba) muestra cuánto mandas a cada cuenta, por mes y por quincena, según tus gastos fijos. Abre una cuenta para ver qué gastos la componen. Abajo están tu **Salario** y tu **Remanente** (lo que te queda del salario después de tus gastos fijos).",
-        "El selector **Desde** cambia el primer mes que se muestra.",
+        "El selector **Desde** cambia el primer mes que se muestra. Junto a él, el interruptor **Hogar / Solo lo mío** limita las tarjetas y las listas a tus propios ingresos, gastos y ahorro en proyectos, y **Por gastar** se adapta a ellos.",
         "Cada mes tiene cuatro números: **Ingresos**, **Gastos fijos**, **Gastos variables** y **Por gastar**. Si apartas dinero para proyectos, aparece también **Ahorro en proyectos** y se resta.",
         "**Gastos extra este mes**: con **+ Gasto variable** o **+ Ingreso variable** agregas algo que solo pasa este mes. En el formulario también eliges **de quién es** (empieza siendo tuyo). Marca la casilla cuando ya esté hecho, usa el lápiz para cambiar el monto, la fecha, la nota, la cuenta o de quién es, y la papelera para eliminarlo.",
         "**Ahorro para proyectos**: una línea por persona con lo que apartó ese mes para un proyecto. Cualquiera del hogar puede marcarla como apartada (eso actualiza el proyecto). Lo que solo está **sugerido** también aparece, marcado **Sugerido**, con un botón **Confirmar**, y no cuenta en los totales hasta que se confirme. Para cambiar un monto, ve a Proyectos.",
